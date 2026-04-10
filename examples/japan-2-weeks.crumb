@@ -1,0 +1,131 @@
+trip:
+  name: Japan in 2 Weeks
+  author: Ana Yamamoto
+  tags: [asia, food, temples, city]
+  note: A two-week circuit through Japan's most iconic cities. Best visited in autumn.
+
+itinerary:
+
+  - Tokyo:
+      duration: 5 nights
+
+  - train
+
+  - Kyoto:
+      duration: 3 nights
+      activities:
+        - Fushimi Inari
+        - Nishiki Market:
+            priority: must
+        - Arashiyama Bamboo Grove:
+            priority: maybe
+
+  - train:
+      duration: 15m
+
+  - Osaka:
+      duration: 2 nights
+      stay:
+        - Namba Hotel:
+            arrives: 3pm
+            departs: morning
+      activities:
+        - Dotonbori:
+            priority: must
+            tags: [landmark, food, nightlife]
+        - Osaka Castle:
+            priority: must
+            tags: [landmark, history]
+        - Shinsekai:
+            priority: maybe
+            tags: [landmark, food]
+
+  - train:
+      to: Hiroshima
+      departs: 2026-09-15T09:00
+
+  - Hiroshima:
+      arrives: 2026-09-15
+      departs: 2026-09-18
+      duration: 3 nights
+      stay:
+        - Hiroshima Garden Hotel:
+            arrives: 2026-09-15
+            departs: 2026-09-18
+            info:
+              - website: https://www.example.com
+              - reference: HGH-220
+            note: Ask for a room facing the garden.
+      activities:
+        - Peace Memorial Park:
+            priority: must
+            tags: [landmark, history]
+            location: Peace Memorial Park, Hiroshima
+            note: Allow a **full morning**. The museum is deeply moving.
+        - Miyajima Island:
+            priority: must
+            tags: [nature, landmark]
+            note: Time your visit around low tide to walk up to the torii gate.
+
+        - day:
+            - Mitaki-dera Temple
+            - Hiroshima Museum of Art
+
+        - day:
+            - Itsukushima Shrine
+            - Mt. Misen
+
+        - day:
+            - Hiroshima Prefectural Art Museum
+            - Mazda Museum
+
+        - day:
+            title: Peace and history
+            time: 2026-09-18
+            items:
+              - Peace Memorial Museum:
+                  time: 9am
+                  duration: 2h
+                  note: Book tickets in advance.
+              - Atomic Bomb Dome:
+                  time: 11am
+                  duration: 1h
+                  location:
+                    name: Genbaku Dome
+                    lat: 34.3955
+                    lng: 132.4530
+              - Okonomi-mura:
+                  time: midday
+                  duration: 1h
+                  note: Try the **Hiroshima-style** okonomiyaki — layered, not mixed.
+              - Hiroshima Castle:
+                  time: 2pm
+                  duration: 1h30m
+              - Shukkeien Garden:
+                  time: late afternoon
+                  duration: 1h
+                  note: A quiet end to the trip.
+
+  - train:
+      from: Hiroshima
+      to: Tokyo
+      departs: 2026-09-18T17:00+09:00
+      arrives: 2026-09-18T19:30+09:00
+
+  - flight:
+      from:
+        name: Tokyo Haneda Airport
+        address: 2-6-5 Hanedakuko, Ota City, Tokyo
+        lat: 35.5494
+        lng: 139.7798
+      to:
+        name: London Heathrow Airport
+        lat: 51.4700
+        lng: -0.4543
+      departs: 2026-09-18T23:00+09:00
+      arrives: 2026-09-19T06:00+01:00
+      info:
+        - operator: JAL
+        - reference: JL44-8821
+        - gate: 114
+        - terminal: International Terminal
