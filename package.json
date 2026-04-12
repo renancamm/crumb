@@ -1,0 +1,20 @@
+{
+  "name": "crumb",
+  "version": "0.1.0",
+  "description": "Crumb — open format for travel itineraries",
+  "scripts": {
+    "render": "ts-node src/cli.ts",
+    "editor": "ts-node src/cli-editor.ts",
+    "build": "ts-node src/cli-editor.ts > dist/index.html"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.0.0",
+    "esbuild": "^0.21.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.0"
+  }
+}

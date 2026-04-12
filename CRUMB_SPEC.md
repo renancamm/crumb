@@ -187,6 +187,8 @@ Write `2026-09-15` or just `September`. Write `9am` or `afternoon`. Write `2h` o
 **3. Everything is optional.**
 A bare place name is valid. An activity with just a name is valid. You add fields as your plans take shape.
 
+> **Note:** Place names must be valid YAML strings. If a name could be read as something else by YAML — for example a number like `2026`, or the word `null` — wrap it in quotes: `- "2026"`, `- "null"`.
+
 ---
 
 ## Top-level Fields
@@ -210,6 +212,7 @@ trip:
 | `name` | string | Title of the trip |
 | `author` | string | Name or handle of the person who wrote this crumb |
 | `tags` | list | Keywords describing the trip style and focus |
+| `info` | MetadataList | Supplementary key-value details (e.g. booking platform, guide website, trip code) |
 | `note` | Text | Free-text description of the trip |
 
 ### `itinerary`
@@ -248,6 +251,7 @@ A place can have accommodation, activities, and notes — or none of these.
     arrives: 2026-09-10
     departs: 2026-09-15
     duration: 5 nights
+    timezone: Asia/Tokyo
     location: Tokyo, Japan
     tags: [city, food, culture]
     stay:
@@ -268,6 +272,7 @@ A place can have accommodation, activities, and notes — or none of these.
 | `arrives` | Moment | When you arrive at this place |
 | `departs` | Moment | When you leave this place |
 | `duration` | Duration | How long you are spending here |
+| `timezone` | string | IANA timezone name for this place (e.g. `Asia/Tokyo`, `Europe/London`). Applies to all times within this place that don't carry an explicit UTC offset. |
 | `location` | Geolocation | Geographic reference for this place |
 | `tags` | list | Keywords for filtering and display |
 | `stay` | list | Accommodation — see [Stay](#stay) |
@@ -382,7 +387,7 @@ Activity groups collect activities into named units — useful for day-by-day pl
 
 `day`, `week`, `plan`
 
-Use `plan` when the group doesn't fit a specific time unit — for themed groups, alternatives, or ideas.
+Use `plan` when the group doesn't fit a specific time unit — for themed groups, alternatives, or ideas. A `plan` group is **not scheduled**: it does not participate in date sequencing, and activities inside it do not get resolved dates even if they have a `time` field. `plan` groups are display-only containers.
 
 Each keyword accepts two forms. The shorthand form takes a list of activities directly. The detailed form takes a group with optional `title`, `time`, `duration`, and `items`.
 
@@ -425,7 +430,7 @@ Each keyword accepts two forms. The shorthand form takes a list of activities di
       - Kegon Falls
 ```
 
-When a `day` or `week` group has no explicit `time`, it automatically continues from the previous one — each group starts the day or week after the previous one, beginning from the place's arrival date. An explicit `time` on any group resets the sequence from that point.
+When a `day` or `week` group has no explicit `time`, it automatically continues from the previous one — each group starts the day or week after the previous one, beginning from the place's arrival date. An explicit `time` on any group resets the sequence from that point. `plan` groups are never part of this sequence.
 
 | Field | Type | Description |
 |---|---|---|
@@ -654,6 +659,9 @@ location:
   address: 68 Fukakusa Yabunouchicho, Fushimi Ward, Kyoto
   lat: 34.9671
   lng: 135.7727
+
+# Opt out of geocoding
+location: none
 ```
 
 | Field | Type | Description |
@@ -665,6 +673,18 @@ location:
 
 **`Geolocation` used on:** places, stays, activities.
 **`from` and `to` on transport legs** follow the same grammar.
+
+#### Geocoding and `location: none`
+
+When a place, stay, or activity has no coordinates, a rendering tool may automatically look up coordinates by name using a geocoding service (such as Google Maps or OpenStreetMap). This is a **render-phase** concern — the parser does not perform geocoding. The parsed output always contains the authored text; the renderer decides whether to resolve it to coordinates.
+
+To explicitly **opt out of geocoding** for a specific location, use the special value `location: none`. This signals to renderers that the place should not be geocoded — it will appear in lists and notes but will not be pinned on a map. Useful for unnamed waypoints, intentionally abstract places, or privacy.
+
+```yaml
+- Somewhere private:
+    location: none
+    duration: 2 nights
+```
 
 ---
 
@@ -912,9 +932,13 @@ Each item in `itinerary` is either a bare string or a single-key mapping. Classi
 
 Transport keywords (case-sensitive, lowercase only): `train`, `flight`, `bus`, `car`, `ferry`, `walk`, `bike`, `transport`. A capitalised form such as `Train` is a place name, not a transport leg.
 
+**YAML string note:** Place names must be valid YAML strings. YAML parses bare values such as `null`, `true`, `false`, `yes`, `no`, `on`, `off`, and plain numbers as non-string scalars — these will not be classified as places. Quote them when needed: `- "null"`, `- "2026"`. Items that fail to parse as a string or single-key mapping are silently ignored.
+
 #### 1.3 Place fields
 
-Recognised fields on a `RawPlace` node: `arrives`, `departs`, `duration`, `location`, `tags`, `stay`, `activities`, `info`, `note`. All other keys are ignored.
+Recognised fields on a `RawPlace` node: `arrives`, `departs`, `duration`, `timezone`, `location`, `tags`, `stay`, `activities`, `info`, `note`. All other keys are ignored.
+
+- `timezone` must be a string. A non-string value is ignored and `timezone` is treated as absent. No validation of the timezone name is performed by the parser — it is stored as-is and passed to consumers.
 
 - `stay` must be a YAML list. A non-list value is ignored and `stay` is treated as absent.
 - `activities` must be a YAML list. A non-list value is ignored and `activities` is treated as absent.
@@ -1049,7 +1073,7 @@ For `range`, N must be less than M. If N ≥ M, treat as `unknown`.
 | `overnight` | `named` | `"overnight"` | `{ value: 1, unit: "nights" }` |
 | `around <span>` | `named-approximate` | as above | as above |
 | `at least <span>` | `named-minimum` | as above | as above |
-| `<span> to <span>`, `<span>-<span>` | `named-range` | `min`, `max` | from each span |
+| `<span> to <span>`, `<span>-<span>` | `named-range` | `min`, `max` | `minEstimate` and `maxEstimate` from each span |
 
 For `named-range`, `min` and `max` must be different spans. If the same span appears on both sides, treat as `unknown`.
 
@@ -1059,7 +1083,8 @@ Anything not matching the above → `{ type: "unknown", label: <original string>
 
 #### 2.3 `Geolocation` → `ResolvedGeolocation`
 
-- A plain string value → `{ label: <original string> }`. No other fields set.
+- The plain string `"none"` → `{ label: "none", geocodingDisabled: true }`. Signals to renderers that this location should not be geocoded.
+- Any other plain string value → `{ label: <original string> }`. No other fields set.
 - A mapping value must contain at least one of `name`, `address`, `lat`, or `lng`. An empty mapping is ignored and `location` treated as absent.
 - `lat` and `lng` are only valid as a pair. If one is present without the other, both are discarded.
 - `lat` must be between −90 and 90 inclusive. `lng` must be between −180 and 180 inclusive. Out-of-range values cause the coordinate pair to be discarded.
@@ -1147,7 +1172,27 @@ Anchor propagation gives every `ResolvedMoment` in the document a resolved date 
 
 A higher-precedence anchor never overwrites one set by a higher source. Within the same precedence level, the nearest source wins.
 
-**Propagation direction:** Propagation is bidirectional. Any absolute date established anywhere in the itinerary propagates forward to subsequent nodes and backward to preceding ones. Forward propagation advances by each `Place.duration`; backward propagation subtracts durations from the known anchor. The highest-precedence source reachable from any node always wins.
+**Propagation direction:** Propagation is **forward-only**. Once an absolute date is established at any point in the itinerary, it propagates forward to subsequent nodes. Each `Place.duration` and `TransportLeg.duration` advances the running date estimate. No backward propagation is performed.
+
+**Duration arithmetic for propagation:**
+
+Calendar-day conversion rules:
+- `N nights` = N calendar days (5 nights from Oct 10 → departs Oct 15).
+- `N days` = N calendar days.
+- `N weeks` = N × 7 calendar days.
+- `hours` and `minutes` do **not** advance the calendar date anchor — they are ignored for propagation.
+- `overnight` (named span) = 1 calendar day advance.
+- `all day` and `half day` (named spans) = hours only, no date advance.
+
+Qualified durations:
+- `approximate` (e.g. `around 3 nights`): use the stated value as-is, same as exact.
+- `minimum` (e.g. `at least 3 nights`): use the stated value as the estimate.
+- `range` (e.g. `2 to 3 nights`): use the **max** value as the estimate.
+- `unknown`: duration is ignored; no propagation.
+
+Transport leg `duration` contributes to forward propagation using the same rules (hours/minutes are ignored, days/nights advance the date).
+
+**`plan` groups:** `plan` groups and their activities do not participate in anchor propagation. Any `time` field on a `plan` group or its activities is stored as-is and receives no anchor.
 
 **Anchor fields:**
 - `anchor.date` (`YYYY-MM-DD`) is set whenever a calendar date can be resolved.
@@ -1159,7 +1204,7 @@ A higher-precedence anchor never overwrites one set by a higher source. Within t
 - When `date` is entirely absent (e.g. a time-only `ResolvedMoment` such as `"morning"` on an activity inside a resolved day group).
 - Never when `date.precision` is `"absolute"` — the date is already explicit.
 
-**When no anchor can be set:** If no anchor of any kind is reachable through propagation, the `ResolvedMoment` carries no `anchor`. This is valid and expected for fully isolated relative values.
+**When no anchor can be set:** If no anchor of any kind is reachable through forward propagation, the `ResolvedMoment` carries no `anchor`. This is valid and expected for fully isolated relative values.
 
 #### 3.5 Relative date resolution
 
@@ -1198,7 +1243,8 @@ Resolution depends on what relative form was authored or injected:
 **`next day` / `next week`**
 - Scan backward through the parent place's `activities` array for the nearest preceding `ActivityGroup` that has a resolved `anchor.date`. `plan` groups and `UngroupedActivities` are skipped.
 - If a preceding anchored group is found: `next day` = that group's `anchor.date` + 1 day; `next week` = + 7 days. Precedence: `"explicit"`.
-- If no preceding anchored group exists (first `day`/`week` group in scope): resolve against the place `arrives` date directly. `next day` = `arrives`; `next week` = `arrives`. Precedence: `"place"`.
+- If no preceding anchored group exists (this is the **first** `day`/`week` group in the place): resolve against the place `arrives` date directly. `next day` = `arrives`; `next week` = `arrives`. Precedence: `"place"`.
+  - **Note:** For the first group, `next day` resolves to the `arrives` date — that is, Day 1 of the stay. "Next" means "the next available day slot in the sequence starting from arrival," not "the day after arrival." Subsequent groups advance by one day or one week from the previous group.
 - If no place date context is available, stored as a display-only label and no `anchor.date` is set.
 
 **`Monday` through `Sunday`**
@@ -1213,8 +1259,9 @@ Resolution depends on what relative form was authored or injected:
 - Both results are combined into the single `ResolvedMoment`.
 
 **Activity anchoring within groups:**
-- Each `Activity` inside a group that has a resolved anchor inherits the group's date as its own anchor when the activity's `time` has no date or has a relative date.
+- Each `Activity` inside a `day` or `week` group that has a resolved anchor inherits the group's date as its own anchor when the activity's `time` has no date or has a relative date.
 - Activities with an absolute `time` are not affected.
+- Activities inside a `plan` group are **not** affected by this rule — they receive no anchor from the group.
 
 #### 3.6 Contradiction resolution
 
@@ -1456,9 +1503,10 @@ type RawDuration = string  // shorthand, plain English, named span, or modified 
 //
 // Mirrors the two authoring forms: plain string or block with named fields.
 // lat/lng are numbers because YAML parses them as numbers natively.
+// The special string "none" opts out of geocoding — preserved as-is for Pass 2.
 
 type RawGeolocation =
-  | string
+  | string                                                  // includes "none"
   | { name?: string; address?: string; lat?: number; lng?: number }
 
 // ─── RawActivity ─────────────────────────────────────────────────────────────
@@ -1522,6 +1570,7 @@ interface RawPlace {
   arrives?:   RawMoment
   departs?:   RawMoment
   duration?:  RawDuration
+  timezone?:  string          // IANA timezone name, stored as-is — not validated by the parser
   location?:  RawGeolocation
   tags?:      string[]
   stay?:      RawStay[]
@@ -1617,7 +1666,7 @@ interface Anchor {
 // estimate is an HH:MM string used for chronological sorting. Loose and
 // exact times share the same coordinate space — compare estimate against
 // an exact HH:MM value to order them on the same day.
-// "late night" crosses midnight — its estimate is 02:00 the following day.
+// All estimates are on the same anchor date — no day-crossing is applied.
 
 type LoosePeriod =
   | "early morning"   // estimate 06:00
@@ -1627,7 +1676,7 @@ type LoosePeriod =
   | "late afternoon"  // estimate 17:00
   | "evening"         // estimate 19:30
   | "night"           // estimate 22:00
-  | "late night"      // estimate 02:00 (following day)
+  | "late night"      // estimate 02:00
   | "midnight"        // estimate 23:59
 
 // ─── TimeOfDay ───────────────────────────────────────────────────────────────
@@ -1720,22 +1769,26 @@ type ResolvedDuration =
   | { type: "named";            span: NamedSpan; estimate: DurationEstimate; label: string }
   | { type: "named-approximate"; span: NamedSpan; estimate: DurationEstimate; label: string }
   | { type: "named-minimum";    span: NamedSpan; estimate: DurationEstimate; label: string }
-  | { type: "named-range";      min: NamedSpan; max: NamedSpan; label: string }
+  | { type: "named-range";      min: NamedSpan; max: NamedSpan; minEstimate: DurationEstimate; maxEstimate: DurationEstimate; label: string }
   | { type: "unknown";          label: string }
 
 // ─── ResolvedGeolocation ─────────────────────────────────────────────────────
 //
-// label:   safe display string in all cases. Set to the original plain string
-//          when written in string form; otherwise name ?? address ?? coords.
+// label:              safe display string in all cases. Set to the original plain
+//                     string when written in string form; otherwise name ?? address ?? coords.
 //
-// lat/lng: always present as a pair or not at all.
+// geocodingDisabled:  true when the author wrote `location: none`. Renderers must
+//                     not attempt to geocode this location. Absent otherwise.
+//
+// lat/lng:            always present as a pair or not at all.
 
 interface ResolvedGeolocation {
-  label:    string
-  name?:    string
-  address?: string
-  lat?:     number
-  lng?:     number
+  label:               string
+  geocodingDisabled?:  true
+  name?:               string
+  address?:            string
+  lat?:                number
+  lng?:                number
 }
 
 // ─── MetadataItem ────────────────────────────────────────────────────────────
@@ -1747,9 +1800,11 @@ interface MetadataItem {
 
 // ─── Activity ────────────────────────────────────────────────────────────────
 //
+// type:     "activity" — discriminator consistent with all other output types.
 // priority: only present when explicitly set by the author.
 
 interface Activity {
+  type:      "activity"
   name:      string
   priority?: Priority
   tags?:     string[]
@@ -1824,6 +1879,7 @@ interface Place {
   arrives?:   ResolvedMoment
   departs?:   ResolvedMoment
   duration?:  ResolvedDuration
+  timezone?:  string          // IANA timezone name. Applies to times within this place lacking an explicit UTC offset.
   location?:  ResolvedGeolocation
   tags?:      string[]
   stay?:      Stay[]
@@ -1855,6 +1911,7 @@ interface TripMeta {
   name?:   string
   author?: string
   tags?:   string[]
+  info?:   MetadataItem[]
   note?:   string
 }
 

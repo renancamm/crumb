@@ -1,0 +1,335 @@
+trip:
+  name: The Grand Tour — Stress Test
+  author: Crumb
+  tags: [europe, all-features, gold-standard]
+  note: This example exercises **every feature** of the Crumb format — all field types, all duration forms, all time expressions, all activity group kinds, and all transport modes.
+  info:
+    - version: stress-test-1.0
+    - purpose: parser validation
+
+itinerary:
+
+  # ── Place: all fields, all activity group kinds, all duration forms ──────────
+
+  - New York:
+      arrives: 2026-03-01
+      departs: 2026-03-08
+      duration: 7 nights
+      timezone: America/New_York
+      location:
+        name: New York City
+        lat: 40.7128
+        lng: -74.0060
+      tags: [city, usa, food, art]
+      note: The city that never sleeps. Pack **light** — you will walk *everywhere*.
+      info:
+        - visa: ESTA required
+        - currency: USD
+      stay:
+        - The Standard High Line:
+            arrives: 2026-03-01T15:00
+            departs: 2026-03-08T11:00
+            info:
+              - reference: STD-88221
+              - website: https://www.standardhotels.com
+            note: Ask for a *high floor* room facing the Hudson.
+      activities:
+
+        # Ungrouped — all priorities, all time formats
+        - Central Park:
+            priority: must
+            time: early morning
+            duration: 2h
+            location: Central Park, Manhattan
+            tags: [nature, walk]
+            note: Great for a **morning run** before the city wakes up.
+        - Times Square:
+            priority: maybe
+            time: late night
+            tags: [landmark, touristy]
+        - Chelsea Galleries:
+            time: afternoon
+            duration: around 2h
+            tags: [art]
+
+        # Day group — title + absolute time on an item
+        - day:
+            title: Arrival day
+            items:
+              - Hotel check-in:
+                  time: 3pm
+              - Dinner at Le Bernardin:
+                  time: 7pm
+                  priority: must
+                  note: Book *well in advance* — weeks ahead minimum.
+                  info:
+                    - website: https://www.le-bernardin.com
+
+        # Day group — no title, next day → resolves to arrival date
+        - day:
+            items:
+              - Brooklyn Bridge:
+                  time: early morning
+                  duration: 1h30m
+                  priority: must
+                  location:
+                    name: Brooklyn Bridge
+                    lat: 40.7061
+                    lng: -73.9969
+              - DUMBO neighbourhood:
+                  time: midday
+                  duration: around 2h
+              - Smorgasburg food market:
+                  time: afternoon
+                  priority: maybe
+                  tags: [food]
+
+        # Day group — explicit relative time reference
+        - day:
+            title: Uptown
+            time: Day 3
+            items:
+              - Metropolitan Museum of Art:
+                  time: 10am
+                  duration: at least 3h
+                  priority: must
+                  tags: [museum, art]
+              - Central Park Reservoir walk:
+                  time: late afternoon
+                  duration: 1h
+              - Jazz at Lincoln Center:
+                  time: 8pm
+                  duration: 2h
+                  priority: must
+                  tags: [music, evening]
+
+        # Week group
+        - week:
+            title: Full week
+            items:
+              - Explore all five boroughs
+              - Day trip to the Catskills:
+                  duration: all day
+                  priority: maybe
+                  tags: [nature, day-trip]
+
+        # Plan group — display only, no dates
+        - plan:
+            title: Rainy day backup
+            items:
+              - MoMA:
+                  duration: half day
+                  tags: [museum, art]
+              - Chelsea Market:
+                  duration: around 2h
+                  tags: [food, indoor]
+              - New York Public Library:
+                  time: morning
+                  note: The *Rose Main Reading Room* alone is worth the visit.
+
+  # ── Flight — full structured from/to, timezone-aware timestamps ─────────────
+
+  - flight:
+      from:
+        name: John F. Kennedy International Airport
+        lat: 40.6413
+        lng: -73.7781
+      to:
+        name: London Heathrow Airport
+        lat: 51.4700
+        lng: -0.4543
+      departs: 2026-03-08T21:00-05:00
+      arrives: 2026-03-09T09:00+00:00
+      duration: 7h
+      info:
+        - operator: British Airways
+        - flight: BA178
+        - terminal: 7
+        - gate: 32B
+        - reference: BA-XJ8821
+      note: Overnight flight — bring a *neck pillow* and noise-cancelling headphones.
+
+  # ── Place — range durations, multiple day groups with date sequencing ────────
+
+  - London:
+      arrives: 2026-03-09
+      departs: 2026-03-14
+      duration: 5 nights
+      timezone: Europe/London
+      location: London, United Kingdom
+      tags: [city, uk, history, royalty]
+      note: Mind the gap. Get an **Oyster card** on arrival.
+      stay:
+        - Claridge's:
+            arrives: 3pm
+            departs: morning
+            info:
+              - reference: CLA-2026-0309
+            note: The *quintessential* London hotel.
+      activities:
+        - Tower of London:
+            priority: must
+            time: morning
+            duration: 2h to 3h
+            location: Tower Hill, London
+            tags: [landmark, history]
+        - Borough Market:
+            priority: must
+            time: late morning
+            tags: [food, market]
+            note: Go hungry. Get the **Neal's Yard** cheese.
+        - day:
+            title: Day trip — Oxford
+            time: Day 2
+            items:
+              - Oxford by coach:
+                  duration: all day
+                  priority: must
+                  note: Take the **Oxford Tube** — faster than the train and drops you in the centre.
+        - day:
+            title: Museums
+            items:
+              - British Museum:
+                  time: 9am
+                  duration: 3h
+                  priority: must
+                  tags: [museum, history, free]
+              - National Gallery:
+                  time: afternoon
+                  duration: 2h
+                  tags: [museum, art, free]
+              - Dinner in Soho:
+                  time: 7:30pm
+                  priority: maybe
+                  tags: [food, evening]
+
+  # ── Train — minimal fields, endpoints inferred ──────────────────────────────
+
+  - train:
+      departs: 2026-03-14T09:30+00:00
+      arrives: 2026-03-14T13:00+01:00
+      duration: 2h30m
+      info:
+        - operator: Eurostar
+        - reference: ES-4421
+
+  # ── Place — minimum, approximate, all named periods, location: none ──────────
+
+  - Paris:
+      arrives: 2026-03-14
+      duration: 4 nights
+      timezone: Europe/Paris
+      tags: [city, france, food, art, romance]
+      note: The *city of light*. Buy a **Navigo** pass on day one.
+      stay:
+        - Hôtel Particulier Montmartre:
+            info:
+              - reference: HPM-3302
+      activities:
+        - Eiffel Tower:
+            priority: must
+            time: early morning
+            duration: 2h
+            location:
+              name: Tour Eiffel
+              lat: 48.8584
+              lng: 2.2945
+            note: Go before 9am — the crowds arrive fast.
+        - Louvre:
+            priority: must
+            time: 10am
+            duration: at least 4h
+            tags: [museum, art]
+            note: Book skip-the-line tickets. The **Denon wing** alone takes hours.
+        - Marché d'Aligre:
+            priority: maybe
+            time: early morning
+            duration: 1h
+            tags: [food, market, local]
+        - Seine at night:
+            time: late night
+            location: none
+            note: Walk along the quais after midnight — the city is *yours*.
+        - day:
+            title: Left Bank
+            items:
+              - Musée d'Orsay:
+                  time: 9am
+                  duration: 2h to 3h
+                  priority: must
+                  tags: [museum, art, impressionism]
+              - Saint-Germain-des-Prés:
+                  time: midday
+                  duration: around 1h30m
+                  tags: [neighbourhood, café]
+              - Café de Flore:
+                  time: afternoon
+                  duration: around 1h
+                  tags: [historic, café]
+                  note: Order a *croque-monsieur* and stay for hours.
+              - Pont des Arts:
+                  time: late afternoon
+                  location: none
+        - day:
+            title: Versailles
+            items:
+              - Palace of Versailles:
+                  time: 9am
+                  duration: all day
+                  priority: must
+                  location:
+                    name: Château de Versailles
+                    lat: 48.8049
+                    lng: 2.1204
+                  note: Buy tickets online — the queues are *brutal* in season.
+        - plan:
+            title: If time allows
+            items:
+              - Sainte-Chapelle:
+                  priority: must
+                  duration: 1h
+                  note: The **stained glass** is unlike anything else in the world.
+              - Père Lachaise Cemetery:
+                  duration: half day
+                  tags: [history, walk, free]
+              - Canal Saint-Martin:
+                  time: evening
+                  tags: [neighbourhood, walk, local]
+
+  # ── Ferry ────────────────────────────────────────────────────────────────────
+
+  - ferry:
+      from: Calais
+      to: Dover
+      departs: 2026-03-18T10:00+01:00
+      arrives: 2026-03-18T11:30+00:00
+      duration: 1h30m
+      info:
+        - operator: DFDS
+        - reference: DFDS-20260318
+
+  # ── Bus ──────────────────────────────────────────────────────────────────────
+
+  - bus:
+      from: Dover Port
+      to: London Victoria
+      departs: 2026-03-18T13:00+00:00
+      duration: 2h
+      info:
+        - operator: National Express
+
+  # ── Walk leg ─────────────────────────────────────────────────────────────────
+
+  - walk:
+      from: Victoria Station
+      to: Tate Britain
+      duration: 15m
+
+  # ── Minimal place — no activities, just a note ───────────────────────────────
+
+  - London:
+      arrives: 2026-03-18
+      duration: 1 night
+      note: One final night before flying home. Dinner with friends.
+      stay:
+        - citizenM London Bankside
