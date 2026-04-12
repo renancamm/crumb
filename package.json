@@ -5,7 +5,7 @@
   "scripts": {
     "render": "ts-node src/cli.ts",
     "editor": "ts-node src/cli-editor.ts",
-    "build": "ts-node src/cli-editor.ts > dist/index.html"
+    "build": "ts-node src/cli-editor.ts dist/index.html"
   },
   "dependencies": {
     "js-yaml": "^4.1.0"

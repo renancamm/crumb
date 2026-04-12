@@ -25,8 +25,16 @@ async function main() {
     examples[file] = fs.readFileSync(path.join(examplesDir, file), "utf8")
   }
 
-  // 3 — Emit HTML
-  process.stdout.write(buildEditorHtml(bundle, examples))
+  // 3 — Emit HTML (to file if path given, otherwise stdout)
+  const html    = buildEditorHtml(bundle, examples)
+  const outArg  = process.argv[2]
+  if (outArg) {
+    const outPath = path.resolve(outArg)
+    fs.mkdirSync(path.dirname(outPath), { recursive: true })
+    fs.writeFileSync(outPath, html, "utf8")
+  } else {
+    process.stdout.write(html)
+  }
 }
 
 main().catch(e => { console.error(e.message); process.exit(1) })
