@@ -1,111 +1,17 @@
-// ─── Shared primitives ────────────────────────────────────────────────────────
-
-export type TransportMode =
-  | "train" | "flight" | "bus" | "car"
-  | "ferry" | "walk"  | "bike" | "transport"
-
-export type GroupKind = "day" | "week" | "plan"
-
-export type Priority = "must" | "maybe"
-
-export type DurationUnit = "minutes" | "hours" | "days" | "nights" | "weeks"
-
-export type NamedSpan = "all day" | "half day" | "overnight"
-
-export type LoosePeriod =
-  | "early morning"
-  | "morning"
-  | "midday"
-  | "afternoon"
-  | "late afternoon"
-  | "evening"
-  | "night"
-  | "late night"
-  | "midnight"
-
-export interface MetadataItem {
-  key:   string
-  value: string | number
-}
-
-// ─── Raw Data Model (Pass 1 output) ───────────────────────────────────────────
-
-export type RawMoment   = string
-export type RawDuration = string
-
-export type RawGeolocation =
-  | string
-  | { name?: string; address?: string; lat?: number; lng?: number }
-
-export interface RawActivity {
-  type:      "activity"
-  name:      string
-  priority?: string
-  tags?:     string[]
-  time?:     RawMoment
-  duration?: RawDuration
-  location?: RawGeolocation
-  info?:     MetadataItem[]
-  note?:     string
-}
-
-export interface RawActivityGroup {
-  type:      "group"
-  kind:      GroupKind
-  title?:    string
-  time?:     RawMoment
-  duration?: RawDuration
-  items:     RawActivity[]
-}
-
-export type RawActivityItem = RawActivity | RawActivityGroup
-
-export interface RawStay {
-  name:      string
-  arrives?:  RawMoment
-  departs?:  RawMoment
-  duration?: RawDuration
-  location?: RawGeolocation
-  tags?:     string[]
-  info?:     MetadataItem[]
-  note?:     string
-}
-
-export interface RawPlace {
-  type:       "place"
-  name:       string
-  arrives?:   RawMoment
-  departs?:   RawMoment
-  duration?:  RawDuration
-  timezone?:  string
-  location?:  RawGeolocation
-  tags?:      string[]
-  stay?:      RawStay[]
-  activities: RawActivityItem[]
-  info?:      MetadataItem[]
-  note?:      string
-}
-
-export interface RawTransportLeg {
-  type:      "transport"
-  mode:      TransportMode
-  from?:     RawGeolocation
-  to?:       RawGeolocation
-  departs?:  RawMoment
-  arrives?:  RawMoment
-  duration?: RawDuration
-  info?:     MetadataItem[]
-  note?:     string
-}
-
-export type RawItineraryItem = RawPlace | RawTransportLeg
-
-export interface RawCrumbDocument {
-  trip?:     TripMeta
-  itinerary: RawItineraryItem[]
-}
-
 // ─── Output Data Model (Pass 3 output) ────────────────────────────────────────
+// The public contract. These are the only types consumers of the parser import.
+
+import {
+  DurationUnit,
+  GroupKind,
+  MetadataItem,
+  NamedSpan,
+  Priority,
+  TransportMode,
+  TripMeta,
+} from "./primitives"
+
+export type { TripMeta } from "./primitives"
 
 export interface Anchor {
   date?:      string
@@ -115,7 +21,7 @@ export interface Anchor {
 
 export type TimeOfDay =
   | { precision: "exact"; value: string }
-  | { precision: "loose"; value: LoosePeriod; estimate: string }
+  | { precision: "loose"; value: import("./primitives").LoosePeriod; estimate: string }
 
 export type DateRef =
   | { precision: "absolute"; value: string }
@@ -217,14 +123,6 @@ export interface TransportLeg {
   duration?: ResolvedDuration
   info?:     MetadataItem[]
   note?:     string
-}
-
-export interface TripMeta {
-  name?:   string
-  author?: string
-  tags?:   string[]
-  info?:   MetadataItem[]
-  note?:   string
 }
 
 export type ItineraryItem = Place | TransportLeg

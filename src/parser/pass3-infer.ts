@@ -16,11 +16,11 @@ import {
   Place,
   ResolvedMoment,
   UngroupedActivities,
-} from "../types"
+} from "../types/resolved"
 
 // ─── Entry point ─────────────────────────────────────────────────────────────
 
-export function pass3(doc: CrumbDocument): CrumbDocument {
+export function infer(doc: CrumbDocument): CrumbDocument {
   const itinerary = doc.itinerary
 
   // 3.1 — Wrap ungrouped activities (already done partially in Pass 2,

@@ -12,17 +12,13 @@
  */
 
 import {
-  Activity,
-  ActivityGroup,
-  ActivityItem,
-  CrumbDocument,
-  DateRef,
-  DurationEstimate,
   DurationUnit,
   LoosePeriod,
   NamedSpan,
-  Place,
   Priority,
+  TripMeta,
+} from "../types/primitives"
+import {
   RawActivity,
   RawActivityGroup,
   RawActivityItem,
@@ -34,19 +30,27 @@ import {
   RawPlace,
   RawStay,
   RawTransportLeg,
+} from "../types/raw"
+import {
+  Activity,
+  ActivityGroup,
+  ActivityItem,
+  CrumbDocument,
+  DateRef,
+  DurationEstimate,
+  Place,
   ResolvedDuration,
   ResolvedGeolocation,
   ResolvedMoment,
   Stay,
   TimeOfDay,
   TransportLeg,
-  TripMeta,
   UngroupedActivities,
-} from "../types"
+} from "../types/resolved"
 
 // ─── Entry point ─────────────────────────────────────────────────────────────
 
-export function pass2(raw: RawCrumbDocument): CrumbDocument {
+export function resolve(raw: RawCrumbDocument): CrumbDocument {
   return {
     trip:      raw.trip ? resolveTripMeta(raw.trip) : undefined,
     itinerary: raw.itinerary.map(resolveItineraryItem),

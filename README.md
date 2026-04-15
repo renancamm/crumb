@@ -2,9 +2,7 @@
 
 > *Leave a trail.*
 
-An open format for travel itineraries. Plan trips in plain text. Share the pieces.
-
-Crumb is a human-writable format for describing travel itineraries. Write as little or as much as you know — a list of city names is a valid crumb, and so is a fully timed, day-by-day schedule with bookings and coordinates. Both live in the same format.
+An open format for travel itineraries. Write trips in plain YAML — a list of city names is a valid crumb, and so is a fully timed, day-by-day schedule with geocoded locations. Both live in the same format.
 
 ---
 
@@ -39,35 +37,71 @@ itinerary:
 
 ---
 
+## Render a crumb
+
+```sh
+npm install
+npx ts-node src/cli.ts examples/japan-2-weeks.crumb > out.html
+open out.html
+```
+
+Produces a self-contained HTML file with an interactive map, a visual itinerary, and an in-browser editor with live re-rendering.
+
+To write to a file directly:
+
+```sh
+npx ts-node src/cli.ts examples/japan-2-weeks.crumb dist/japan.html
+```
+
+---
+
+## Verify changes
+
+```sh
+npx tsc --noEmit
+npx ts-node src/cli.ts examples/japan-2-weeks.crumb > /dev/null
+```
+
+---
+
+## Project layout
+
+```
+src/
+  cli.ts                   entry point — parses a .crumb file, renders to HTML
+  browser-entry.ts         browser bundle entry (esbuild, for live re-rendering)
+  parser/
+    index.ts               parse(source) → CrumbDocument
+    pass1-classify.ts      raw YAML → typed raw tree
+    pass2-resolve.ts       raw tree → resolved fields
+    pass3-infer.ts         resolved tree → inferred dates + endpoints
+  renderer/
+    html.ts                renderHtml() + renderItineraryBody()
+    css.ts                 all styles
+    format.ts              pure formatting helpers
+    types.ts               CrumbRenderer interface (for third-party renderers)
+  types/
+    primitives.ts          shared scalars and enums
+    raw.ts                 Pass 1 output types
+    resolved.ts            Pass 3 output types (public contract)
+examples/                  sample .crumb files
+spec/
+  CRUMB_SPEC.md            user guide
+  reference/
+    parser.md              three-pass pipeline + worked example (for tool builders)
+    data-model.md          CrumbDocument TypeScript interfaces (for tool builders)
+```
+
+---
+
 ## Specification
 
-The full specification is in [`CRUMB_SPEC.md`](CRUMB_SPEC.md). It covers:
-
-- **User guide** — format overview, field reference, examples
-- **Parser Reference** — three-pass pipeline for tool builders
-- **Data models** — TypeScript interfaces for raw and resolved output
-- **Worked example** — a complete source crumb with annotated JSON output
-
----
-
-## Examples
-
-The [`examples/`](examples/) directory contains sample `.crumb` files.
-
----
-
-## File format
-
-Crumb files use the `.crumb` extension and are valid YAML documents.
-
-```
-trip.crumb
-japan-2026.crumb
-weekend-in-lisbon.crumb
-```
+- [spec/CRUMB_SPEC.md](spec/CRUMB_SPEC.md) — format overview, field reference, examples
+- [spec/reference/parser.md](spec/reference/parser.md) — parsing pipeline, resolution rules, worked example
+- [spec/reference/data-model.md](spec/reference/data-model.md) — output TypeScript interfaces
 
 ---
 
 ## Status
 
-The specification is in active development. Feedback and contributions welcome.
+Proof of concept. Specification and output format are in active development.

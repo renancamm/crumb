@@ -9,6 +9,10 @@
 import {
   GroupKind,
   MetadataItem,
+  TransportMode,
+  TripMeta,
+} from "../types/primitives"
+import {
   RawActivity,
   RawActivityGroup,
   RawActivityItem,
@@ -18,9 +22,7 @@ import {
   RawPlace,
   RawStay,
   RawTransportLeg,
-  TransportMode,
-  TripMeta,
-} from "../types"
+} from "../types/raw"
 
 const TRANSPORT_KEYWORDS = new Set<string>([
   "train", "flight", "bus", "car", "ferry", "walk", "bike", "transport",
@@ -30,7 +32,7 @@ const ACTIVITY_GROUP_KEYWORDS = new Set<string>(["day", "week", "plan"])
 
 // ─── Entry point ─────────────────────────────────────────────────────────────
 
-export function pass1(raw: unknown): RawCrumbDocument {
+export function classify(raw: unknown): RawCrumbDocument {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     throw new Error("Invalid crumb document: root must be a YAML mapping")
   }

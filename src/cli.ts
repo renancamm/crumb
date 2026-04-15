@@ -1,29 +1,87 @@
 #!/usr/bin/env ts-node
-import * as fs from "fs"
-import * as path from "path"
-import { parse } from "./parser"
-import { renderHtml } from "./renderer/html"
-import { renderPreview } from "./renderer/preview"
+/**
+ * Crumb CLI
+ *
+ * Usage: npx ts-node src/cli.ts <file.crumb> [output.html]
+ *
+ * Produces a self-contained HTML file with:
+ *   — interactive map (MapLibre GL + Nominatim geocoding)
+ *   — itinerary panel with app bar (Open / Share / Reference)
+ *   — live YAML editor (activated via the Open button)
+ *
+ * Writes to stdout if no output path is given, or to the specified file.
+ */
 
-const args     = process.argv.slice(2)
-const preview  = args.includes("--preview")
-const filePath = args.find(a => !a.startsWith("--"))
+import * as esbuild from "esbuild"
+import * as fs      from "fs"
+import * as path    from "path"
+import { parse }    from "./parser"
+import { renderHtml, AppOptions } from "./renderer/html"
 
-if (!filePath) {
-  console.error("Usage: npx ts-node src/cli.ts [--preview] <file.crumb>")
-  console.error("  --preview   Split view: source on left, rendered output on right")
-  process.exit(1)
+async function main() {
+  const args     = process.argv.slice(2)
+  const filePath = args[0]
+  const outPath  = args[1]
+
+  if (!filePath) {
+    console.error("Usage: npx ts-node src/cli.ts <file.crumb> [output.html]")
+    process.exit(1)
+  }
+
+  const resolved = path.resolve(filePath)
+  if (!fs.existsSync(resolved)) {
+    console.error(`File not found: ${resolved}`)
+    process.exit(1)
+  }
+
+  // 1 — Parse the .crumb source
+  const source = fs.readFileSync(resolved, "utf8")
+  const doc    = parse(source)
+
+  // 2 — Bundle parser + renderer for the browser (live re-parsing)
+  const result = await esbuild.build({
+    entryPoints: [path.resolve(__dirname, "browser-entry.ts")],
+    bundle:      true,
+    format:      "iife",
+    globalName:  "Crumb",
+    platform:    "browser",
+    write:       false,
+    logLevel:    "silent",
+  })
+  const parserBundle = result.outputFiles[0].text
+
+  // 3 — Collect examples
+  const examplesDir = path.resolve(__dirname, "../examples")
+  const examples: Record<string, string> = {}
+  if (fs.existsSync(examplesDir)) {
+    for (const file of fs.readdirSync(examplesDir).filter(f => f.endsWith(".crumb")).sort()) {
+      examples[file] = fs.readFileSync(path.join(examplesDir, file), "utf8")
+    }
+  }
+
+  // 4 — Load spec for the Reference → "Download spec for AI" button
+  const specCandidates = [
+    path.resolve(__dirname, "../spec/CRUMB_SPEC.md"),
+    path.resolve(__dirname, "../CRUMB_SPEC.md"),
+  ]
+  const specPath    = specCandidates.find(p => fs.existsSync(p))
+  const specContent = specPath ? fs.readFileSync(specPath, "utf8") : undefined
+
+  // 5 — Render
+  const options: AppOptions = { source, examples, parserBundle, specContent }
+  const html = renderHtml(doc, options)
+
+  if (outPath) {
+    const out = path.resolve(outPath)
+    fs.mkdirSync(path.dirname(out), { recursive: true })
+    fs.writeFileSync(out, html, "utf8")
+    console.error(`Written to ${out}`)
+  } else {
+    process.stdout.write(html)
+  }
 }
 
-const resolved = path.resolve(filePath)
-
-if (!fs.existsSync(resolved)) {
-  console.error(`File not found: ${resolved}`)
+main().catch(e => {
+  console.error(e.message)
   process.exit(1)
-}
-
-const source = fs.readFileSync(resolved, "utf8")
-const doc    = parse(source)
-const html   = preview ? renderPreview(source, doc) : renderHtml(doc)
-
-process.stdout.write(html)
+})
