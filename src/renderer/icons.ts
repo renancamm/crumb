@@ -76,11 +76,10 @@ export const ICON_ROUTE = icon(
 // ─── Content ──────────────────────────────────────────────────────────────────
 
 export const ICON_STAY = icon(
-  `<path d="M10 12h4"/>` +
-  `<path d="M10 8h4"/>` +
-  `<path d="M14 21v-3a2 2 0 0 0-4 0v3"/>` +
-  `<path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"/>` +
-  `<path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/>`
+  `<path d="M2 4v16"/>` +
+  `<path d="M2 8h18a2 2 0 0 1 2 2v10"/>` +
+  `<path d="M2 17h20"/>` +
+  `<path d="M6 8v9"/>`
 )
 
 export const ICON_INFO = icon(

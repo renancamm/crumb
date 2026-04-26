@@ -1,0 +1,46 @@
+trip:
+  name: Portugal in October
+  author: Clara Mendes
+  tags: [europe, coastal, food, photography]
+
+itinerary:
+
+  - Porto:
+      duration: 4 nights
+      stay:
+        - Casa da Ribeira
+      activities:
+        - Livraria Lello:
+            priority: must
+        - Ribeira waterfront:
+            note: Best at sunset.
+        - Francesinha at Café Santiago:
+            priority: must
+
+  - train
+
+  - Lisbon:
+      duration: 4 nights
+      stay:
+        - Alfama Guesthouse
+      activities:
+        - Belém Tower:
+            priority: must
+        - LX Factory:
+            priority: maybe
+            note: Sundays are busiest but most lively.
+        - Pastéis de Belém:
+            priority: must
+
+  - bus
+
+  - Algarve:
+      duration: 5 nights
+      stay:
+        - Sagres Surf Lodge
+      activities:
+        - Ponta de Sagres
+        - Praia da Marinha:
+            priority: must
+        - Kayaking tour:
+            priority: maybe

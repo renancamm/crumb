@@ -1,0 +1,116 @@
+trip:
+  name: Norway Atlantic Road
+  tags: [europe, nature, road trip, fjords, coastal]
+  note: Drive the scenic routes in summer (June–August) for the longest daylight. Book ferries ahead — they fill up.
+
+itinerary:
+
+  - Bergen:
+      duration: 2 nights
+      stay:
+        - Hotel Zander K
+      activities:
+        - Fish market at Zachariasbryggen:
+            time: morning
+            priority: must
+        - Bryggen Wharf:
+            priority: must
+            location:
+              name: Bryggen
+              lat: 60.3974
+              lng: 5.3237
+        - Fløibanen funicular:
+            priority: must
+            note: Go up at dusk for the full panorama over the fjords.
+
+  - car:
+      note: E16 to Voss, then Rv13 to Gudvangen and down the Flåmsbana valley road. Around 2.5 hours.
+
+  - Flåm:
+      duration: 1 night
+      activities:
+        - Flåm Railway:
+            priority: must
+            duration: 1h
+            note: One of the steepest standard-gauge railways in the world. Book the return trip in advance online.
+            location:
+              name: Flåm Station
+              lat: 60.8632
+              lng: 7.1122
+        - Aurlandsfjord kayak:
+            priority: maybe
+            duration: around 3h
+
+  - car:
+      note: Rv5 north through the mountain pass. In summer the Sognefjellet route (Rv55) is spectacular but adds 1h.
+
+  - Geiranger:
+      duration: 2 nights
+      activities:
+        - Geirangerfjord boat cruise:
+            priority: must
+            duration: 2h
+            note: Several operators run daily departures from the village pier. Worth the cost.
+        - Eagle Road viewpoint:
+            priority: must
+            location:
+              name: Ørnesvingen viewpoint
+              lat: 62.1078
+              lng: 7.0612
+        - Seven Sisters waterfall viewpoint:
+            priority: must
+            location:
+              name: Seven Sisters Falls
+              lat: 62.1014
+              lng: 7.1030
+            note: Best seen from the fjord on the boat cruise, not the road.
+
+  - car:
+      note: Rv63 north via Trollstigen. The hairpin mountain road is open late May–October only. Allow 3 hours including a stop at the top.
+
+  - Ålesund:
+      duration: 2 nights
+      activities:
+        - Aksla viewpoint:
+            time: sunset
+            priority: must
+            location:
+              name: Aksla Hill
+              lat: 62.4723
+              lng: 6.1534
+            note: 418 steps. The Art Nouveau roofline spread below you is worth every one.
+        - KUBE — Art Nouveau Centre:
+            priority: maybe
+            duration: 1h30m
+
+  - car:
+      note: E39 north along the coast. The Atlanterhavsvegen (Atlantic Ocean Road) is a short detour worth adding — stunning in any weather.
+
+  - Atlantic Ocean Road:
+      duration: half day
+      activities:
+        - Storseisundbrua bridge:
+            priority: must
+            location:
+              name: Storseisundbrua
+              lat: 63.0220
+              lng: 7.3419
+            note: Park at the lay-by and walk onto the bridge. Eerie and spectacular, especially in a storm.
+
+  - car
+
+  - Trondheim:
+      duration: 2 nights
+      activities:
+        - Nidaros Cathedral:
+            priority: must
+            duration: 1h30m
+            location:
+              name: Nidarosdomen
+              lat: 63.4268
+              lng: 10.3969
+        - Bakklandet neighbourhood:
+            note: Old wooden houses along the river, independent cafés. Best for a slow afternoon.
+        - Ravnkloa fish market:
+            time: morning
+            note: Buy a bag of fresh shrimp and eat them on the dock.

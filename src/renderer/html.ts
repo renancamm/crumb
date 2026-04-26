@@ -7,7 +7,7 @@
  *     Used by the browser bundle for live re-rendering after edits.
  *
  *   renderHtml(doc, options) — complete self-contained mini-app HTML.
- *     Map + itinerary panel + app bar (Open / Share / Reference).
+ *     Split layout: editor panel (left, toggled) | sidebar list | map.
  *     Used by the CLI to produce the final output file.
  *
  * HtmlRenderer is the reference implementation of the CrumbRenderer plugin
@@ -18,18 +18,15 @@ import type { MetadataItem, TripMeta } from "../types/primitives"
 import type {
   Activity,
   ActivityGroup,
-  ActivityItem,
   CrumbDocument,
   Place,
-  ResolvedDuration,
-  ResolvedGeolocation,
-  ResolvedMoment,
   Stay,
   TransportLeg,
   UngroupedActivities,
 } from "../types/resolved"
 import { CSS } from "./css"
-import { ICON_STAY, modeIconSvg } from "./icons"
+import { GEO_SCRIPT } from "./geocoder"
+import { ICON_STAY, ICON_PLANE, ICON_TRAIN, ICON_BUS, ICON_CAR, ICON_SHIP, ICON_WALK, ICON_BIKE, ICON_ROUTE, modeIconSvg } from "./icons"
 import {
   escape,
   formatDuration,
@@ -37,20 +34,19 @@ import {
   formatMoment,
   formatMomentDate,
   formatMomentTime,
-  formatMode,
 } from "./format"
 import type { CrumbRenderer, RenderContext } from "./types"
 
 // ─── AppOptions ───────────────────────────────────────────────────────────────
 
 export interface AppOptions {
-  /** Original YAML source — embedded for the Share panel and Open textarea. */
+  /** Original YAML source — embedded for the editor. */
   source: string
-  /** Example files to populate the Open dropdown. filename → YAML content. */
+  /** Example files (unused in this renderer, kept for API compat). */
   examples: Record<string, string>
   /** Esbuild browser bundle output (parse + renderItineraryBody). */
   parserBundle: string
-  /** CRUMB_SPEC.md content for the "Download spec for AI" button. Optional. */
+  /** CRUMB_SPEC.md content for the "Download spec" button. Optional. */
   specContent?: string
 }
 
@@ -58,7 +54,7 @@ export interface AppOptions {
 
 /**
  * Render only the itinerary HTML body — no wrapping shell, no CSS, no JS.
- * Injected into .preview-body by the browser JS when live re-rendering.
+ * Injected into #list by the browser JS when live re-rendering.
  */
 export function renderItineraryBody(doc: CrumbDocument): string {
   const parts: string[] = []
@@ -85,18 +81,20 @@ export function renderItineraryBody(doc: CrumbDocument): string {
 
 /**
  * Render a complete self-contained HTML file:
- *   — fullscreen map (MapLibre GL + Nominatim geocoding)
- *   — floating itinerary panel
- *   — app bar: Open / Share / Reference
- *   — live YAML editor (activated via Open)
+ *   — sidebar with floating pill menu (New / Edit / Examples / Generate / About)
+ *   — editor panel (left split, toggled via Edit) with live hot-reload
+ *   — MapLibre GL map with Nominatim geocoding
  */
 export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
-  const title       = escape(doc.trip?.name ?? "Itinerary")
-  const body        = renderItineraryBody(doc)
-  const docJson     = JSON.stringify(doc)
-  const sourceJson  = JSON.stringify(options.source)
-  const examplesJson= JSON.stringify(options.examples)
-  const specJson    = JSON.stringify(options.specContent ?? "")
+  const title          = escape(doc.trip?.name ?? "Itinerary")
+  const body           = renderItineraryBody(doc)
+  const docJson        = JSON.stringify(doc)
+  const sourceJson     = JSON.stringify(options.source)
+  const specJson       = JSON.stringify(options.specContent ?? "")
+  const examplesJson   = JSON.stringify(options.examples)
+  const exampleItemsHtml = Object.keys(options.examples)
+    .map(name => `<div class="menu-sub-item" data-example="${escape(name)}">${escape(name.replace(/\.crumb$/, ""))}</div>`)
+    .join("\n        ")
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -104,100 +102,143 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" />
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
   <style>${CSS}</style>
 </head>
 <body>
 
-  <!-- Map fills the entire viewport -->
-  <div id="map"></div>
+  <!-- Main split view -->
+  <div id="main">
 
-  <!-- Floating itinerary panel -->
-  <div class="panel">
-
-    <!-- App bar -->
-    <div class="appbar">
-      <span class="appbar-brand">crumb</span>
-      <button class="appbar-btn" id="load-btn">Load</button>
-      <button class="appbar-btn" id="edit-btn">Edit</button>
-      <button class="appbar-btn" id="ref-btn">Generate</button>
+    <!-- Editor panel (left split, hidden by default) -->
+    <div id="editor-panel" style="display:none">
+      <div class="editor-header">
+        <button id="editor-close-btn" class="editor-close-btn">
+          <svg class="editor-close-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+          Close
+        </button>
+      </div>
+      <div id="editor-error-bar" class="editor-error-bar" style="display:none"></div>
+      <textarea
+        id="editor"
+        class="editor-textarea"
+        spellcheck="false"
+        autocorrect="off"
+        autocapitalize="off"
+        autocomplete="off"
+        placeholder="Paste or type a .crumb document…"
+      ></textarea>
     </div>
 
-    <!-- Panel body: preview + split handle + editor -->
-    <div class="panel-body">
+    <!-- Sidebar -->
+    <div id="sidebar">
 
-      <!-- Preview (always visible) -->
-      <div class="preview-scroll">
-        <div id="preview-body" class="preview-body">${body}</div>
-      </div>
-
-      <!-- Drag handle (shown when editor is open) -->
-      <div id="split-handle" class="split-handle" style="display:none"></div>
-
-      <!-- Editor section (shown when editor is open) -->
-      <div id="view-editor" class="editor-section" style="display:none">
-        <div class="editor-section-header">
-          <span class="editor-section-label">Editor</span>
-          <button class="editor-close-btn" id="editor-close">×</button>
+      <!-- Pill header with dropdown menu -->
+      <div class="sidebar-header">
+        <div class="pill-wrap">
+          <button class="pill-trigger" id="menu-trigger">
+            <span class="pill-brand">crumb</span>
+            <svg class="pill-chevron" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div class="dropdown-menu" id="main-menu">
+            <div class="menu-item" id="menu-new">New</div>
+            <div class="menu-item" id="menu-edit">Edit</div>
+            <div class="menu-separator"></div>
+            <div class="menu-item" id="menu-examples">
+              Examples
+              <svg class="menu-chevron-r" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </div>
+            <div class="menu-sub" id="examples-sub">
+              ${exampleItemsHtml}
+            </div>
+            <div class="menu-separator"></div>
+            <div class="menu-item" id="menu-generate">How to generate</div>
+            <div class="menu-item" id="menu-about">About</div>
+          </div>
         </div>
-        <div id="editor-error-bar" class="editor-error-bar" style="display:none"></div>
-        <textarea
-          id="editor"
-          class="editor-textarea"
-          spellcheck="false"
-          autocorrect="off"
-          autocapitalize="off"
-          autocomplete="off"
-          placeholder="Paste or type a .crumb document…"
-        ></textarea>
       </div>
 
+      <!-- List view -->
+      <div id="list-view">
+        <div id="list">${body}</div>
+      </div>
+
+
     </div>
+
+    <!-- Map -->
+    <div id="map"></div>
 
   </div>
 
-  <!-- Load modal -->
-  <div class="modal-overlay" id="load-modal">
+  <!-- New itinerary modal -->
+  <div class="modal-overlay" id="new-modal">
     <div class="modal-box">
+      <button class="modal-x" id="new-close-x">×</button>
       <div class="modal-header">
-        <span class="modal-title">Load crumb</span>
-        <button class="modal-close" id="load-modal-close">×</button>
+        <div class="modal-title">New itinerary</div>
+        <div class="modal-description">Paste a <code>.crumb</code> document below to load it.</div>
       </div>
       <div class="modal-body">
         <textarea
-          id="load-textarea"
-          class="load-textarea"
+          id="new-textarea"
+          class="new-textarea"
           spellcheck="false"
           autocorrect="off"
           autocapitalize="off"
           autocomplete="off"
-          placeholder="Paste a .crumb document here…"
+          placeholder="Paste your .crumb YAML here…"
         ></textarea>
       </div>
       <div class="modal-footer">
-        <button class="action-btn primary" id="load-confirm">Load</button>
-        <button class="action-btn" id="load-cancel">Cancel</button>
+        <button class="action-btn" id="new-cancel">Cancel</button>
+        <button class="action-btn primary" id="new-load">Load</button>
       </div>
     </div>
   </div>
 
-  <!-- Reference modal -->
-  <div class="modal-overlay" id="ref-modal">
+  <!-- Generate with AI modal -->
+  <div class="modal-overlay" id="generate-modal">
     <div class="modal-box">
+      <button class="modal-x" id="generate-close-x">×</button>
       <div class="modal-header">
-        <span class="modal-title">Generate with AI</span>
-        <button class="modal-close" id="ref-close">×</button>
+        <div class="modal-title">Generate with AI</div>
+        <div class="modal-description">Download the Crumb spec, upload it to an AI assistant, then describe your trip.</div>
       </div>
       <div class="modal-body">
-        <p class="ref-intro">Download the Crumb spec and upload it to an AI assistant. Then describe your trip — the AI will generate a <code>.crumb</code> document you can paste into Load.</p>
         <div class="ref-prompt-block">
           <div class="ref-prompt-label">Sample prompt</div>
           <div class="ref-prompt-text">Plan a 2-week trip to Japan for two people in October. Include Tokyo (5 nights), Kyoto (4 nights), and Osaka (3 nights). Add shinkansen legs between cities. Include must-do activities with morning/afternoon timings. Output as a valid .crumb document.</div>
         </div>
       </div>
       <div class="modal-footer">
+        <button class="action-btn" id="generate-close">Close</button>
         <button class="action-btn primary" id="dl-spec-btn">Download spec</button>
-        <button class="action-btn" id="ref-close2">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- About modal -->
+  <div class="modal-overlay" id="about-modal">
+    <div class="modal-box">
+      <button class="modal-x" id="about-close-x">×</button>
+      <div class="modal-header">
+        <div class="modal-title">About Crumb</div>
+      </div>
+      <div class="modal-body">
+        <p class="ref-intro">Crumb is a plain-text, YAML-based format for travel itineraries designed to work naturally with AI assistants. It keeps trips human-readable while making it easy to collaborate with a language model to plan routes, fill in activities, timings, and notes — then render everything as an interactive map.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="action-btn primary" id="about-close-btn">Close</button>
       </div>
     </div>
   </div>
@@ -207,118 +248,208 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <script>${options.parserBundle}</script>
+  <script>${GEO_SCRIPT}</script>
   <script>
     // ── Embedded data ─────────────────────────────────────────────────────────
     const SOURCE   = ${sourceJson}
     const SPEC     = ${specJson}
-    let   DATA     = ${docJson}   // pre-parsed document (for initial map render)
+    const EXAMPLES = ${examplesJson}
+    let   DATA     = ${docJson}
 
     // ── DOM refs ──────────────────────────────────────────────────────────────
     const editorEl    = document.getElementById("editor")
-    const previewEl   = document.getElementById("preview-body")
+    const listEl      = document.getElementById("list")
     const mapStatusEl = document.getElementById("map-status")
-    const viewEditor  = document.getElementById("view-editor")
-    const splitHandle = document.getElementById("split-handle")
+    const editorPanel = document.getElementById("editor-panel")
     const errorBar    = document.getElementById("editor-error-bar")
+    const newModal      = document.getElementById("new-modal")
+    const newTextarea   = document.getElementById("new-textarea")
+    const generateModal = document.getElementById("generate-modal")
+    const aboutModal    = document.getElementById("about-modal")
 
-    // ── Color palette (mirrors --crumb-* CSS tokens) ──────────────────────────
-    const COLORS = {
-      place:    "#2563eb",  // --crumb-blue
-      stay:     "#93c5fd",  // --crumb-blue-mid
-      hub:      "#bfdbfe",  // --crumb-blue-faint
-      must:     "#ea580c",  // --crumb-orange
-      activity: "#fdba74",  // --crumb-orange-mid
-      route:    "#bfdbfe",  // --crumb-blue-faint
+    // ── Embedded icons ────────────────────────────────────────────────────────
+    const ICONS = {
+      stay:      ${JSON.stringify(ICON_STAY)},
+      flight:    ${JSON.stringify(ICON_PLANE)},
+      train:     ${JSON.stringify(ICON_TRAIN)},
+      bus:       ${JSON.stringify(ICON_BUS)},
+      car:       ${JSON.stringify(ICON_CAR)},
+      ferry:     ${JSON.stringify(ICON_SHIP)},
+      walk:      ${JSON.stringify(ICON_WALK)},
+      bike:      ${JSON.stringify(ICON_BIKE)},
+      transport: ${JSON.stringify(ICON_ROUTE)},
     }
 
-    // ── Geo index (for sidebar → map fly-to) ─────────────────────────────────
-    const geoIndex = { places: [null], activities: new Map() }
+    // ── Color palette ─────────────────────────────────────────────────────────
+    const COLORS = {
+      place:    "#18181b",
+      stay:     "#a1a1aa",
+      hub:      "#d4d4d8",
+      must:     "#c2410c",
+      activity: "#f97316",
+      route:    "#18181b",
+    }
 
-    // ── App bar: Load modal ───────────────────────────────────────────────────
-    const loadModal    = document.getElementById("load-modal")
-    const loadTextarea = document.getElementById("load-textarea")
+    // ── Geo index (for list → map fly-to) ────────────────────────────────────
+    const geoIndex = { places: [null], activities: new Map(), stays: new Map(), hubs: new Map() }
 
-    document.getElementById("load-btn").addEventListener("click", () => {
-      loadTextarea.value = ""
-      loadModal.classList.add("open")
-      setTimeout(() => loadTextarea.focus(), 50)
+    // ── Focus state (list ↔ marker sync) ─────────────────────────────────────
+    let focusedPlaceIdx = null
+    let focusedActName  = null
+    let focusedStayName = null
+    let focusedHubName  = null
+
+    function clearFocus() {
+      focusedPlaceIdx = null; focusedActName = null; focusedStayName = null; focusedHubName = null
+      document.querySelectorAll(".place.--focused").forEach(el => el.classList.remove("--focused"))
+      document.querySelectorAll(".activity-item.--focused").forEach(el => el.classList.remove("--focused"))
+      document.querySelectorAll(".stay.--focused").forEach(el => el.classList.remove("--focused"))
+      placeMarkers.forEach(m => m.getElement().classList.remove("--focused"))
+      detailMarkers.forEach(m => m.getElement().classList.remove("--focused"))
+    }
+
+    function focusPlace(placeIdx) {
+      clearFocus(); focusedPlaceIdx = placeIdx
+      const placeEl = document.querySelector(\`.place[data-place-index="\${placeIdx}"]\`)
+      if (placeEl) { placeEl.classList.add("--focused"); placeEl.scrollIntoView({ block: "nearest", behavior: "smooth" }) }
+      const marker = placeMarkers[placeIdx - 1]
+      if (marker) marker.getElement().classList.add("--focused")
+      const geo = geoIndex.places[placeIdx]
+      if (geo) map.flyTo({ center: [geo.lng, geo.lat], zoom: Math.max(map.getZoom(), 10), duration: 800 })
+    }
+
+    function focusActivity(actName) {
+      clearFocus(); focusedActName = actName
+      for (const item of listEl.querySelectorAll(".activity-item[data-act-name]")) {
+        if (item.dataset.actName === actName) {
+          item.classList.add("--focused"); item.scrollIntoView({ block: "nearest", behavior: "smooth" }); break
+        }
+      }
+      for (const m of detailMarkers) {
+        if (m.getElement().dataset.name === actName) { m.getElement().classList.add("--focused"); break }
+      }
+      const geo = geoIndex.activities.get(actName)
+      if (geo) map.flyTo({ center: [geo.lng, geo.lat], zoom: Math.max(map.getZoom(), 14), duration: 800 })
+    }
+
+    function focusStay(stayName) {
+      clearFocus(); focusedStayName = stayName
+      const stayEl = [...listEl.querySelectorAll(".stay[data-stay-name]")].find(el => el.dataset.stayName === stayName)
+      if (stayEl) { stayEl.classList.add("--focused"); stayEl.scrollIntoView({ block: "nearest", behavior: "smooth" }) }
+      for (const m of detailMarkers) {
+        if (m.getElement().dataset.name === stayName) { m.getElement().classList.add("--focused"); break }
+      }
+      const geo = geoIndex.stays.get(stayName)
+      if (geo) map.flyTo({ center: [geo.lng, geo.lat], zoom: Math.max(map.getZoom(), 14), duration: 800 })
+    }
+
+    function focusHub(hubName) {
+      clearFocus(); focusedHubName = hubName
+      for (const m of detailMarkers) {
+        if (m.getElement().dataset.name === hubName) { m.getElement().classList.add("--focused"); break }
+      }
+      const geo = geoIndex.hubs.get(hubName)
+      if (geo) map.flyTo({ center: [geo.lng, geo.lat], zoom: Math.max(map.getZoom(), 12), duration: 800 })
+    }
+
+    function setPlaceLoading(placeIdx, loading) {
+      const el = document.querySelector(\`.place[data-place-index="\${placeIdx}"] .place-num\`)
+      if (el) el.classList.toggle("--loading", loading)
+    }
+
+    function setStayLoading(stayName, loading) {
+      const stayEl = [...listEl.querySelectorAll(".stay[data-stay-name]")].find(el => el.dataset.stayName === stayName)
+      if (stayEl) stayEl.querySelector(".stay-icon")?.classList.toggle("--loading", loading)
+    }
+
+    function setActLoading(actName, loading) {
+      for (const item of listEl.querySelectorAll(".activity-item[data-act-name]")) {
+        if (item.dataset.actName === actName) {
+          const label = item.querySelector(".act-label")
+          if (label) label.classList.toggle("--loading", loading)
+          break
+        }
+      }
+    }
+
+    // ── Pill menu ─────────────────────────────────────────────────────────────
+    const menuTrigger = document.getElementById("menu-trigger")
+    const mainMenu    = document.getElementById("main-menu")
+
+    function closeMenu() {
+      mainMenu.classList.remove("open")
+      menuTrigger.classList.remove("open")
+    }
+
+    menuTrigger.addEventListener("click", e => {
+      e.stopPropagation()
+      mainMenu.classList.toggle("open")
+      menuTrigger.classList.toggle("open")
+    })
+    document.addEventListener("click", closeMenu)
+    mainMenu.addEventListener("click", e => e.stopPropagation())
+
+    // ── Menu → New ────────────────────────────────────────────────────────────
+    document.getElementById("menu-new").addEventListener("click", () => {
+      closeMenu()
+      newModal.classList.add("open")
+      setTimeout(() => newTextarea.focus(), 50)
     })
 
-    function closeLoadModal() { loadModal.classList.remove("open") }
-    document.getElementById("load-modal-close").addEventListener("click", closeLoadModal)
-    document.getElementById("load-cancel").addEventListener("click",      closeLoadModal)
-    loadModal.addEventListener("click", e => { if (e.target === loadModal) closeLoadModal() })
-
-    document.getElementById("load-confirm").addEventListener("click", () => {
-      const src = loadTextarea.value.trim()
+    function closeNewModal() { newModal.classList.remove("open"); newTextarea.value = "" }
+    document.getElementById("new-close-x").addEventListener("click",  closeNewModal)
+    document.getElementById("new-cancel").addEventListener("click",   closeNewModal)
+    newModal.addEventListener("click", e => { if (e.target === newModal) closeNewModal() })
+    document.getElementById("new-load").addEventListener("click", () => {
+      const src = newTextarea.value.trim()
       if (!src) return
       editorEl.value = src
-      closeLoadModal()
       render()
+      closeEditor()
+      closeNewModal()
     })
 
-    // ── App bar: Edit (split-screen) ──────────────────────────────────────────
-    const editBtn = document.getElementById("edit-btn")
-    const EDITOR_DEFAULT_H = 260
+    // ── Menu → Edit ───────────────────────────────────────────────────────────
+    document.getElementById("menu-edit").addEventListener("click", () => { closeMenu(); openEditor() })
 
     function openEditor() {
       if (editorEl.value === "") editorEl.value = SOURCE
-      viewEditor.style.display = "flex"
-      viewEditor.style.height  = EDITOR_DEFAULT_H + "px"
-      splitHandle.style.display = ""
-      editBtn.classList.add("active")
+      editorPanel.style.display = "flex"
       editorEl.focus()
     }
 
     function closeEditor() {
-      viewEditor.style.display  = "none"
-      splitHandle.style.display = "none"
-      editBtn.classList.remove("active")
-      clearEditorError()
+      editorPanel.style.display = "none"
     }
 
-    editBtn.addEventListener("click", () => {
-      viewEditor.style.display === "none" ? openEditor() : closeEditor()
-    })
-    document.getElementById("editor-close").addEventListener("click", closeEditor)
+    document.getElementById("editor-close-btn").addEventListener("click", closeEditor)
 
-    // ── Split handle drag ─────────────────────────────────────────────────────
-    let dragging = false, dragStartY = 0, dragStartH = 0
-    const panelBodyEl = document.querySelector(".panel-body")
-
-    splitHandle.addEventListener("mousedown", e => {
-      dragging   = true
-      dragStartY = e.clientY
-      dragStartH = viewEditor.offsetHeight
-      splitHandle.classList.add("dragging")
-      document.body.style.cursor     = "ns-resize"
-      document.body.style.userSelect = "none"
-      e.preventDefault()
+    // ── Menu → Examples ───────────────────────────────────────────────────────
+    document.getElementById("menu-examples").addEventListener("click", e => {
+      e.stopPropagation()
+      document.getElementById("examples-sub").classList.toggle("open")
+      e.currentTarget.classList.toggle("open")
     })
-    document.addEventListener("mousemove", e => {
-      if (!dragging) return
-      const delta = dragStartY - e.clientY
-      const min   = 80
-      const max   = panelBodyEl.offsetHeight - 80
-      viewEditor.style.height = Math.max(min, Math.min(max, dragStartH + delta)) + "px"
-    })
-    document.addEventListener("mouseup", () => {
-      if (!dragging) return
-      dragging = false
-      splitHandle.classList.remove("dragging")
-      document.body.style.cursor     = ""
-      document.body.style.userSelect = ""
+    document.querySelectorAll("[data-example]").forEach(el => {
+      el.addEventListener("click", () => {
+        const src = EXAMPLES[el.dataset.example]
+        if (!src) return
+        editorEl.value = src
+        render()
+        closeEditor()
+        closeMenu()
+      })
     })
 
-    // ── App bar: Reference modal ──────────────────────────────────────────────
-    const refModal = document.getElementById("ref-modal")
-
-    document.getElementById("ref-btn").addEventListener("click", () => refModal.classList.add("open"))
-
-    function closeRef() { refModal.classList.remove("open") }
-    document.getElementById("ref-close").addEventListener("click",  closeRef)
-    document.getElementById("ref-close2").addEventListener("click", closeRef)
-    refModal.addEventListener("click", e => { if (e.target === refModal) closeRef() })
+    // ── Menu → How to generate ────────────────────────────────────────────────
+    document.getElementById("menu-generate").addEventListener("click", () => {
+      closeMenu()
+      generateModal.classList.add("open")
+    })
+    function closeGenerate() { generateModal.classList.remove("open") }
+    document.getElementById("generate-close-x").addEventListener("click", closeGenerate)
+    document.getElementById("generate-close").addEventListener("click",   closeGenerate)
+    generateModal.addEventListener("click", e => { if (e.target === generateModal) closeGenerate() })
 
     document.getElementById("dl-spec-btn").addEventListener("click", () => {
       if (!SPEC) return
@@ -329,6 +460,37 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
       URL.revokeObjectURL(url)
     })
 
+    // ── Menu → About ──────────────────────────────────────────────────────────
+    document.getElementById("menu-about").addEventListener("click", () => {
+      closeMenu()
+      aboutModal.classList.add("open")
+    })
+    function closeAbout() { aboutModal.classList.remove("open") }
+    document.getElementById("about-close-x").addEventListener("click",   closeAbout)
+    document.getElementById("about-close-btn").addEventListener("click", closeAbout)
+    aboutModal.addEventListener("click", e => { if (e.target === aboutModal) closeAbout() })
+
+    // ── List click: focus on name/title click only ───────────────────────────
+    listEl.addEventListener("click", e => {
+      const actNameEl = e.target.closest(".act-name")
+      if (actNameEl) {
+        const actEl = actNameEl.closest("[data-act-name]")
+        if (actEl) { focusActivity(actEl.dataset.actName); return }
+      }
+      const stayNameEl = e.target.closest(".stay-name")
+      if (stayNameEl) {
+        const stayEl = stayNameEl.closest("[data-stay-name]")
+        if (stayEl) { focusStay(stayEl.dataset.stayName); return }
+      }
+      const hubEl = e.target.closest(".waypoint-name.--geocoded")
+      if (hubEl) { focusHub(hubEl.dataset.hubName); return }
+      const placeNameEl = e.target.closest(".place-name-text")
+      if (placeNameEl) {
+        const placeEl = placeNameEl.closest("[data-place-index]")
+        if (placeEl) { focusPlace(parseInt(placeEl.dataset.placeIndex, 10)); return }
+      }
+    })
+
     // ── MapLibre GL ───────────────────────────────────────────────────────────
     const map = new maplibregl.Map({
       container: "map",
@@ -337,186 +499,138 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
       zoom:      2,
     })
 
-    let mapReady   = false
-    let pendingDoc = null
-    const detailPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 8,  className: "detail-popup" })
-    const placePopup  = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 18, className: "place-popup"  })
+    let mapReady      = false
+    let pendingDoc    = null
+    let placeMarkers  = []
+    let detailMarkers = []
+
+    function popupHtml(title, sub) {
+      return sub
+        ? \`<span class="popup-title">\${escHtml(title)}</span><br><span class="popup-sub">\${escHtml(sub)}</span>\`
+        : \`<span class="popup-title">\${escHtml(title)}</span>\`
+    }
+
+    function applyZoomClass() {
+      const z = map.getZoom()
+      document.body.classList.toggle("map-zoom-medium", z >= 8)
+      document.body.classList.toggle("map-zoom-close",  z >= 12)
+    }
+    map.on("zoom",    applyZoomClass)
+    map.on("zoomend", applyZoomClass)
 
     map.on("load", () => {
-      map.addSource("route",   { type: "geojson", data: { type: "FeatureCollection", features: [] } })
-      map.addSource("places",  { type: "geojson", data: { type: "FeatureCollection", features: [] } })
-      map.addSource("details", { type: "geojson", data: { type: "FeatureCollection", features: [] }, cluster: true, clusterRadius: 40, clusterMaxZoom: 11 })
+      map.addSource("route", { type: "geojson", data: { type: "FeatureCollection", features: [] } })
 
-      // Data-driven color: blue family for stays/hubs, orange family for activities
-      const pinColor = ["case",
-        ["==", ["get", "pinType"], "stay"], COLORS.stay,
-        ["==", ["get", "pinType"], "hub"],  COLORS.hub,
-        ["==", ["get", "pinType"], "must"], COLORS.must,
-        COLORS.activity,  // activity + maybe → orange-mid
-      ]
-
+      // Route line
       map.addLayer({ id: "route-line", type: "line", source: "route",
-        paint: { "line-color": COLORS.route, "line-width": 2, "line-opacity": 0.5, "line-dasharray": [2, 3] } })
-
-      // Activity clusters (orange family)
-      map.addLayer({ id: "detail-clusters", type: "circle", source: "details",
-        filter: ["has", "point_count"],
-        paint: {
-          "circle-color": COLORS.activity,
-          "circle-radius": ["step", ["get", "point_count"], 14, 5, 18, 20, 22],
-          "circle-stroke-width": 1.5,
-          "circle-stroke-color": COLORS.must,
-        } })
-      map.addLayer({ id: "detail-cluster-count", type: "symbol", source: "details",
-        filter: ["has", "point_count"],
-        layout: { "text-field": ["get", "point_count_abbreviated"], "text-size": 11 },
-        paint: { "text-color": COLORS.must } })
-
-      // Place circles (strong blue, always visible)
-      map.addLayer({ id: "place-circles", type: "circle", source: "places",
-        paint: { "circle-color": COLORS.place, "circle-radius": 15, "circle-stroke-width": 3, "circle-stroke-color": "#fff" } })
-
-      // Activity / stay / hub dots — appear at zoom 9, sized by zoom
-      map.addLayer({ id: "detail-dots", type: "circle", source: "details",
-        filter: ["!", ["has", "point_count"]],
-        paint: {
-          "circle-color": pinColor,
-          "circle-radius": ["interpolate", ["linear"], ["zoom"], 8, 3, 10, 6],
-          "circle-stroke-width": 1.5,
-          "circle-stroke-color": "#fff",
-          "circle-opacity": ["step", ["zoom"], 0, 9,
-            ["case", ["==", ["get", "pinType"], "maybe"], 0.6, 1.0]
-          ],
-        } })
-
-      // Within-place activity numbers — appear at zoom 13
-      map.addLayer({ id: "detail-numbers", type: "symbol", source: "details",
-        filter: ["all", ["!", ["has", "point_count"]], ["has", "placeActIdx"]],
-        layout: { "text-field": ["to-string", ["get", "placeActIdx"]], "text-font": ["Noto Sans Bold"], "text-size": 9, "text-allow-overlap": true },
-        paint: { "text-color": "#fff", "text-opacity": ["step", ["zoom"], 0, 13, 1] } })
-
-      // Must-activity name labels — appear at zoom 14
-      map.addLayer({ id: "detail-labels", type: "symbol", source: "details",
-        filter: ["all", ["!", ["has", "point_count"]], ["==", ["get", "pinType"], "must"]],
-        layout: { "text-field": ["get", "name"], "text-font": ["Noto Sans Regular"], "text-size": 11, "text-offset": [0, 1.4], "text-anchor": "top", "text-optional": true },
-        paint: { "text-color": COLORS.must, "text-halo-color": "#fff", "text-halo-width": 1.5, "text-opacity": ["step", ["zoom"], 0, 14, 1] } })
-
-      // Place numbers (always visible)
-      map.addLayer({ id: "place-numbers", type: "symbol", source: "places",
-        layout: { "text-field": ["to-string", ["get", "idx"]], "text-font": ["Noto Sans Bold"], "text-size": 11, "text-allow-overlap": true },
-        paint: { "text-color": "#fff" } })
-
-      function popupHtml(title, sub) {
-        return sub
-          ? \`<span class="popup-title">\${escHtml(title)}</span><br><span class="popup-sub">\${escHtml(sub)}</span>\`
-          : \`<span class="popup-title">\${escHtml(title)}</span>\`
-      }
-
-      map.on("mouseenter", "detail-dots", e => {
-        map.getCanvas().style.cursor = "pointer"
-        const { name, subtitle } = e.features[0].properties
-        const coords = e.features[0].geometry.coordinates.slice()
-        detailPopup.setLngLat(coords).setHTML(popupHtml(name, subtitle)).addTo(map)
-      })
-      map.on("mouseleave", "detail-dots", () => { map.getCanvas().style.cursor = ""; detailPopup.remove() })
-      map.on("mouseenter", "place-circles", e => {
-        map.getCanvas().style.cursor = "pointer"
-        const { name, arrives } = e.features[0].properties
-        const coords = e.features[0].geometry.coordinates.slice()
-        placePopup.setLngLat(coords).setHTML(popupHtml(name, arrives)).addTo(map)
-      })
-      map.on("mouseleave", "place-circles", () => { map.getCanvas().style.cursor = ""; placePopup.remove() })
-
-      previewEl.addEventListener("click", e => {
-        const actEl = e.target.closest("[data-act-name]")
-        if (actEl) {
-          const geo = geoIndex.activities.get(actEl.dataset.actName)
-          if (geo) { map.flyTo({ center: [geo.lng, geo.lat], zoom: 15, duration: 800 }); return }
-        }
-        const placeEl = e.target.closest("[data-place-index]")
-        if (placeEl) {
-          const geo = geoIndex.places[parseInt(placeEl.dataset.placeIndex, 10)]
-          if (geo) map.flyTo({ center: [geo.lng, geo.lat], zoom: 12, duration: 800 })
-        }
-      })
+        paint: { "line-color": COLORS.route, "line-width": 2, "line-opacity": ["step", ["zoom"], 0.5, 12, 0], "line-dasharray": [2, 2] } })
 
       mapReady = true
       if (pendingDoc) { updateMap(pendingDoc); pendingDoc = null }
     })
 
-    // ── Geocoding ─────────────────────────────────────────────────────────────
-    const GEO_CACHE_PREFIX = "crumb-geo:"
-    let geoQueue = Promise.resolve()
+    // ── Geocoding epoch (functions provided by GEO_SCRIPT) ───────────────────
     let geocodeEpoch = 0
-
-    function cachedGeo(name) {
-      try { const r = localStorage.getItem(GEO_CACHE_PREFIX + name.toLowerCase()); return r ? JSON.parse(r) : null } catch { return null }
-    }
-    function cacheGeo(name, result) {
-      try { localStorage.setItem(GEO_CACHE_PREFIX + name.toLowerCase(), JSON.stringify(result)) } catch {}
-    }
-    function fetchGeo(name) {
-      const promise = geoQueue.then(() => new Promise(resolve => {
-        fetch("https://nominatim.openstreetmap.org/search?" + new URLSearchParams({ q: name, format: "json", limit: "1", "accept-language": "en" }))
-          .then(r => r.json()).then(data => {
-            const result = data?.length > 0 ? { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) } : null
-            if (result) cacheGeo(name, result)
-            setTimeout(() => resolve(result), 1100)
-          }).catch(() => setTimeout(() => resolve(null), 1100))
-      }))
-      geoQueue = promise.then(() => {})
-      return promise
-    }
-    async function resolveGeo(place) {
-      if (place.location) {
-        if (place.location.geocodingDisabled) return null
-        if (place.location.lat != null && place.location.lng != null) return { lat: place.location.lat, lng: place.location.lng }
-        const label = place.location.label
-        if (label && label !== "none") { const c = cachedGeo(label); return c ?? fetchGeo(label) }
-      }
-      const q = place.query ?? place.name
-      return cachedGeo(q) ?? fetchGeo(q)
-    }
 
     // ── Map rendering ─────────────────────────────────────────────────────────
     async function updateMap(doc) {
       if (!mapReady) { pendingDoc = doc; return }
       const epoch  = ++geocodeEpoch
+      document.querySelectorAll(".--loading").forEach(el => el.classList.remove("--loading"))
       const places = doc.itinerary.filter(item => item.type === "place")
       geoIndex.places     = [null]
       geoIndex.activities = new Map()
+      geoIndex.stays      = new Map()
+      geoIndex.hubs       = new Map()
 
       if (!places.length) {
         map.getSource("route").setData({ type: "FeatureCollection", features: [] })
-        map.getSource("places").setData({ type: "FeatureCollection", features: [] })
-        map.getSource("details").setData({ type: "FeatureCollection", features: [] })
+        placeMarkers.forEach(m => m.remove());  placeMarkers = []
+        detailMarkers.forEach(m => m.remove()); detailMarkers = []
         setMapStatus(""); return
       }
 
       const needsFetch = places.filter(p => !p.location?.geocodingDisabled && p.location?.lat == null && !cachedGeo(p.location?.label || p.name))
+      const needsFetchSet = new Set(needsFetch)
+
+      // Collect all targets early so we can show all spinners at once
+      const actTargets  = collectActivityGeoTargets(doc)
+      const stayTargets = collectStayGeoTargets(doc)
+
+      // Show all pending spinners upfront before any geocoding starts
+      for (const [i, place] of places.entries()) {
+        if (needsFetchSet.has(place)) setPlaceLoading(i + 1, true)
+      }
+      for (const t of actTargets) {
+        if (t.location?.lat != null) continue
+        const actQ = t.query ?? t.name
+        if (!cachedGeo(actQ)) setActLoading(t.name, true)
+      }
+      let staysMarked = 0
+      for (const t of stayTargets) {
+        if (t.hasCoords) continue
+        if (staysMarked >= 3) break
+        if (!cachedGeo(t.name)) setStayLoading(t.stayName, true)
+        staysMarked++
+      }
       if (needsFetch.length) setMapStatus("geocoding…")
 
       const resolved = []
       const resolvedPlaceCoords = new Map()
+      const retryWithContext = []
       let done = 0
-      for (const place of places) {
+
+      // Pass 1: geocode each place independently
+      for (const [i, place] of places.entries()) {
         if (epoch !== geocodeEpoch) return
         const geo = await resolveGeo(place)
         done++
         if (needsFetch.length) setMapStatus(\`geocoding \${done}/\${places.length}…\`)
-        if (geo) { resolved.push({ name: place.name, lat: geo.lat, lng: geo.lng, arrives: place.arrives?.label ?? null }); resolvedPlaceCoords.set(place.name, geo) }
+        if (geo) {
+          setPlaceLoading(i + 1, false)
+          writeBackGeo(place, geo)
+          resolved.push({ name: place.name, lat: geo.lat, lng: geo.lng, arrives: place.arrives?.label ?? null })
+          resolvedPlaceCoords.set(place.name, geo)
+        } else {
+          retryWithContext.push({ place, i })
+        }
         geoIndex.places.push(geo ?? null)
       }
+
+      // Pass 2: retry failed places — spinner stays on from upfront marking
+      for (const { place, i } of retryWithContext) {
+        if (epoch !== geocodeEpoch) return
+        const prev = places[i - 1]?.name
+        const next = places[i + 1]?.name
+        const neighbor = resolvedPlaceCoords.get(prev) ? prev
+                       : resolvedPlaceCoords.get(next) ? next : null
+        const q = neighbor ? place.name + ", " + neighbor : null
+        const geo = q ? (cachedGeo(q) ?? await fetchGeo(q)) : null
+        setPlaceLoading(i + 1, false)
+        if (geo) {
+          writeBackGeo(place, geo)
+          resolved.push({ name: place.name, lat: geo.lat, lng: geo.lng, arrives: place.arrives?.label ?? null })
+          resolvedPlaceCoords.set(place.name, geo)
+        }
+        geoIndex.places[i + 1] = geo ?? null
+      }
+
       if (epoch !== geocodeEpoch) return
       drawPlaceMarkers(resolved)
       setMapStatus("")
 
-      let detailPoints = collectTransitHubPoints(doc, resolvedPlaceCoords)
+      let detailPoints = await geocodeTransportHubs(doc, resolvedPlaceCoords, () => epoch !== geocodeEpoch)
+      for (const p of detailPoints) {
+        if (p.pinType !== "hub") continue
+        geoIndex.hubs.set(p.name, { lat: p.lat, lng: p.lng })
+        listEl.querySelectorAll('.waypoint-name[data-hub-name]').forEach(el => {
+          if (el.dataset.hubName === p.name) el.classList.add("--geocoded")
+        })
+      }
       setDetailSource(detailPoints)
 
-      const actTargets = collectActivityGeoTargets(doc)
       function actPoint(t, geo) {
-        return { name: t.name, lat: geo.lat, lng: geo.lng, pinType: t.priority === "must" ? "must" : t.priority === "maybe" ? "maybe" : "activity", subtitle: t.priority === "must" ? "must do" : null, placeIdx: t.placeIdx, placeActIdx: t.placeActIdx }
+        return { name: t.name, lat: geo.lat, lng: geo.lng, pinType: t.priority === "must" ? "must" : t.priority === "maybe" ? "maybe" : "activity", subtitle: t.priority === "must" ? "must do" : null, placeIdx: t.placeIdx, actLabel: t.actLabel }
       }
       for (const t of actTargets) {
         const loc = t.location
@@ -532,73 +646,102 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
         if (t.location?.lat != null) continue
         if (epoch !== geocodeEpoch) return
         const geo = await resolveGeo(t)
+        setActLoading(t.name, false)
         if (epoch !== geocodeEpoch) return
         if (geo) { geoIndex.activities.set(t.name, geo); detailPoints = [...detailPoints, actPoint(t, geo)]; setDetailSource(detailPoints) }
       }
 
-      const stayTargets = collectStayGeoTargets(doc)
       let staysGeocoded = 0
       for (const t of stayTargets) {
         if (epoch !== geocodeEpoch) return
         if (!t.hasCoords && staysGeocoded >= 3) continue
         const geo = await resolveGeo(t)
+        setStayLoading(t.stayName, false)
         if (epoch !== geocodeEpoch) return
         if (!t.hasCoords) staysGeocoded++
-        if (geo) { detailPoints = [...detailPoints, { name: t.name, lat: geo.lat, lng: geo.lng, pinType: "stay", subtitle: t.checkin ?? null, placeIdx: t.placeIdx }]; setDetailSource(detailPoints) }
+        if (geo) { geoIndex.stays.set(t.stayName, geo); detailPoints = [...detailPoints, { name: t.stayName, lat: geo.lat, lng: geo.lng, pinType: "stay", subtitle: t.checkin ?? null, placeIdx: t.placeIdx }]; setDetailSource(detailPoints) }
       }
     }
 
     function drawPlaceMarkers(points) {
       map.getSource("route").setData({ type: "FeatureCollection", features: points.length > 1
         ? [{ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: points.map(p => [p.lng, p.lat]) } }] : [] })
-      map.getSource("places").setData({ type: "FeatureCollection",
-        features: points.map((p, i) => ({ type: "Feature", properties: { name: p.name, idx: i + 1, arrives: p.arrives ?? null }, geometry: { type: "Point", coordinates: [p.lng, p.lat] } })) })
+
+      placeMarkers.forEach(m => m.remove()); placeMarkers = []
+
+      for (const [i, p] of points.entries()) {
+        const el = document.createElement("div")
+        el.className = "place-marker"
+        el.innerHTML = \`<span class="place-marker-num">\${i + 1}</span>\`
+        const popup = new maplibregl.Popup({ closeButton: false, offset: 20, className: "place-popup" })
+          .setHTML(popupHtml(p.name, p.arrives))
+        el.addEventListener("mouseenter", () => popup.setLngLat([p.lng, p.lat]).addTo(map))
+        el.addEventListener("mouseleave", () => popup.remove())
+        el.addEventListener("click", e => { e.stopPropagation(); focusPlace(i + 1) })
+        const marker = new maplibregl.Marker({ element: el, anchor: "center" })
+          .setLngLat([p.lng, p.lat]).addTo(map)
+        placeMarkers.push(marker)
+      }
+
+      if (focusedPlaceIdx !== null) {
+        const m = placeMarkers[focusedPlaceIdx - 1]
+        if (m) m.getElement().classList.add("--focused")
+      }
+
       if (points.length) {
         const bounds = new maplibregl.LngLatBounds()
         points.forEach(p => bounds.extend([p.lng, p.lat]))
         map.fitBounds(bounds, { padding: 60, maxZoom: 10 })
+        applyZoomClass()
       }
     }
+
     function setDetailSource(points) {
-      map.getSource("details").setData({ type: "FeatureCollection",
-        features: points.map(p => {
-          const props = { name: p.name, pinType: p.pinType ?? "activity", subtitle: p.subtitle ?? null, placeIdx: p.placeIdx ?? null }
-          if (p.placeActIdx != null) props.placeActIdx = p.placeActIdx
-          return { type: "Feature", properties: props, geometry: { type: "Point", coordinates: [p.lng, p.lat] } }
-        }) })
+      detailMarkers.forEach(m => m.remove()); detailMarkers = []
+
+      for (const p of points) {
+        const el = document.createElement("div")
+        el.className = \`detail-marker detail-marker--\${p.pinType ?? "activity"}\`
+        if (p.pinType === "stay") el.innerHTML = ICONS.stay
+        else if (p.pinType === "hub") el.innerHTML = ICONS[p.mode] ?? ICONS.transport
+        else if (p.actLabel) el.innerHTML = \`<span class="detail-marker-label">\${escHtml(p.actLabel)}</span>\`
+        const popup = new maplibregl.Popup({ closeButton: false, offset: 14, className: "detail-popup" })
+          .setHTML(popupHtml(p.name, p.subtitle))
+        el.addEventListener("mouseenter", () => popup.setLngLat([p.lng, p.lat]).addTo(map))
+        el.addEventListener("mouseleave", () => popup.remove())
+        el.dataset.name = p.name
+        if (p.pinType === "stay")
+          el.addEventListener("click", e => { e.stopPropagation(); focusStay(p.name) })
+        else if (p.pinType === "hub")
+          el.addEventListener("click", e => { e.stopPropagation(); focusHub(p.name) })
+        else
+          el.addEventListener("click", e => { e.stopPropagation(); focusActivity(p.name) })
+        const marker = new maplibregl.Marker({ element: el, anchor: "center" })
+          .setLngLat([p.lng, p.lat]).addTo(map)
+        detailMarkers.push(marker)
+      }
+
+      const focusedDetailName = focusedActName ?? focusedStayName ?? focusedHubName
+      if (focusedDetailName !== null) {
+        for (const m of detailMarkers) {
+          if (m.getElement().dataset.name === focusedDetailName) { m.getElement().classList.add("--focused"); break }
+        }
+      }
     }
+
     function collectActivityGeoTargets(doc) {
       const targets = []; let placeIdx = 0
       for (const item of doc.itinerary) {
         if (item.type !== "place") continue; placeIdx++
-        let placeActIdx = 0
+        let actIdx = 0
         for (const group of (item.activities ?? []))
           for (const act of (group.items ?? []))
             if (!act.location?.geocodingDisabled)
-              targets.push({ name: act.name, location: act.location ?? null, query: act.location ? null : \`\${act.name}, \${item.name}\`, priority: act.priority ?? null, placeIdx, placeActIdx: ++placeActIdx })
+              targets.push({ name: act.name, location: act.location ?? null, query: act.location ? null : \`\${act.name}, \${item.name}\`, priority: act.priority ?? null, placeIdx, actLabel: String.fromCharCode(65 + actIdx++) })
       }
       return targets
     }
-    function collectTransitHubPoints(doc, resolvedPlaceCoords) {
-      const skip = new Set(["walk", "bike"]); const items = doc.itinerary; const points = []
-      function nearPlace(pt, name) { const g = resolvedPlaceCoords.get(name); return g && Math.abs(pt.lat - g.lat) < 0.8 && Math.abs(pt.lng - g.lng) < 1.2 }
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i]; if (item.type === "place" || skip.has(item.mode)) continue
-        const prev = [...items.slice(0, i)].reverse().find(x => x.type === "place")
-        const next = items.slice(i + 1).find(x => x.type === "place")
-        if (item.from?.lat != null && item.from?.lng != null) {
-          const pt = { lat: item.from.lat, lng: item.from.lng }
-          if (!nearPlace(pt, prev?.name) && !nearPlace(pt, next?.name))
-            points.push({ name: item.from.label, lat: pt.lat, lng: pt.lng, pinType: "hub", subtitle: item.mode + " hub", placeIdx: null })
-        }
-        if (item.to?.lat != null && item.to?.lng != null) {
-          const pt = { lat: item.to.lat, lng: item.to.lng }
-          if (!nearPlace(pt, prev?.name) && !nearPlace(pt, next?.name))
-            points.push({ name: item.to.label, lat: pt.lat, lng: pt.lng, pinType: "hub", subtitle: item.mode + " hub", placeIdx: null })
-        }
-      }
-      return points
-    }
+
     function collectStayGeoTargets(doc) {
       const targets = []; let placeIdx = 0
       for (const item of doc.itinerary) {
@@ -606,7 +749,7 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
         for (const stay of (item.stay ?? [])) {
           if (stay.location?.geocodingDisabled) continue
           const hasCoords = stay.location?.lat != null
-          targets.push({ name: hasCoords ? stay.name : \`\${stay.name}, \${item.name}\`, location: stay.location ?? null, hasCoords, checkin: stay.arrives ? \`check-in \${stay.arrives.label}\` : null, placeIdx })
+          targets.push({ name: hasCoords ? stay.name : \`\${stay.name}, \${item.name}\`, stayName: stay.name, location: stay.location ?? null, hasCoords, checkin: stay.arrives ? \`check-in \${stay.arrives.label}\` : null, placeIdx })
         }
       }
       return targets
@@ -616,29 +759,26 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
     function escHtml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;") }
 
     // ── Live editor ───────────────────────────────────────────────────────────
-    function setEditorError(msg) {
-      errorBar.textContent = msg
-      errorBar.style.display = msg ? "" : "none"
-    }
+    function setEditorError(msg) { errorBar.textContent = msg; errorBar.style.display = msg ? "" : "none" }
     function clearEditorError() { setEditorError("") }
 
     let debounce
     function render() {
       const src = editorEl.value.trim()
       if (!src) {
-        previewEl.innerHTML = '<div class="preview-empty">Start typing a .crumb document…</div>'
+        listEl.innerHTML = '<div class="list-empty">Start typing a .crumb document…</div>'
         clearEditorError()
         if (mapReady) {
           map.getSource("route").setData({ type: "FeatureCollection", features: [] })
-          map.getSource("places").setData({ type: "FeatureCollection", features: [] })
-          map.getSource("details").setData({ type: "FeatureCollection", features: [] })
+          placeMarkers.forEach(m => m.remove());  placeMarkers = []
+          detailMarkers.forEach(m => m.remove()); detailMarkers = []
         }
         setMapStatus(""); return
       }
       try {
         const doc = Crumb.parse(src)
         DATA = doc
-        previewEl.innerHTML = Crumb.renderItineraryBody(doc)
+        listEl.innerHTML = Crumb.renderItineraryBody(doc)
         clearEditorError()
         updateMap(doc)
       } catch (e) {
@@ -656,7 +796,7 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
       editorEl.selectionStart = editorEl.selectionEnd = s + 2
     })
 
-    // ── Boot: render initial map from embedded doc ────────────────────────────
+    // ── Boot ─────────────────────────────────────────────────────────────────
     updateMap(DATA)
   </script>
 </body>
@@ -669,10 +809,8 @@ function renderTripHeader(meta: TripMeta): string {
   const parts: string[] = [`<header class="trip-header">`]
   parts.push(`  <h1>${escape(meta.name ?? "Itinerary")}</h1>`)
 
-  const meta2: string[] = []
-  if (meta.author) meta2.push(`<span class="author">by ${escape(meta.author)}</span>`)
-  if (meta.tags?.length) meta2.push(meta.tags.map(t => `<span class="tag">${escape(t)}</span>`).join(""))
-  if (meta2.length) parts.push(`  <div class="trip-meta">${meta2.join(" ")}</div>`)
+  if (meta.author) parts.push(`  <div class="trip-meta"><span class="author">by ${escape(meta.author)}</span></div>`)
+  if (meta.tags?.length) parts.push(`  <div class="tags">${meta.tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>`)
   if (meta.note)   parts.push(`  <p class="note">${renderMarkdown(meta.note)}</p>`)
   if (meta.info?.length) parts.push(renderInfoList(meta.info, "  "))
 
@@ -684,25 +822,42 @@ function renderPlace(place: Place, index = 0): string {
   const parts: string[] = []
   parts.push(`<div class="place" data-place-index="${index}">`)
 
-  const badge = index > 0 ? `<span class="place-num">${index}</span>` : ""
+  // Header: large number + place name/dates stacked
   parts.push(`  <div class="place-header">`)
-  parts.push(`    <h2 class="place-name">${badge}${escape(place.name)}</h2>`)
-
+  if (index > 0) parts.push(`    <span class="place-num">${index}</span>`)
+  parts.push(`    <div class="place-heading">`)
+  parts.push(`      <span class="place-name-text">${escape(place.name)}</span>`)
   const dateLine = renderPlaceDateLine(place)
-  if (dateLine) parts.push(`    <div class="place-dates">${dateLine}</div>`)
-  if (place.timezone) parts.push(`    <div class="place-tz">${escape(place.timezone)}</div>`)
+  if (dateLine) parts.push(`      <span class="place-dates">${dateLine}</span>`)
+  if (place.timezone) parts.push(`      <span class="place-tz">${escape(place.timezone)}</span>`)
+  parts.push(`    </div>`)
   parts.push(`  </div>`)
 
-  if (place.tags?.length)   parts.push(`  <div class="tags">${place.tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>`)
-  if (place.note)            parts.push(`  <div class="note">${renderMarkdown(place.note)}</div>`)
-  if (place.stay?.length)    parts.push(renderStays(place.stay))
-  if (place.info?.length)    parts.push(renderInfoList(place.info, "  "))
-
+  // Body — indented content
+  const bodyParts: string[] = []
+  if (place.tags?.length)
+    bodyParts.push(`<div class="tags">${place.tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>`)
+  if (place.note)
+    bodyParts.push(`<p class="place-note">${renderMarkdown(place.note)}</p>`)
+  if (place.stay?.length)
+    bodyParts.push(renderStays(place.stay))
+  if (place.info?.length)
+    bodyParts.push(renderInfoList(place.info, ""))
   if (place.activities.length > 0) {
-    parts.push(`  <div class="activities">`)
+    const actParts: string[] = [`<div class="activities">`]
+    const counter = { n: 0 }
     for (const actItem of place.activities) {
-      parts.push(actItem.type === "ungrouped" ? renderUngrouped(actItem) : renderActivityGroup(actItem))
+      actParts.push(actItem.type === "ungrouped"
+        ? renderUngrouped(actItem, counter)
+        : renderActivityGroup(actItem, counter))
     }
+    actParts.push(`</div>`)
+    bodyParts.push(actParts.join("\n"))
+  }
+
+  if (bodyParts.length) {
+    parts.push(`  <div class="place-body">`)
+    parts.push(bodyParts.map(p => `    ${p}`).join("\n"))
     parts.push(`  </div>`)
   }
 
@@ -731,28 +886,54 @@ function renderPlaceDateLine(place: Place): string {
 }
 
 function renderTransportLeg(leg: TransportLeg): string {
-  const mode  = formatMode(leg.mode)
-  const icon  = modeIconSvg(leg.mode)
-  const from  = leg.from ? leg.from.label : null
-  const to    = leg.to   ? leg.to.label   : null
-  const route = from && to ? ` ${escape(from)} → ${escape(to)}` : from ? ` from ${escape(from)}` : to ? ` to ${escape(to)}` : ""
+  const icon = modeIconSvg(leg.mode)
+  const from = leg.from ? leg.from.label : null
+  const to   = leg.to   ? leg.to.label   : null
 
-  const times: string[] = []
-  if (leg.departs) { const t = formatMoment(leg.departs); if (t) times.push(`departs ${t}`) }
-  if (leg.arrives) { const t = formatMoment(leg.arrives); if (t) times.push(`arrives ${t}`) }
-  if (leg.duration) times.push(formatDuration(leg.duration))
-  const timeLine = times.length ? `<span class="transport-times">${times.join(" · ")}</span>` : ""
+  const departsText  = leg.departs  ? formatMoment(leg.departs)      : null
+  const arrivesText  = leg.arrives  ? formatMoment(leg.arrives)      : null
+  const durationText = leg.duration ? formatDuration(leg.duration)   : null
 
-  const infoLines = leg.info?.length
+  const noteHtml = leg.note ? `<div class="transport-note">${renderMarkdown(leg.note)}</div>` : ""
+  const infoHtml = leg.info?.length
     ? `<div class="transport-info">${leg.info.map(i => `<span class="info-item"><span class="info-key">${escape(String(i.key))}</span><span class="info-val">${escape(String(i.value))}</span></span>`).join("")}</div>`
     : ""
-  const noteStr = leg.note ? `<div class="transport-note">${renderMarkdown(leg.note)}</div>` : ""
+
+  const hasBoth = !!(from || departsText) && !!(to || arrivesText)
+
+  let routeHtml: string
+  if (hasBoth) {
+    routeHtml = `<div class="transport-route-block">
+      <div class="tl-row">
+        <div class="tl-marker"><div class="tl-dot"></div></div>
+        <span class="waypoint-name"${from ? ` data-hub-name="${escape(from)}"` : ""}>${from ? escape(from) : ""}</span>
+      </div>
+      <div class="tl-row">
+        <div class="tl-marker tl-marker-line"><div class="tl-line"></div></div>
+        <div class="tl-meta">
+          ${departsText ? `<span class="waypoint-time">departs ${departsText}</span>` : ""}
+          ${durationText ? `<span class="segment-duration">${durationText}</span>` : ""}
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-marker"><div class="tl-dot"></div></div>
+        <span class="waypoint-name"${to ? ` data-hub-name="${escape(to)}"` : ""}>${to ? escape(to) : ""}</span>
+      </div>
+      ${arrivesText ? `<div class="tl-indent"><span class="waypoint-time">arrives ${arrivesText}</span></div>` : ""}
+    </div>`
+  } else {
+    const parts: string[] = []
+    if (from || to) parts.push([from, to].filter(Boolean).map(s => escape(s!)).join(" → "))
+    if (departsText) parts.push(`departs ${departsText}`)
+    if (arrivesText) parts.push(`arrives ${arrivesText}`)
+    if (durationText) parts.push(durationText)
+    routeHtml = parts.length ? `<div class="transport-simple">${parts.join(" · ")}</div>` : ""
+  }
 
   return `<div class="transport">
   <span class="transport-icon">${icon}</span>
-  <div class="transport-main">
-    <span class="transport-mode">${escape(mode)}</span>${route ? `<span class="transport-route">${route}</span>` : ""}
-    ${timeLine}${infoLines}${noteStr}
+  <div class="transport-body">
+    ${routeHtml}${noteHtml}${infoHtml}
   </div>
 </div>`
 }
@@ -763,27 +944,35 @@ function renderStays(stays: Stay[]): string {
     const dateParts: string[] = []
     if (stay.arrives) { const a = formatMoment(stay.arrives); if (a) dateParts.push(`check-in ${a}`) }
     if (stay.departs) { const d = formatMoment(stay.departs); if (d) dateParts.push(`check-out ${d}`) }
-    const dateStr = dateParts.length ? ` <span class="stay-dates">${dateParts.join(" · ")}</span>` : ""
-    const noteStr = stay.note ? ` <span class="stay-note">${renderMarkdown(stay.note)}</span>` : ""
+    const dateStr = dateParts.length
+      ? ` <span class="stay-dates">${dateParts.join(" · ")}</span>`
+      : ""
+    const noteStr = stay.note
+      ? ` <span class="stay-note">${renderMarkdown(stay.note)}</span>`
+      : ""
     const infoStr = stay.info?.length
       ? ` <div class="stay-info">${stay.info.map(i => `<span class="info-item"><span class="info-key">${escape(String(i.key))}</span><span class="info-val">${escape(String(i.value))}</span></span>`).join("")}</div>`
       : ""
-    parts.push(`    <div class="stay"><span class="stay-icon">${ICON_STAY}</span><div class="stay-content"><span class="stay-name">${escape(stay.name)}</span>${dateStr}${infoStr}${noteStr}</div></div>`)
+    const stayGeoAttr = !stay.location?.geocodingDisabled ? ` data-stay-name="${escape(stay.name)}"` : ""
+    parts.push(`    <div class="stay"${stayGeoAttr}><span class="stay-icon">${ICON_STAY}</span><div class="stay-content"><span class="stay-name">${escape(stay.name)}</span>${dateStr}${infoStr}${noteStr}</div></div>`)
   }
   parts.push(`  </div>`)
   return parts.join("\n")
 }
 
-function renderUngrouped(container: UngroupedActivities): string {
-  return `    <ul class="activity-list ungrouped">${container.items.map(a => renderActivityItem(a)).join("\n")}</ul>`
+/** Shared counter type — threads across groups so letters are unique per place. */
+interface ActCounter { n: number }
+
+function renderUngrouped(container: UngroupedActivities, counter: ActCounter): string {
+  return `    <ul class="activity-list ungrouped">${container.items.map(a => renderActivityItem(a, counter.n++)).join("\n")}</ul>`
 }
 
-function renderActivityGroup(group: ActivityGroup): string {
-  const isPlan  = group.kind === "plan"
-  const cls     = isPlan ? "activity-group plan-group" : "activity-group"
-  const kind    = isPlan ? "Plan" : group.kind === "week" ? "Week" : "Day"
-  const dateStr = !isPlan && group.time ? formatGroupDate(group.time) : null
-  let headerText = group.title ?? kind
+function renderActivityGroup(group: ActivityGroup, counter: ActCounter): string {
+  const isPlan    = group.kind === "plan"
+  const cls       = isPlan ? "activity-group plan-group" : "activity-group"
+  const kind      = isPlan ? "Plan" : group.kind === "week" ? "Week" : "Day"
+  const dateStr   = !isPlan && group.time ? formatGroupDate(group.time) : null
+  let headerText  = group.title ?? kind
   if (dateStr) headerText += ` <span class="group-date">— ${escape(dateStr)}</span>`
 
   const header = isPlan && group.title
@@ -791,28 +980,37 @@ function renderActivityGroup(group: ActivityGroup): string {
     : `<div class="group-header">${headerText}</div>`
 
   const items = group.items.length
-    ? `<ul class="activity-list">${group.items.map(a => renderActivityItem(a)).join("\n")}</ul>`
+    ? `<ul class="activity-list">${group.items.map(a => renderActivityItem(a, counter.n++)).join("\n")}</ul>`
     : ""
 
   return `    <div class="${cls}">\n      ${header}\n      ${items}\n    </div>`
 }
 
-function renderActivityItem(act: Activity): string {
-  const dot = act.priority === "must"  ? `<span class="dot must" title="Must do">●</span>`
-            : act.priority === "maybe" ? `<span class="dot maybe" title="Maybe">●</span>`
-            : ""
+function renderActivityItem(act: Activity, actIndex?: number): string {
+  // Letter label (A, B, C…) as map reference — shown only when index is provided
+  const label = actIndex !== undefined && actIndex < 26
+    ? `<span class="act-label">${String.fromCharCode(65 + actIndex)}</span>`
+    : ""
 
-  const nameParts = [`<span class="act-name">${escape(act.name)}</span>`]
-  if (act.time)     { const t = formatMomentTime(act.time); if (t) nameParts.push(`<span class="act-time">${escape(t)}</span>`) }
-  if (act.duration) nameParts.push(`<span class="act-duration">${escape(formatDuration(act.duration))}</span>`)
-  if (act.tags?.length) nameParts.push(act.tags.map(t => `<span class="tag small">${escape(t)}</span>`).join(""))
-  if (act.note)     nameParts.push(`<div class="act-note">${renderMarkdown(act.note)}</div>`)
-  if (act.info?.length) nameParts.push(`<div class="act-info">${act.info.map(i => `<span class="info-item"><span class="info-key">${escape(String(i.key))}</span><span class="info-val">${escape(String(i.value))}</span></span>`).join("")}</div>`)
+  const mainParts = [`<span class="act-name">${escape(act.name)}</span>`]
+  if (act.time)     { const t = formatMomentTime(act.time); if (t) mainParts.push(`<span class="act-time">${escape(t)}</span>`) }
+  if (act.duration) mainParts.push(`<span class="act-duration">${escape(formatDuration(act.duration))}</span>`)
 
-  const geoAttr = act.location && !act.location.geocodingDisabled
+  const tags: string[] = []
+  if (act.priority === "must")  tags.push(`<span class="tag priority-must">must</span>`)
+  if (act.priority === "maybe") tags.push(`<span class="tag priority-maybe">maybe</span>`)
+  if (act.tags?.length) act.tags.forEach(t => tags.push(`<span class="tag">${escape(t)}</span>`))
+
+  const contentParts: string[] = [`<div class="act-main">${mainParts.join(" ")}</div>`]
+  if (tags.length)      contentParts.push(`<div class="act-tags">${tags.join("")}</div>`)
+  if (act.note)         contentParts.push(`<div class="act-note">${renderMarkdown(act.note)}</div>`)
+  if (act.info?.length) contentParts.push(`<div class="act-info">${act.info.map(i => `<span class="info-item"><span class="info-key">${escape(String(i.key))}</span><span class="info-val">${escape(String(i.value))}</span></span>`).join("")}</div>`)
+
+  const geoAttr = !act.location?.geocodingDisabled
     ? ` data-act-name="${escape(act.name)}"`
     : ""
-  return `<li class="activity-item"${geoAttr}>${dot ? dot + " " : ""}${nameParts.join(" ")}</li>`
+
+  return `<li class="activity-item"${geoAttr}>${label ? label + " " : ""}<div class="act-content">${contentParts.join("")}</div></li>`
 }
 
 function renderInfoList(info: MetadataItem[], indent: string): string {
@@ -832,19 +1030,11 @@ function renderMarkdown(text: string): string {
 
 /**
  * Reference implementation of the CrumbRenderer plugin interface.
- *
- * Shows third-party renderer authors what the contract looks like:
- * a single render() method that takes a document and context.
- *
- * Note: this produces the itinerary body only (no app shell).
+ * Produces the itinerary body only (no app shell).
  * For the full mini-app output, use renderHtml() directly.
  */
 export class HtmlRenderer implements CrumbRenderer {
-  render(doc: CrumbDocument, context: RenderContext): string {
-    // The context provides formatting helpers (context.formatMoment, etc.).
-    // This implementation delegates to renderItineraryBody() which uses
-    // the same helpers internally via format.ts. A custom renderer would
-    // call context.formatMoment() etc. instead of importing format.ts.
+  render(doc: CrumbDocument, _context: RenderContext): string {
     return renderItineraryBody(doc)
   }
 }

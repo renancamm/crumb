@@ -1,0 +1,85 @@
+trip:
+  name: Mexico City Long Weekend
+  tags: [latin america, food, art, city]
+
+itinerary:
+
+  - Mexico City:
+      arrives: 2026-11-05
+      departs: 2026-11-10
+      stay:
+        - Hotel Condesa DF:
+            arrives: 2026-11-05
+            departs: 2026-11-10
+            info:
+              - reference: CDX-4812
+
+      activities:
+        - day:
+            title: Arrival + Colonia Roma
+            time: 2026-11-05
+            items:
+              - Check in and rest
+              - Mercado de Medellín:
+                  time: late afternoon
+                  note: Pick up street snacks and fresh juice.
+              - Contramar:
+                  time: evening
+                  priority: must
+                  note: Book ahead — very popular.
+
+        - day:
+            title: Centro Histórico
+            time: 2026-11-06
+            items:
+              - Zócalo:
+                  time: morning
+                  duration: 1h
+              - Templo Mayor:
+                  time: 10am
+                  duration: 2h
+                  priority: must
+              - Palacio de Bellas Artes:
+                  time: afternoon
+                  duration: 1h30m
+                  priority: must
+              - Tacos de Canasta at El Huequito:
+                  time: midday
+
+        - day:
+            title: Coyoacán + Xochimilco
+            time: 2026-11-07
+            items:
+              - Frida Kahlo Museum:
+                  time: 10am
+                  duration: 2h
+                  priority: must
+                  note: Tickets must be booked weeks in advance online.
+              - Plaza Hidalgo lunch:
+                  time: midday
+              - Xochimilco trajineras:
+                  time: afternoon
+                  duration: 2h30m
+                  priority: must
+
+        - day:
+            title: Chapultepec
+            time: 2026-11-08
+            items:
+              - Museo Nacional de Antropología:
+                  time: 10am
+                  duration: 3h
+                  priority: must
+              - Chapultepec Castle:
+                  time: afternoon
+                  duration: 1h30m
+
+        - day:
+            title: Polanco + departure prep
+            time: 2026-11-09
+            items:
+              - Mercado de Polanco:
+                  time: morning
+              - Quintonil or Pujol:
+                  priority: maybe
+                  note: Splurge lunch if you can get a reservation.
