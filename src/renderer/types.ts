@@ -27,6 +27,8 @@ export interface RenderContext {
   formatMomentDate(m: ResolvedMoment): string
   /** Format only the time portion of a moment. */
   formatMomentTime(m: ResolvedMoment): string
+  /** Format a moment for activity group headers: prefers resolved anchor date over relative label. */
+  formatGroupDate(m: ResolvedMoment): string
   /** Format a duration (e.g. "2h 30m", "~3 nights"). */
   formatDuration(d: ResolvedDuration): string
   /** Escape a string for safe insertion into HTML. */

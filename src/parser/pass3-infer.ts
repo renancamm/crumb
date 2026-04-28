@@ -103,6 +103,7 @@ export function infer(doc: CrumbDocument): CrumbDocument {
           group.time.date.value,
           arrivalDate,
           dayGroupIndex,
+          momentToISO(place.departs),
         )
 
         if (resolvedDate) {
@@ -112,19 +113,21 @@ export function infer(doc: CrumbDocument): CrumbDocument {
             anchor: { date: resolvedDate, precedence: "explicit" },
           }
 
+          const groupPrecedence = group.time.anchor?.precedence ?? "explicit"
           for (const act of group.items) {
             if (!act.time) continue
             if (!isAbsoluteOrApproxDate(act.time)) {
-              act.time = { ...act.time, anchor: { date: resolvedDate, precedence: "explicit" } }
+              act.time = { ...act.time, anchor: { date: resolvedDate, precedence: groupPrecedence } }
             }
           }
         }
       } else if (group.time?.date?.precision === "absolute") {
-        const groupDate = group.time.date.value
+        const groupDate      = group.time.date.value
+        const groupPrecedence = group.time.anchor?.precedence ?? "explicit"
         for (const act of group.items) {
           if (!act.time) continue
           if (!isAbsoluteOrApproxDate(act.time)) {
-            act.time = { ...act.time, anchor: { date: groupDate, precedence: "explicit" } }
+            act.time = { ...act.time, anchor: { date: groupDate, precedence: groupPrecedence } }
           }
         }
       }
@@ -375,10 +378,15 @@ function nearestPlace(
 
 // ─── 3.5 — Relative date resolution ─────────────────────────────────────────
 
+const WEEKDAY_NAMES = [
+  "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+]
+
 function resolveRelativeGroupDate(
   relValue: string,
   arrivalDate: string,
   groupIndex: number,
+  departureDate?: string | null,
 ): string | null {
   const lower = relValue.toLowerCase()
 
@@ -390,17 +398,47 @@ function resolveRelativeGroupDate(
     return addDays(arrivalDate, groupIndex * 7)
   }
 
+  if (lower === "first day") {
+    return arrivalDate
+  }
+
+  if (lower === "last day") {
+    return departureDate ?? null
+  }
+
   const dayN = lower.match(/^day\s+(\d+)$/)
   if (dayN) {
-    return addDays(arrivalDate, parseInt(dayN[1], 10) - 1)
+    const n = parseInt(dayN[1], 10)
+    if (n <= 0) return null
+    return addDays(arrivalDate, n - 1)
   }
 
   const weekN = lower.match(/^week\s+(\d+)$/)
   if (weekN) {
-    return addDays(arrivalDate, (parseInt(weekN[1], 10) - 1) * 7)
+    const n = parseInt(weekN[1], 10)
+    if (n <= 0) return null
+    return addDays(arrivalDate, (n - 1) * 7)
+  }
+
+  // Weekday names: Monday through Sunday
+  const wdIdx = WEEKDAY_NAMES.indexOf(lower)
+  if (wdIdx >= 0) {
+    return nextWeekday(arrivalDate, wdIdx)
   }
 
   return null
+}
+
+/** Returns the next occurrence of the given weekday on or after fromDate.
+ *  weekday: 0=Monday, 1=Tuesday, ..., 6=Sunday */
+function nextWeekday(fromDate: string, weekday: number): string {
+  const [y, m, d] = fromDate.split("-").map(Number)
+  const date = new Date(Date.UTC(y, m - 1, d))
+  // JS Date: 0=Sun, 1=Mon, ..., 6=Sat; our indexing: 0=Mon, ..., 6=Sun
+  const currentDay = date.getUTCDay()
+  const targetDay  = (weekday + 1) % 7
+  const daysToAdd  = (targetDay - currentDay + 7) % 7
+  return addDays(fromDate, daysToAdd)
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

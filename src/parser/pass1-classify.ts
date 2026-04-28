@@ -359,6 +359,7 @@ function parseInfo(raw: unknown): MetadataItem[] | undefined {
     if (typeof item === "object" && item !== null && !Array.isArray(item)) {
       const obj = item as Record<string, unknown>
       for (const [k, v] of Object.entries(obj)) {
+        if (k.trim() === "") continue
         if (typeof v === "string" || typeof v === "number") {
           items.push({ key: k, value: v })
         }

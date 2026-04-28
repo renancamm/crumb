@@ -266,11 +266,20 @@ function parseTimeOfDay(s: string): TimeOfDay | null {
   return null
 }
 
+const WEEKDAY_NAMES = [
+  "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+]
+
 function parseRelativeDate(s: string): DateRef | null {
   const lower = s.toLowerCase()
 
   // "next day", "next week"
   if (lower === "next day" || lower === "next week") {
+    return { precision: "relative", value: lower }
+  }
+
+  // "first day" / "last day"
+  if (lower === "first day" || lower === "last day") {
     return { precision: "relative", value: lower }
   }
 
@@ -286,6 +295,11 @@ function parseRelativeDate(s: string): DateRef | null {
     return { precision: "relative", value: `Week ${weekN[1]}` }
   }
 
+  // Weekday names: Monday through Sunday
+  if (WEEKDAY_NAMES.includes(lower)) {
+    return { precision: "relative", value: lower }
+  }
+
   return null
 }
 
@@ -299,6 +313,23 @@ export function resolveDuration(raw: RawDuration): ResolvedDuration {
   const namedSpan = parseNamedSpan(s)
   if (namedSpan) {
     return { type: "named", span: namedSpan, estimate: namedSpanEstimate(namedSpan), label }
+  }
+
+  // Named span range: "half day to all day", "overnight - all day"
+  const namedRangeMatch = s.match(/^(.+?)\s+(?:to|-)\s+(.+)$/)
+  if (namedRangeMatch) {
+    const minSpan = parseNamedSpan(namedRangeMatch[1].trim())
+    const maxSpan = parseNamedSpan(namedRangeMatch[2].trim())
+    if (minSpan && maxSpan && minSpan !== maxSpan) {
+      return {
+        type:        "named-range",
+        min:         minSpan,
+        max:         maxSpan,
+        minEstimate: namedSpanEstimate(minSpan),
+        maxEstimate: namedSpanEstimate(maxSpan),
+        label,
+      }
+    }
   }
 
   // Check for qualifiers
@@ -319,13 +350,10 @@ export function resolveDuration(raw: RawDuration): ResolvedDuration {
   if (rangeMatch) {
     const unit = parseUnit(rangeMatch[3])
     if (unit) {
-      return {
-        type: "range",
-        min:  parseFloat(rangeMatch[1]),
-        max:  parseFloat(rangeMatch[2]),
-        unit,
-        label,
-      }
+      const min = parseFloat(rangeMatch[1])
+      const max = parseFloat(rangeMatch[2])
+      if (min < max) return { type: "range", min, max, unit, label }
+      return { type: "unknown", label }
     }
   }
 
@@ -400,18 +428,26 @@ export function resolveGeolocation(raw: RawGeolocation): ResolvedGeolocation {
     return { label: raw }
   }
 
-  // Block form
+  // Block form — validate coordinate ranges; discard pair if either is out of bounds
+  const validCoords =
+    raw.lat != null && raw.lng != null &&
+    raw.lat >= -90 && raw.lat <= 90 &&
+    raw.lng >= -180 && raw.lng <= 180
+
+  const lat = validCoords ? raw.lat : undefined
+  const lng = validCoords ? raw.lng : undefined
+
   const label =
     raw.name ??
     raw.address ??
-    (raw.lat != null && raw.lng != null ? `${raw.lat}, ${raw.lng}` : "location")
+    (validCoords ? `${raw.lat}, ${raw.lng}` : "location")
 
   return {
     label,
     name:    raw.name,
     address: raw.address,
-    lat:     raw.lat,
-    lng:     raw.lng,
+    lat,
+    lng,
   }
 }
 
@@ -491,13 +527,22 @@ function parseFuzzyDate(s: string): DateRef | null {
     return { precision: "approximate", estimate: `${year}-${pad(month)}-${pad(day)}` }
   }
 
-  // "[Month] [Year?]"  — bare month name, optional year
-  const bare = lower.match(/^([a-z]+)(?:\s+(\d{4}))?$/)
-  if (bare) {
-    const month = MONTH_NAMES[bare[1]]
-    if (!month) return null
-    const year = bare[2] ? parseInt(bare[2], 10) : inferYear(month, 15)
-    return { precision: "approximate", estimate: `${year}-${pad(month)}-15` }
+  // "[Month] [Day]"  e.g. "September 15", "Sep 15" (no year) → relative
+  const monthDay = lower.match(/^([a-z]+)\s+(\d{1,2})$/)
+  if (monthDay && MONTH_NAMES[monthDay[1]]) {
+    return { precision: "relative", value: s }
+  }
+
+  // "[Month] [Year]"  e.g. "September 2026" → relative
+  const monthYear = lower.match(/^([a-z]+)\s+(\d{4})$/)
+  if (monthYear && MONTH_NAMES[monthYear[1]]) {
+    return { precision: "relative", value: s }
+  }
+
+  // "[Month]" bare → relative
+  const monthOnly = lower.match(/^([a-z]+)$/)
+  if (monthOnly && MONTH_NAMES[monthOnly[1]]) {
+    return { precision: "relative", value: s }
   }
 
   return null
@@ -505,8 +550,9 @@ function parseFuzzyDate(s: string): DateRef | null {
 
 function inferYear(month: number, day: number): number {
   const thisYear = new Date().getFullYear()
-  const candidate = new Date(Date.UTC(thisYear, month - 1, day))
-  return candidate.getTime() >= Date.now() ? thisYear : thisYear + 1
+  const today    = new Date().toISOString().slice(0, 10)
+  const candidate = `${thisYear}-${pad(month)}-${pad(day)}`
+  return candidate >= today ? thisYear : thisYear + 1
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

@@ -118,6 +118,7 @@ export function escape(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
 }
 
 // ─── RenderContext factory ────────────────────────────────────────────────────
@@ -128,6 +129,7 @@ export function createRenderContext(): RenderContext {
     formatMoment,
     formatMomentDate,
     formatMomentTime,
+    formatGroupDate,
     formatDuration,
     escape,
   }

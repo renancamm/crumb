@@ -766,7 +766,7 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
     }
 
     function setMapStatus(text) { mapStatusEl.textContent = text }
-    function escHtml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;") }
+    function escHtml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/'/g,"&#39;") }
 
     // ── Live editor ───────────────────────────────────────────────────────────
     function setEditorError(msg) { errorBar.textContent = msg; errorBar.style.display = msg ? "" : "none" }
