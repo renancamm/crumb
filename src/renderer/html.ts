@@ -20,6 +20,7 @@ import type {
   ActivityGroup,
   CrumbDocument,
   Place,
+  ResolvedMoment,
   Stay,
   TransportLeg,
   UngroupedActivities,
@@ -30,6 +31,7 @@ import { ICON_STAY, ICON_PLANE, ICON_TRAIN, ICON_BUS, ICON_CAR, ICON_SHIP, ICON_
 import {
   escape,
   formatDuration,
+  formatDurValue,
   formatGroupDate,
   formatMoment,
   formatMomentDate,
@@ -869,22 +871,45 @@ function renderPlace(place: Place, index = 0): string {
 }
 
 function renderPlaceDateLine(place: Place): string {
-  const parts: string[] = []
-
-  if (place.arrives && place.departs) {
-    const a = formatMomentDate(place.arrives)
-    const d = formatMomentDate(place.departs)
-    if (a && d) parts.push(`${a} – ${d}`)
-    else if (a) parts.push(`from ${a}`)
-  } else if (place.arrives) {
-    const a = formatMomentDate(place.arrives)
-    if (a) parts.push(`arrives ${a}`)
-  } else if (place.departs) {
-    const d = formatMomentDate(place.departs)
-    if (d) parts.push(`departs ${d}`)
+  // Returns the date string for a moment, wrapped in .date-inferred if engine-computed.
+  // User-authored approximate dates (e.g. "early October 2026") use their label directly.
+  function dateFrag(m: ResolvedMoment): string {
+    const isInferred = m.anchor?.precedence === "inferred"
+    const str = (!isInferred && m.date?.precision === "approximate")
+      ? escape(m.label)
+      : escape(formatMomentDate(m))
+    if (!str) return ""
+    return isInferred ? `<span class="date-inferred">${str}</span>` : str
   }
 
-  if (place.duration) parts.push(formatDuration(place.duration))
+  const parts: string[] = []
+  const a = place.arrives
+  const d = place.departs
+
+  if (a && d) {
+    const af = dateFrag(a)
+    const df = dateFrag(d)
+    if (af && df) parts.push(`${af} – ${df}`)
+    else if (af)  parts.push(`arrives ${af}`)
+    else if (df)  parts.push(`departs ${df}`)
+  } else if (a) {
+    const af = dateFrag(a)
+    if (af) parts.push(`arrives ${af}`)
+  } else if (d) {
+    const df = dateFrag(d)
+    if (df) parts.push(`departs ${df}`)
+  }
+
+  if (place.duration) {
+    if (place.duration.type === "approximate") {
+      // Use formatDurValue (no ~ prefix) — CSS ::before on .date-inferred supplies the ~
+      const rawStr = formatDurValue(place.duration.value, place.duration.unit)
+      parts.push(`<span class="date-inferred">${escape(rawStr)}</span>`)
+    } else {
+      parts.push(escape(formatDuration(place.duration)))
+    }
+  }
+
   return parts.join(" · ")
 }
 

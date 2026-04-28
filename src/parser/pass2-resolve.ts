@@ -231,6 +231,12 @@ export function resolveMoment(raw: RawMoment): ResolvedMoment {
     return { date: relativeDate, label }
   }
 
+  // Fuzzy date expressions ("early October", "mid-March 2026", "spring 2027", …)
+  const fuzzyDate = parseFuzzyDate(s)
+  if (fuzzyDate) {
+    return { date: fuzzyDate, label }
+  }
+
   // Fallback — unrecognised, store in label only
   return { label }
 }
@@ -407,6 +413,100 @@ export function resolveGeolocation(raw: RawGeolocation): ResolvedGeolocation {
     lat:     raw.lat,
     lng:     raw.lng,
   }
+}
+
+// ─── Fuzzy date parsing ──────────────────────────────────────────────────────
+
+const MONTH_NAMES: Record<string, number> = {
+  january: 1, jan: 1,
+  february: 2, feb: 2,
+  march: 3, mar: 3,
+  april: 4, apr: 4,
+  may: 5,
+  june: 6, jun: 6,
+  july: 7, jul: 7,
+  august: 8, aug: 8,
+  september: 9, sep: 9,
+  october: 10, oct: 10,
+  november: 11, nov: 11,
+  december: 12, dec: 12,
+}
+
+function parseFuzzyDate(s: string): DateRef | null {
+  // Normalise: lowercase and collapse hyphens to spaces ("mid-October" → "mid october")
+  const lower = s.toLowerCase().trim().replace(/-/g, " ")
+
+  // Seasons: "spring 2026", "summer 2026", "fall 2026", "autumn 2026", "winter 2026"
+  const season = lower.match(/^(spring|summer|fall|autumn|winter)\s+(\d{4})$/)
+  if (season) {
+    const year = parseInt(season[2], 10)
+    const estimates: Record<string, [number, number, number]> = {
+      spring: [year,     4,  1],
+      summer: [year,     7,  1],
+      fall:   [year,    10,  1],
+      autumn: [year,    10,  1],
+      winter: [year + 1, 1,  1],
+    }
+    const [y, m, d] = estimates[season[1]]
+    return { precision: "approximate", estimate: `${y}-${pad(m)}-${pad(d)}` }
+  }
+
+  // "sometime in [Month] [Year?]"
+  const sometime = lower.match(/^sometime in\s+([a-z]+)(?:\s+(\d{4}))?$/)
+  if (sometime) {
+    const month = MONTH_NAMES[sometime[1]]
+    if (!month) return null
+    const year = sometime[2] ? parseInt(sometime[2], 10) : inferYear(month, 15)
+    return { precision: "approximate", estimate: `${year}-${pad(month)}-15` }
+  }
+
+  // "around [Month] [Day] [Year?]"  e.g. "around October 15, 2026"
+  const aroundA = lower.match(/^around\s+([a-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?(?:[, ]+(\d{4}))?$/)
+  if (aroundA) {
+    const month = MONTH_NAMES[aroundA[1]]
+    const day   = parseInt(aroundA[2], 10)
+    if (!month || isNaN(day)) return null
+    const year = aroundA[3] ? parseInt(aroundA[3], 10) : inferYear(month, day)
+    return { precision: "approximate", estimate: `${year}-${pad(month)}-${pad(day)}` }
+  }
+
+  // "around [Day] [Month] [Year?]"  e.g. "around 15 October 2026"
+  const aroundB = lower.match(/^around\s+(\d{1,2})(?:st|nd|rd|th)?\s+([a-z]+)(?:[, ]+(\d{4}))?$/)
+  if (aroundB) {
+    const day   = parseInt(aroundB[1], 10)
+    const month = MONTH_NAMES[aroundB[2]]
+    if (!month || isNaN(day)) return null
+    const year = aroundB[3] ? parseInt(aroundB[3], 10) : inferYear(month, day)
+    return { precision: "approximate", estimate: `${year}-${pad(month)}-${pad(day)}` }
+  }
+
+  // "[early|mid|middle of|late] [Month] [Year?]"
+  const qualified = lower.match(/^(early|middle of|mid|late)\s+([a-z]+)(?:\s+(\d{4}))?$/)
+  if (qualified) {
+    const q     = qualified[1]
+    const month = MONTH_NAMES[qualified[2]]
+    if (!month) return null
+    const day = q === "early" ? 5 : q.startsWith("mid") ? 15 : 25
+    const year = qualified[3] ? parseInt(qualified[3], 10) : inferYear(month, day)
+    return { precision: "approximate", estimate: `${year}-${pad(month)}-${pad(day)}` }
+  }
+
+  // "[Month] [Year?]"  — bare month name, optional year
+  const bare = lower.match(/^([a-z]+)(?:\s+(\d{4}))?$/)
+  if (bare) {
+    const month = MONTH_NAMES[bare[1]]
+    if (!month) return null
+    const year = bare[2] ? parseInt(bare[2], 10) : inferYear(month, 15)
+    return { precision: "approximate", estimate: `${year}-${pad(month)}-15` }
+  }
+
+  return null
+}
+
+function inferYear(month: number, day: number): number {
+  const thisYear = new Date().getFullYear()
+  const candidate = new Date(Date.UTC(thisYear, month - 1, day))
+  return candidate.getTime() >= Date.now() ? thisYear : thisYear + 1
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

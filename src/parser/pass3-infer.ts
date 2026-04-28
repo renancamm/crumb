@@ -5,7 +5,12 @@
  *   3.1  Wrap ungrouped activities into UngroupedActivities containers
  *   3.2  Infer transport from/to endpoints from neighbouring places
  *   3.3  Inject default time on day/week groups
- *   3.4  Forward anchor propagation — assign calendar dates to places/groups
+ *   3.4  inferTimeline() — 5-phase constraint propagation:
+ *          Phase 1: intra-item resolution (2 of {arrives, departs, duration} → 3rd)
+ *          Phase 4: even distribution (split remaining time across duration-less places)
+ *          Phase 1 again: re-run with newly distributed durations
+ *          Phase 2: forward sweep (propagate end dates left→right)
+ *          Phase 3: backward sweep (propagate start dates right→left)
  *   3.5  Relative date resolution — resolve "next day", "Day N" to calendar dates
  */
 
@@ -13,8 +18,11 @@ import {
   ActivityGroup,
   ActivityItem,
   CrumbDocument,
+  ItineraryItem,
   Place,
+  ResolvedDuration,
   ResolvedMoment,
+  TransportLeg,
   UngroupedActivities,
 } from "../types/resolved"
 
@@ -63,46 +71,23 @@ export function infer(doc: CrumbDocument): CrumbDocument {
     }
   }
 
-  // 3.4 — Forward anchor propagation
-  let currentDate: string | null = null
+  // 3.4 — Timeline inference
+  inferTimeline(itinerary)
 
+  // 3.5 — Relative date resolution (runs after inferTimeline so place.arrives may be inferred)
   for (let i = 0; i < itinerary.length; i++) {
     const item = itinerary[i]
+    if (item.type !== "place") continue
 
-    if (item.type === "transport") {
-      // Transport leg with an absolute departs date updates currentDate
-      if (item.departs?.date?.precision === "absolute") {
-        currentDate = item.departs.date.value
-      }
-      continue
-    }
-
-    // Place
     const place = item as Place
+    const arrivalDate = momentToISO(place.arrives)
 
-    // Determine place arrival date
-    let arrivalDate: string | null = null
-
-    if (place.arrives?.date?.precision === "absolute") {
-      arrivalDate = place.arrives.date.value
-      currentDate = arrivalDate
-    } else if (place.departs?.date?.precision === "absolute" && !place.arrives) {
-      // Use departs as a proxy for the start if no arrives
-      arrivalDate = currentDate
-      currentDate = place.departs.date.value
-    } else if (currentDate) {
-      // Use propagated date from previous leg
-      arrivalDate = currentDate
-    }
-
-    // 3.5 — Resolve day group dates
     let dayGroupIndex = 0
     for (const actItem of place.activities) {
       if (actItem.type === "ungrouped") {
-        // Attach anchor to ungrouped activities if we have a date
         if (arrivalDate) {
           for (const act of actItem.items) {
-            if (act.time && !act.time.anchor && !isAbsoluteDate(act.time)) {
+            if (act.time && !act.time.anchor && !isAbsoluteOrApproxDate(act.time)) {
               act.time = { ...act.time, anchor: { date: arrivalDate, precedence: "place" } }
             }
           }
@@ -127,20 +112,18 @@ export function infer(doc: CrumbDocument): CrumbDocument {
             anchor: { date: resolvedDate, precedence: "explicit" },
           }
 
-          // Propagate anchor to items inside this group
           for (const act of group.items) {
             if (!act.time) continue
-            if (!isAbsoluteDate(act.time)) {
+            if (!isAbsoluteOrApproxDate(act.time)) {
               act.time = { ...act.time, anchor: { date: resolvedDate, precedence: "explicit" } }
             }
           }
         }
       } else if (group.time?.date?.precision === "absolute") {
-        // Explicit date on group — propagate to items
         const groupDate = group.time.date.value
         for (const act of group.items) {
           if (!act.time) continue
-          if (!isAbsoluteDate(act.time)) {
+          if (!isAbsoluteOrApproxDate(act.time)) {
             act.time = { ...act.time, anchor: { date: groupDate, precedence: "explicit" } }
           }
         }
@@ -148,15 +131,210 @@ export function infer(doc: CrumbDocument): CrumbDocument {
 
       dayGroupIndex++
     }
-
-    // Advance currentDate past this place
-    currentDate = advanceDateByDuration(
-      arrivalDate ?? currentDate,
-      place,
-    )
   }
 
   return doc
+}
+
+// ─── 3.4 — Timeline inference ─────────────────────────────────────────────────
+
+function inferTimeline(itinerary: ItineraryItem[]): void {
+  // Phase 1 — intra-item: derive missing field from any 2 known fields
+  runIntraItem(itinerary)
+
+  // Phase 4 — distribute remaining time across duration-less places within anchored spans.
+  // Must run BEFORE the forward/backward sweeps so that explicit-only anchor detection
+  // works correctly (sweeps would otherwise fill everything with incorrect inferred dates).
+  distributeRemainingTime(itinerary)
+
+  // Phase 1 again — re-run with newly distributed durations
+  runIntraItem(itinerary)
+
+  // Phase 2 — forward sweep: propagate end dates left→right
+  let current: string | null = null
+  for (let i = 0; i < itinerary.length; i++) {
+    const item = itinerary[i]
+
+    if (item.type === "transport") {
+      const dISO = momentToISO(item.departs)
+      const aISO = momentToISO(item.arrives)
+      if (dISO) current = dISO
+      if (aISO) {
+        current = aISO
+      } else {
+        const bridgeDays = transportBridgeDays(item)
+        if (current && bridgeDays > 0) current = addDays(current, bridgeDays)
+      }
+      continue
+    }
+
+    const place = item as Place
+    const arrivesISO = momentToISO(place.arrives)
+    const departsISO = momentToISO(place.departs)
+
+    if (arrivesISO) {
+      current = arrivesISO
+    } else if (current && !place.arrives) {
+      place.arrives = makeInferredMoment(current)
+    }
+
+    // Recompute in case we just wrote an inferred arrives
+    const effectiveArrives = momentToISO(place.arrives)
+    const days = placeDays(place)
+
+    if (departsISO) {
+      current = departsISO
+    } else if (effectiveArrives && days > 0) {
+      const inferredDeparts = addDays(effectiveArrives, days)
+      current = inferredDeparts
+      if (!place.departs) place.departs = makeInferredMoment(inferredDeparts)
+    }
+  }
+
+  // Phase 3 — backward sweep: propagate start dates right→left
+  current = null
+  for (let i = itinerary.length - 1; i >= 0; i--) {
+    const item = itinerary[i]
+
+    if (item.type === "transport") {
+      const dISO = momentToISO(item.departs)
+      const aISO = momentToISO(item.arrives)
+      if (aISO) current = aISO
+      if (dISO) {
+        current = dISO
+      } else {
+        const bridgeDays = transportBridgeDays(item)
+        if (current && bridgeDays > 0) current = addDays(current, -bridgeDays)
+      }
+      continue
+    }
+
+    const place = item as Place
+    const arrivesISO = momentToISO(place.arrives)
+    const departsISO = momentToISO(place.departs)
+
+    if (departsISO) {
+      current = departsISO
+    } else if (current && !place.departs) {
+      place.departs = makeInferredMoment(current)
+    }
+
+    // Recompute in case we just wrote an inferred departs
+    const effectiveDeparts = momentToISO(place.departs)
+    const days = placeDays(place)
+
+    if (arrivesISO) {
+      current = arrivesISO
+    } else if (effectiveDeparts && days > 0) {
+      const inferredArrives = addDays(effectiveDeparts, -days)
+      if (!place.arrives) place.arrives = makeInferredMoment(inferredArrives)
+      current = inferredArrives
+    } else if (effectiveDeparts) {
+      current = effectiveDeparts
+    }
+  }
+}
+
+// Phase 1: for each place, if 2 of {arrives, departs, duration} are known, derive the 3rd
+function runIntraItem(itinerary: ItineraryItem[]): void {
+  for (const item of itinerary) {
+    if (item.type !== "place") continue
+    const place = item as Place
+
+    const aISO = momentToISO(place.arrives)
+    const dISO = momentToISO(place.departs)
+    const days = placeDays(place)
+
+    if (aISO && !place.departs && days > 0) {
+      place.departs = makeInferredMoment(addDays(aISO, days))
+    } else if (dISO && !place.arrives && days > 0) {
+      place.arrives = makeInferredMoment(addDays(dISO, -days))
+    } else if (aISO && dISO && !place.duration) {
+      const n = daysBetween(aISO, dISO)
+      if (n > 0) {
+        // Exact when both dates are user-authored; approximate when either was inferred
+        const anyInferred =
+          place.arrives?.anchor?.precedence === "inferred" ||
+          place.departs?.anchor?.precedence  === "inferred"
+        place.duration = anyInferred ? makeSyntheticDuration(n) : makeExactDuration(n)
+      }
+    }
+  }
+}
+
+// Phase 4: distribute remaining time evenly across duration-less places within spans
+// bounded by EXPLICIT (non-inferred) anchor dates.
+function distributeRemainingTime(itinerary: ItineraryItem[]): void {
+  // Collect explicit anchor points: (place index, ISO date)
+  // We only use user-authored dates — not engine-inferred ones.
+  type Anchor = { idx: number; date: string }
+  const anchors: Anchor[] = []
+
+  for (let i = 0; i < itinerary.length; i++) {
+    const item = itinerary[i]
+    if (item.type !== "place") continue
+    const place = item as Place
+
+    const aISO = momentToISO(place.arrives)
+    const dISO = momentToISO(place.departs)
+
+    if (aISO && place.arrives?.anchor?.precedence !== "inferred") {
+      anchors.push({ idx: i, date: aISO })
+    }
+    if (dISO && place.departs?.anchor?.precedence !== "inferred") {
+      anchors.push({ idx: i, date: dISO })
+    }
+  }
+
+  // Process each consecutive anchor pair
+  for (let a = 0; a + 1 < anchors.length; a++) {
+    const start = anchors[a]
+    const end   = anchors[a + 1]
+    const totalDays = daysBetween(start.date, end.date)
+    if (totalDays <= 0) continue
+
+    let committed = 0
+    const durationless: Place[] = []
+
+    for (let i = start.idx; i <= end.idx; i++) {
+      const inner = itinerary[i]
+      if (inner.type === "transport") {
+        committed += transportBridgeDays(inner)
+        continue
+      }
+      const p = inner as Place
+      const pA = momentToISO(p.arrives)
+      const pD = momentToISO(p.departs)
+      const pAExplicit = pA != null && p.arrives?.anchor?.precedence !== "inferred"
+      const pDExplicit = pD != null && p.departs?.anchor?.precedence !== "inferred"
+
+      if (pAExplicit && pDExplicit) {
+        // Fully explicitly anchored: count its span as committed
+        committed += Math.max(0, daysBetween(pA!, pD!))
+        continue
+      }
+      const days = placeDays(p)
+      if (days > 0) {
+        committed += days
+        continue
+      }
+      durationless.push(p)
+    }
+
+    if (durationless.length === 0) continue
+    const remaining = Math.max(0, totalDays - committed)
+    if (remaining === 0) continue
+
+    const perPlace = Math.floor(remaining / durationless.length)
+    const extra    = remaining % durationless.length
+
+    durationless.forEach((p, idx) => {
+      const nights = perPlace + (idx < extra ? 1 : 0)
+      if (nights > 0 && !p.duration) {
+        p.duration = makeSyntheticDuration(nights)
+      }
+    })
+  }
 }
 
 // ─── 3.1 — Merge consecutive ungrouped wrappers ──────────────────────────────
@@ -168,7 +346,6 @@ function mergeUngrouped(items: ActivityItem[]): ActivityItem[] {
     if (item.type === "ungrouped") {
       const last = result[result.length - 1]
       if (last && last.type === "ungrouped") {
-        // Merge into previous ungrouped container
         last.items.push(...item.items)
       } else {
         result.push({ type: "ungrouped", items: [...item.items] } as UngroupedActivities)
@@ -201,12 +378,11 @@ function nearestPlace(
 function resolveRelativeGroupDate(
   relValue: string,
   arrivalDate: string,
-  groupIndex: number, // 0-based index among day/week groups only
+  groupIndex: number,
 ): string | null {
   const lower = relValue.toLowerCase()
 
   if (lower === "next day") {
-    // First group (index 0) = arrival date, second = +1, etc.
     return addDays(arrivalDate, groupIndex)
   }
 
@@ -214,13 +390,11 @@ function resolveRelativeGroupDate(
     return addDays(arrivalDate, groupIndex * 7)
   }
 
-  // "Day 1" = arrival, "Day 2" = arrival+1
   const dayN = lower.match(/^day\s+(\d+)$/)
   if (dayN) {
     return addDays(arrivalDate, parseInt(dayN[1], 10) - 1)
   }
 
-  // "Week 1" = arrival, "Week 2" = arrival+7
   const weekN = lower.match(/^week\s+(\d+)$/)
   if (weekN) {
     return addDays(arrivalDate, (parseInt(weekN[1], 10) - 1) * 7)
@@ -229,44 +403,79 @@ function resolveRelativeGroupDate(
   return null
 }
 
-// ─── 3.4 — Anchor propagation helpers ────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function advanceDateByDuration(
-  baseDate: string | null,
-  place: Place,
-): string | null {
-  if (!baseDate) return null
-
-  // Explicit departs date takes precedence
-  if (place.departs?.date?.precision === "absolute") {
-    return place.departs.date.value
-  }
-
-  // Use duration
-  if (!place.duration) return baseDate
-
-  const dur = place.duration
-  let days = 0
-
-  if (dur.type === "exact" || dur.type === "approximate" || dur.type === "minimum") {
-    days = durationToDays(dur.value, dur.unit)
-  } else if (dur.type === "range") {
-    days = durationToDays(dur.max, dur.unit)
-  }
-
-  if (days === 0) return baseDate
-
-  return addDays(baseDate, days)
+/** Extract a usable ISO date string from any ResolvedMoment, or null. */
+function momentToISO(m: ResolvedMoment | undefined): string | null {
+  if (!m?.date) return null
+  if (m.date.precision === "absolute")    return m.date.value
+  if (m.date.precision === "approximate") return m.date.estimate
+  return null
 }
 
-function durationToDays(value: number, unit: string): number {
-  if (unit === "nights" || unit === "days") return value
-  if (unit === "weeks") return value * 7
+/** Resolve a place's duration to whole days (0 if sub-day or unknown). */
+function placeDays(place: Place): number {
+  return place.duration ? durationToDays(place.duration) : 0
+}
+
+/** Resolve a transport leg's duration to whole days (0 if not day-resolvable). */
+function transportBridgeDays(leg: TransportLeg): number {
+  return leg.duration ? durationToDays(leg.duration) : 0
+}
+
+function durationToDays(dur: ResolvedDuration): number {
+  switch (dur.type) {
+    case "exact":
+    case "approximate":
+    case "minimum":
+      return toWholeDays(dur.value, dur.unit)
+    case "range":
+      return toWholeDays(dur.max, dur.unit)
+    case "named": {
+      const h = dur.estimate.unit === "hours" ? dur.estimate.value : 0
+      return h >= 24 ? Math.floor(h / 24) : 0
+    }
+    default:
+      return 0
+  }
+}
+
+function toWholeDays(value: number, unit: string): number {
+  if (unit === "nights" || unit === "days") return Math.round(value)
+  if (unit === "weeks")                     return Math.round(value * 7)
   return 0
 }
 
-function isAbsoluteDate(moment: ResolvedMoment): boolean {
-  return moment.date?.precision === "absolute"
+function makeInferredMoment(dateStr: string): ResolvedMoment {
+  const [y, m, d] = dateStr.split("-").map(Number)
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+  return {
+    date:   { precision: "absolute", value: dateStr },
+    anchor: { date: dateStr, precedence: "inferred" },
+    label:  `~${months[m - 1]} ${d}, ${y}`,
+  }
+}
+
+function makeSyntheticDuration(nights: number): ResolvedDuration {
+  return {
+    type:  "approximate",
+    value: nights,
+    unit:  "nights",
+    label: `~${nights} ${nights === 1 ? "night" : "nights"}`,
+  }
+}
+
+function makeExactDuration(nights: number): ResolvedDuration {
+  return {
+    type:  "exact",
+    value: nights,
+    unit:  "nights",
+    label: `${nights} ${nights === 1 ? "night" : "nights"}`,
+  }
+}
+
+function isAbsoluteOrApproxDate(m: ResolvedMoment): boolean {
+  return m.date?.precision === "absolute" || m.date?.precision === "approximate"
 }
 
 // ─── Date arithmetic ─────────────────────────────────────────────────────────
@@ -276,4 +485,10 @@ export function addDays(dateStr: string, days: number): string {
   const date = new Date(Date.UTC(y, m - 1, d))
   date.setUTCDate(date.getUTCDate() + days)
   return date.toISOString().slice(0, 10)
+}
+
+function daysBetween(a: string, b: string): number {
+  const msA = new Date(a + "T00:00:00Z").getTime()
+  const msB = new Date(b + "T00:00:00Z").getTime()
+  return Math.round((msB - msA) / 86_400_000)
 }

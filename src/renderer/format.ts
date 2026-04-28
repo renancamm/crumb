@@ -21,6 +21,7 @@ export function formatMoment(m: ResolvedMoment): string {
 
 export function formatMomentDate(m: ResolvedMoment): string {
   if (!m.date) return ""
+  if (m.date.precision === "approximate") return formatISODate(m.date.estimate)
   return formatDateRef(m.date)
 }
 
@@ -38,7 +39,9 @@ export function formatGroupDate(m: ResolvedMoment): string {
 }
 
 export function formatDateRef(d: DateRef): string {
-  return d.precision === "absolute" ? formatISODate(d.value) : d.value
+  if (d.precision === "absolute")    return formatISODate(d.value)
+  if (d.precision === "approximate") return formatISODate(d.estimate)
+  return d.value
 }
 
 export function formatISODate(iso: string): string {

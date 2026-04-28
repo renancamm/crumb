@@ -24,8 +24,9 @@ export type TimeOfDay =
   | { precision: "loose"; value: import("./primitives").LoosePeriod; estimate: string }
 
 export type DateRef =
-  | { precision: "absolute"; value: string }
-  | { precision: "relative"; value: string }
+  | { precision: "absolute";    value: string }
+  | { precision: "approximate"; estimate: string }   // midpoint ISO date for arithmetic; display via ResolvedMoment.label
+  | { precision: "relative";    value: string }
 
 export interface ResolvedMoment {
   date?:   DateRef

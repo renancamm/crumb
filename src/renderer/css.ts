@@ -552,6 +552,8 @@ body.map-zoom-close .detail-marker--hub  .crumb-icon { display: block; }
 .place-name-text { display: block; font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.01em; line-height: 1.3; }
 .place-dates { display: block; font-size: var(--text-sm); color: var(--muted); margin-top: 2px; }
 .place-tz { display: block; font-size: var(--text-xs); color: var(--muted); opacity: 0.6; margin-top: 1px; }
+.date-inferred { font-style: italic; opacity: 0.75; }
+.date-inferred::before { content: "~"; }
 
 .place-body { padding-left: 38px; }
 

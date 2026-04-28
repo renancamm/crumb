@@ -1,0 +1,175 @@
+trip:
+  name: Central Europe — 5 Weeks
+  author: Luca Ferretti
+  tags: [europe, backpacking, budget, trains, hostels]
+  note: Rail pass covers most legs. Book hostels at least a week ahead in summer — dorms fill fast.
+
+itinerary:
+
+  - Amsterdam:
+      arrives: early June 2026
+      duration: 4 nights
+      stay:
+        - Stayokay Vondelpark
+      activities:
+        - day:
+            title: Arrival & Jordaan
+            items:
+              - Check in and drop bags
+              - Jordaan neighbourhood walk:
+                  priority: must
+              - Albert Cuyp Market:
+                  time: morning
+              - Heineken Experience:
+                  priority: maybe
+
+        - day:
+            title: Museums
+            items:
+              - Rijksmuseum:
+                  priority: must
+                  duration: 3h
+              - Van Gogh Museum:
+                  priority: must
+                  duration: 2h
+                  note: Book tickets online the day before — always sells out.
+              - Leidseplein for dinner:
+                  time: evening
+
+        - day:
+            title: Day trip to Haarlem
+            items:
+              - Train to Haarlem:
+                  time: morning
+                  duration: 20m
+              - Frans Hals Museum:
+                  priority: maybe
+              - Grote Markt:
+                  note: Much quieter than Amsterdam. Good for people-watching.
+
+  - train
+
+  - Berlin:
+      duration: 5 nights
+      stay:
+        - Generator Berlin Mitte
+      activities:
+        - East Side Gallery:
+            priority: must
+            duration: 1h
+        - Checkpoint Charlie:
+            priority: maybe
+        - Mauerpark flea market:
+            time: morning
+            note: Sunday only. Get there early for the good stuff.
+            priority: must
+        - Kreuzberg street food:
+            time: evening
+            priority: must
+
+        - day:
+            title: History day
+            items:
+              - Memorial to the Murdered Jews of Europe:
+                  priority: must
+                  duration: 1h
+              - Topography of Terror:
+                  priority: must
+                  duration: 2h
+              - Reichstag dome:
+                  priority: must
+                  note: Free but must be booked online weeks in advance.
+
+  - train
+
+  - Prague:
+      duration: 4 nights
+      stay:
+        - Sophie's Hostel
+      activities:
+        - Charles Bridge at sunrise:
+            time: early morning
+            priority: must
+            note: Go before 7am — you'll have it almost to yourself.
+        - Old Town Square:
+            priority: must
+        - Vinohrady neighbourhood:
+            note: Skip the tourist centre for lunch. Head here instead.
+
+        - day:
+            title: Castle & Malá Strana
+            items:
+              - Prague Castle:
+                  time: 9am
+                  duration: 3h
+                  priority: must
+              - Lobkowicz Palace:
+                  priority: maybe
+              - Malá Strana backstreets:
+                  time: afternoon
+
+  - train
+
+  - Vienna:
+      duration: 4 nights
+      stay:
+        - Wombats City Hostel
+      activities:
+        - Schönbrunn Palace:
+            priority: must
+            duration: 2h
+        - Naschmarkt:
+            time: morning
+            priority: must
+            note: Go hungry. The Turkish and Middle Eastern stalls are the highlight.
+        - Belvedere:
+            priority: must
+            duration: 2h
+            note: The Klimt room alone is worth it.
+        - Prater & Riesenrad:
+            time: evening
+            priority: maybe
+
+  - train
+
+  - Budapest:
+      arrives: mid July 2026
+      duration: 5 nights
+      stay:
+        - Maverick City Lodge
+      activities:
+        - Széchenyi thermal baths:
+            priority: must
+            duration: half day
+            note: Bring flip-flops and a padlock for the locker.
+        - Ruin bars in the Jewish Quarter:
+            time: evening
+            priority: must
+        - Fisherman's Bastion:
+            time: early morning
+            priority: must
+            note: Free before 9am. Views over the Danube are best at dawn.
+
+        - day:
+            title: Buda side
+            items:
+              - Buda Castle:
+                  priority: must
+                  duration: 2h
+              - Hungarian National Gallery:
+                  priority: maybe
+                  duration: 1h30m
+              - Gellért Hill viewpoint:
+                  time: late afternoon
+
+        - day:
+            title: Day trip to Eger
+            items:
+              - Train to Eger:
+                  time: 9am
+                  duration: 2h
+              - Eger Castle:
+                  priority: must
+              - Valley of the Beautiful Women:
+                  note: Try the Bull's Blood wine straight from the cellars.
+                  priority: must
