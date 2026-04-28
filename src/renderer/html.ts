@@ -26,7 +26,7 @@ import type {
 } from "../types/resolved"
 import { CSS } from "./css"
 import { GEO_SCRIPT } from "./geocoder"
-import { ICON_STAY, ICON_PLANE, ICON_TRAIN, ICON_BUS, ICON_CAR, ICON_SHIP, ICON_WALK, ICON_BIKE, ICON_ROUTE, modeIconSvg } from "./icons"
+import { ICON_STAY, ICON_PLANE, ICON_TRAIN, ICON_BUS, ICON_CAR, ICON_SHIP, ICON_WALK, ICON_BIKE, ICON_ROUTE, ICON_GLOBE_OFF, modeIconSvg } from "./icons"
 import {
   escape,
   formatDuration,
@@ -86,7 +86,7 @@ export function renderItineraryBody(doc: CrumbDocument): string {
  *   — MapLibre GL map with Nominatim geocoding
  */
 export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
-  const title          = escape(doc.trip?.name ?? "Itinerary")
+  const title          = "Crumb" + (doc.trip?.name ? " — " + escape(doc.trip.name) : "")
   const body           = renderItineraryBody(doc)
   const docJson        = JSON.stringify(doc)
   const sourceJson     = JSON.stringify(options.source)
@@ -278,17 +278,12 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
       walk:      ${JSON.stringify(ICON_WALK)},
       bike:      ${JSON.stringify(ICON_BIKE)},
       transport: ${JSON.stringify(ICON_ROUTE)},
+      globe_off: ${JSON.stringify(ICON_GLOBE_OFF)},
     }
+    const GEO_FAIL_ICON = \`<span class="geo-no-loc">\${ICONS.globe_off}</span>\`
 
     // ── Color palette ─────────────────────────────────────────────────────────
-    const COLORS = {
-      place:    "#18181b",
-      stay:     "#a1a1aa",
-      hub:      "#d4d4d8",
-      must:     "#c2410c",
-      activity: "#f97316",
-      route:    "#18181b",
-    }
+    const COLORS = { route: "#18181b" }
 
     // ── Geo index (for list → map fly-to) ────────────────────────────────────
     const geoIndex = { places: [null], activities: new Map(), stays: new Map(), hubs: new Map() }
@@ -472,23 +467,15 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
 
     // ── List click: focus on name/title click only ───────────────────────────
     listEl.addEventListener("click", e => {
-      const actNameEl = e.target.closest(".act-name")
-      if (actNameEl) {
-        const actEl = actNameEl.closest("[data-act-name]")
-        if (actEl) { focusActivity(actEl.dataset.actName); return }
-      }
-      const stayNameEl = e.target.closest(".stay-name")
-      if (stayNameEl) {
-        const stayEl = stayNameEl.closest("[data-stay-name]")
-        if (stayEl) { focusStay(stayEl.dataset.stayName); return }
-      }
-      const hubEl = e.target.closest(".waypoint-name.--geocoded")
-      if (hubEl) { focusHub(hubEl.dataset.hubName); return }
-      const placeNameEl = e.target.closest(".place-name-text")
-      if (placeNameEl) {
-        const placeEl = placeNameEl.closest("[data-place-index]")
-        if (placeEl) { focusPlace(parseInt(placeEl.dataset.placeIndex, 10)); return }
-      }
+      const link = e.target.closest("[data-map-link]")
+      if (!link) return
+      const act  = link.closest("[data-act-name]")
+      const stay = link.closest("[data-stay-name]")
+      if (act)                  { focusActivity(act.dataset.actName); return }
+      if (stay)                 { focusStay(stay.dataset.stayName); return }
+      if (link.dataset.hubName) { focusHub(link.dataset.hubName); return }
+      const place = link.closest("[data-place-index]")
+      if (place) { focusPlace(parseInt(place.dataset.placeIndex, 10)); return }
     })
 
     // ── MapLibre GL ───────────────────────────────────────────────────────────
@@ -611,6 +598,9 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
           writeBackGeo(place, geo)
           resolved.push({ name: place.name, lat: geo.lat, lng: geo.lng, arrives: place.arrives?.label ?? null })
           resolvedPlaceCoords.set(place.name, geo)
+        } else {
+          const nameEl = document.querySelector(\`.place[data-place-index="\${i + 1}"] .place-name-text\`)
+          if (nameEl && !nameEl.querySelector(".geo-no-loc")) nameEl.insertAdjacentHTML("beforeend", GEO_FAIL_ICON)
         }
         geoIndex.places[i + 1] = geo ?? null
       }
@@ -624,7 +614,7 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
         if (p.pinType !== "hub") continue
         geoIndex.hubs.set(p.name, { lat: p.lat, lng: p.lng })
         listEl.querySelectorAll('.waypoint-name[data-hub-name]').forEach(el => {
-          if (el.dataset.hubName === p.name) el.classList.add("--geocoded")
+          if (el.dataset.hubName === p.name) el.setAttribute('data-map-link', '')
         })
       }
       setDetailSource(detailPoints)
@@ -649,6 +639,11 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
         setActLoading(t.name, false)
         if (epoch !== geocodeEpoch) return
         if (geo) { geoIndex.activities.set(t.name, geo); detailPoints = [...detailPoints, actPoint(t, geo)]; setDetailSource(detailPoints) }
+        else {
+          const item = [...listEl.querySelectorAll(".activity-item[data-act-name]")].find(el => el.dataset.actName === t.name)
+          const nameEl = item?.querySelector(".act-name")
+          if (nameEl && !nameEl.querySelector(".geo-no-loc")) nameEl.insertAdjacentHTML("beforeend", GEO_FAIL_ICON)
+        }
       }
 
       let staysGeocoded = 0
@@ -660,6 +655,11 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
         if (epoch !== geocodeEpoch) return
         if (!t.hasCoords) staysGeocoded++
         if (geo) { geoIndex.stays.set(t.stayName, geo); detailPoints = [...detailPoints, { name: t.stayName, lat: geo.lat, lng: geo.lng, pinType: "stay", subtitle: t.checkin ?? null, placeIdx: t.placeIdx }]; setDetailSource(detailPoints) }
+        else if (!t.hasCoords) {
+          const stayEl = [...listEl.querySelectorAll(".stay[data-stay-name]")].find(el => el.dataset.stayName === t.stayName)
+          const nameEl = stayEl?.querySelector(".stay-name")
+          if (nameEl && !nameEl.querySelector(".geo-no-loc")) nameEl.insertAdjacentHTML("beforeend", GEO_FAIL_ICON)
+        }
       }
     }
 
@@ -778,6 +778,7 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
       try {
         const doc = Crumb.parse(src)
         DATA = doc
+        document.title = "Crumb" + (doc.trip?.name ? " — " + doc.trip.name : "")
         listEl.innerHTML = Crumb.renderItineraryBody(doc)
         clearEditorError()
         updateMap(doc)
@@ -826,7 +827,9 @@ function renderPlace(place: Place, index = 0): string {
   parts.push(`  <div class="place-header">`)
   if (index > 0) parts.push(`    <span class="place-num">${index}</span>`)
   parts.push(`    <div class="place-heading">`)
-  parts.push(`      <span class="place-name-text">${escape(place.name)}</span>`)
+  const placeGeoIcon = place.location?.geocodingDisabled ? `<span class="geo-no-loc">${ICON_GLOBE_OFF}</span>` : ""
+  const placeMapLink = !place.location?.geocodingDisabled ? ` data-map-link=""` : ""
+  parts.push(`      <span class="place-name-text"${placeMapLink}>${escape(place.name)}${placeGeoIcon}</span>`)
   const dateLine = renderPlaceDateLine(place)
   if (dateLine) parts.push(`      <span class="place-dates">${dateLine}</span>`)
   if (place.timezone) parts.push(`      <span class="place-tz">${escape(place.timezone)}</span>`)
@@ -896,7 +899,7 @@ function renderTransportLeg(leg: TransportLeg): string {
 
   const noteHtml = leg.note ? `<div class="transport-note">${renderMarkdown(leg.note)}</div>` : ""
   const infoHtml = leg.info?.length
-    ? `<div class="transport-info">${leg.info.map(i => `<span class="info-item"><span class="info-key">${escape(String(i.key))}</span><span class="info-val">${escape(String(i.value))}</span></span>`).join("")}</div>`
+    ? `<div class="transport-info">${leg.info.map(i => `<div class="info-item"><span class="info-key">${escape(String(i.key))}</span><span class="info-val">${escape(String(i.value))}</span></div>`).join("")}</div>`
     : ""
 
   const hasBoth = !!(from || departsText) && !!(to || arrivesText)
@@ -951,10 +954,12 @@ function renderStays(stays: Stay[]): string {
       ? ` <span class="stay-note">${renderMarkdown(stay.note)}</span>`
       : ""
     const infoStr = stay.info?.length
-      ? ` <div class="stay-info">${stay.info.map(i => `<span class="info-item"><span class="info-key">${escape(String(i.key))}</span><span class="info-val">${escape(String(i.value))}</span></span>`).join("")}</div>`
+      ? ` <div class="stay-info">${stay.info.map(i => `<div class="info-item"><span class="info-key">${escape(String(i.key))}</span><span class="info-val">${escape(String(i.value))}</span></div>`).join("")}</div>`
       : ""
     const stayGeoAttr = !stay.location?.geocodingDisabled ? ` data-stay-name="${escape(stay.name)}"` : ""
-    parts.push(`    <div class="stay"${stayGeoAttr}><span class="stay-icon">${ICON_STAY}</span><div class="stay-content"><span class="stay-name">${escape(stay.name)}</span>${dateStr}${infoStr}${noteStr}</div></div>`)
+    const stayGeoIcon = stay.location?.geocodingDisabled ? `<span class="geo-no-loc">${ICON_GLOBE_OFF}</span>` : ""
+    const stayMapLink = !stay.location?.geocodingDisabled ? ` data-map-link=""` : ""
+    parts.push(`    <div class="stay"${stayGeoAttr}><span class="stay-icon">${ICON_STAY}</span><div class="stay-content"><span class="stay-name"${stayMapLink}>${escape(stay.name)}${stayGeoIcon}</span>${dateStr}${infoStr}${noteStr}</div></div>`)
   }
   parts.push(`  </div>`)
   return parts.join("\n")
@@ -992,7 +997,9 @@ function renderActivityItem(act: Activity, actIndex?: number): string {
     ? `<span class="act-label">${String.fromCharCode(65 + actIndex)}</span>`
     : ""
 
-  const mainParts = [`<span class="act-name">${escape(act.name)}</span>`]
+  const actGeoIcon  = act.location?.geocodingDisabled ? `<span class="geo-no-loc">${ICON_GLOBE_OFF}</span>` : ""
+  const actMapLink  = !act.location?.geocodingDisabled ? ` data-map-link=""` : ""
+  const mainParts = [`<span class="act-name"${actMapLink}>${escape(act.name)}${actGeoIcon}</span>`]
   if (act.time)     { const t = formatMomentTime(act.time); if (t) mainParts.push(`<span class="act-time">${escape(t)}</span>`) }
   if (act.duration) mainParts.push(`<span class="act-duration">${escape(formatDuration(act.duration))}</span>`)
 
@@ -1004,7 +1011,7 @@ function renderActivityItem(act: Activity, actIndex?: number): string {
   const contentParts: string[] = [`<div class="act-main">${mainParts.join(" ")}</div>`]
   if (tags.length)      contentParts.push(`<div class="act-tags">${tags.join("")}</div>`)
   if (act.note)         contentParts.push(`<div class="act-note">${renderMarkdown(act.note)}</div>`)
-  if (act.info?.length) contentParts.push(`<div class="act-info">${act.info.map(i => `<span class="info-item"><span class="info-key">${escape(String(i.key))}</span><span class="info-val">${escape(String(i.value))}</span></span>`).join("")}</div>`)
+  if (act.info?.length) contentParts.push(`<div class="act-info">${act.info.map(i => `<div class="info-item"><span class="info-key">${escape(String(i.key))}</span><span class="info-val">${escape(String(i.value))}</span></div>`).join("")}</div>`)
 
   const geoAttr = !act.location?.geocodingDisabled
     ? ` data-act-name="${escape(act.name)}"`
@@ -1015,7 +1022,7 @@ function renderActivityItem(act: Activity, actIndex?: number): string {
 
 function renderInfoList(info: MetadataItem[], indent: string): string {
   const items = info.map(i =>
-    `${indent}  <div class="info-row"><span class="info-key">${escape(String(i.key))}</span><span class="info-val">${escape(String(i.value))}</span></div>`
+    `${indent}  <div class="info-item"><span class="info-key">${escape(String(i.key))}</span><span class="info-val">${escape(String(i.value))}</span></div>`
   ).join("\n")
   return `${indent}<div class="info-list">\n${items}\n${indent}</div>`
 }
