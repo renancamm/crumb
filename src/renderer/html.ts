@@ -559,8 +559,11 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
       for (const t of stayTargets) {
         if (t.hasCoords) continue
         if (staysMarked >= 3) break
-        if (!cachedGeo(t.name)) setStayLoading(t.stayName, true)
-        staysMarked++
+        const cacheKey = t.location?.label && t.location.label !== "none" ? t.location.label : t.name
+        if (!cachedGeo(cacheKey)) {
+          setStayLoading(t.stayName, true)
+          staysMarked++
+        }
       }
       if (needsFetch.length) setMapStatus("geocoding…")
 
@@ -648,14 +651,19 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
         }
       }
 
-      let staysGeocoded = 0
+      let staysFetched = 0
       for (const t of stayTargets) {
         if (epoch !== geocodeEpoch) return
-        if (!t.hasCoords && staysGeocoded >= 3) continue
+        const cacheKey = t.location?.label && t.location.label !== "none" ? t.location.label : t.name
+        const isCached = t.hasCoords || cachedGeo(cacheKey) != null
+        if (!isCached && staysFetched >= 3) {
+          setStayLoading(t.stayName, false)
+          continue
+        }
         const geo = await resolveGeo(t)
         setStayLoading(t.stayName, false)
         if (epoch !== geocodeEpoch) return
-        if (!t.hasCoords) staysGeocoded++
+        if (!t.hasCoords && !isCached) staysFetched++
         if (geo) { geoIndex.stays.set(t.stayName, geo); detailPoints = [...detailPoints, { name: t.stayName, lat: geo.lat, lng: geo.lng, pinType: "stay", subtitle: t.checkin ?? null, placeIdx: t.placeIdx }]; setDetailSource(detailPoints) }
         else if (!t.hasCoords) {
           const stayEl = [...listEl.querySelectorAll(".stay[data-stay-name]")].find(el => el.dataset.stayName === t.stayName)
