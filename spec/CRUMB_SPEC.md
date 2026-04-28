@@ -182,12 +182,14 @@ Three rules shape everything in Crumb.
 Each place is a named key. All information about that place — accommodation, activities, and day plans — lives nested inside it. Transport legs connect places and sit between them in the list.
 
 **2. Dates, times, and durations are flexible.**
-Write `2026-09-15` or just `September`. Write `9am` or `afternoon`. Write `2h` or `at least half day`. Crumb understands a wide range, from exact timestamps to loose human expressions.
+Write `2026-09-15` or just `September`. Write `9am` or `afternoon`. Write `2h` or `at least half day`. A wide range of formats are valid, from exact timestamps to loose human expressions.
 
 **3. Everything is optional.**
 A bare place name is valid. An activity with just a name is valid. You add fields as your plans take shape.
 
 > **Note:** Place names must be valid YAML strings. If a name could be read as something else by YAML — for example a number like `2026`, or the word `null` — wrap it in quotes: `- "2026"`, `- "null"`.
+
+> A crumb can mix any level of detail freely. One place can have confirmed dates and a booking reference; another in the same itinerary can be just a name. Dates, durations, and locations are all independent — a place can have an exact arrival date and a rough duration, or a specific hotel location and no dates at all. The right level of precision for any field is the level that reflects what's actually known. An approximate value like `early October` signals an estimate; a missing field signals that the information isn't available.
 
 ---
 
@@ -231,7 +233,7 @@ itinerary:
 
 ## Itinerary: Places
 
-A place is the primary building block of an itinerary. At its simplest, it is a bare string — just a name. Add a colon and indent fields underneath to describe it further.
+A place is the primary building block of an itinerary. The place name is the YAML key — it is not a field. A bare string sets the name and nothing else; adding a colon opens a block of optional fields underneath.
 
 ```yaml
 # Minimal
@@ -243,6 +245,8 @@ A place is the primary building block of an itinerary. At its simplest, it is a 
     tags: [city, food]
     note: Base yourself in Shinjuku.
 ```
+
+`- name: Tokyo` is not valid. The name must always be the key.
 
 A place can have accommodation, activities, and notes — or none of these.
 
@@ -327,6 +331,8 @@ The `activities` field holds a list of things to do at a place. Three kinds of i
 - **A detailed activity** — a name with any combination of fields
 - **An activity group** — `day`, `week`, or `plan`, used to group activities
 
+> A bare activity name is enough for anything worth noting but not yet planned in detail. Add `must` for definite priorities, `maybe` for things that depend on time or mood. Fields like `time` and `duration` suit activities where scheduling actually matters — leave them out for anything more loosely planned.
+
 ```yaml
 - Kyoto:
     activities:
@@ -387,7 +393,9 @@ Activity groups collect activities into named units — useful for day-by-day pl
 
 `day`, `week`, `plan`
 
-Use `plan` when the group doesn't fit a specific time unit — for themed groups, alternatives, or ideas. A `plan` group is **not scheduled**: it does not participate in date sequencing, and activities inside it do not get resolved dates even if they have a `time` field. `plan` groups are display-only containers.
+Activity group keywords are lowercase-only. `day` is an activity group; `Day` is an activity name.
+
+Use `plan` when the group doesn't fit a specific time unit — for themed groups, alternatives, or ideas. A `plan` group is unscheduled: its contents are not part of the itinerary's chronological sequence.
 
 Each keyword accepts two forms. The shorthand form takes a list of activities directly. The detailed form takes a group with optional `title`, `time`, `duration`, and `items`.
 
@@ -430,7 +438,7 @@ Each keyword accepts two forms. The shorthand form takes a list of activities di
       - Kegon Falls
 ```
 
-When a `day` or `week` group has no explicit `time`, it automatically continues from the previous one — each group starts the day or week after the previous one, beginning from the place's arrival date. An explicit `time` on any group resets the sequence from that point. `plan` groups are never part of this sequence.
+When a `day` or `week` group has no explicit `time`, it begins the day or week immediately following the previous group, starting from the place's arrival date. An explicit `time` on any group resets the sequence from that point. `plan` groups are never part of this sequence.
 
 | Field | Type | Description |
 |---|---|---|
@@ -443,7 +451,9 @@ When a `day` or `week` group has no explicit `time`, it automatically continues 
 
 ## Itinerary: Transport
 
-A transport leg connects two places. Use the mode of transport as the key — or as a bare string when no fields are needed. The surrounding places in the list determine the departure and arrival points — you only need to be explicit when the actual point differs from the place name, such as a specific airport.
+A transport leg connects two places. The transport mode is the YAML key — it is not a field. A bare string sets the mode and nothing else; adding a colon opens a block of optional fields underneath. The surrounding places in the list determine the departure and arrival points — you only need to be explicit when the actual point differs from the place name, such as a specific airport.
+
+`- mode: train` is not valid. The mode must always be the key.
 
 ```yaml
 # Bare string — no fields needed
@@ -470,6 +480,8 @@ The available transport modes are:
 `train`, `flight`, `bus`, `car`, `ferry`, `walk`, `bike`, `transport`
 
 Use `transport` when the mode doesn't fit any of the above.
+
+Transport mode keywords are lowercase-only. `train` is a transport leg; `Train` is a place name.
 
 | Field | Type | Description |
 |---|---|---|
@@ -521,6 +533,8 @@ This section describes the grammar for each special field type.
 How long something takes or lasts. Accepts shorthand, plain English, named spans, and any of these with a modifier expressing uncertainty.
 
 **Used on:** places, stays, activities, activity groups, transport legs.
+
+> Exact values suit confirmed or well-known durations. Approximate, minimum, or range forms suit estimates — `around 3 nights` or `2-3 hours` is more accurate than a precise value that isn't actually known. Named spans like `all day` or `half day` work when an activity fills a period without a specific hour count. Leave the field out when the length is unknown.
 
 ---
 
@@ -649,6 +663,8 @@ info:
 
 A geographic reference. Write it as a plain string or as a block with any combination of the fields below.
 
+> A plain string is enough for any named location — a city, a neighbourhood, a landmark. Include coordinates only when a specific map pin matters beyond what a name provides. Use `location: none` when no geographic reference applies. Leave the field out when location isn't relevant.
+
 ```yaml
 # Plain string
 location: Fushimi Inari, Kyoto
@@ -674,11 +690,9 @@ location: none
 **`Geolocation` used on:** places, stays, activities.
 **`from` and `to` on transport legs** follow the same grammar.
 
-#### Geocoding and `location: none`
+#### `location: none`
 
-When a place, stay, or activity has no coordinates, a rendering tool may automatically look up coordinates by name using a geocoding service (such as Google Maps or OpenStreetMap). This is a **render-phase** concern — the parser does not perform geocoding. The parsed output always contains the authored text; the renderer decides whether to resolve it to coordinates.
-
-To explicitly **opt out of geocoding** for a specific location, use the special value `location: none`. This signals to renderers that the place should not be geocoded — it will appear in lists and notes but will not be pinned on a map. Useful for unnamed waypoints, intentionally abstract places, or privacy.
+`location: none` marks a place, stay, or activity as having no geographic coordinates. Coordinate lookup and map placement are outside the scope of the Crumb format. Useful for unnamed waypoints, intentionally abstract places, or privacy.
 
 ```yaml
 - Somewhere private:
@@ -712,11 +726,13 @@ A temporal expression — from a precise machine datetime to a loose human label
 
 **Used on:** `time` on activities and activity groups, `arrives`/`departs` on places, stays, and transport legs.
 
+> Machine formats suit confirmed dates and times. Human month-year or approximate forms suit plans still taking shape — `September 2026`, `early October`, or `fall 2026` is more honest than a specific date that isn't actually known. Named periods like `morning` or `afternoon` work for time-of-day when the exact time doesn't matter. Leave the field out entirely when timing is unknown.
+
 ---
 
 #### Machine date
 
-ISO 8601 date. Always resolves to an absolute date.
+ISO 8601 date. Always an absolute date.
 
 ```yaml
 arrives: 2026-09-15
@@ -745,7 +761,7 @@ arrives: 2026-09-19T06:00+01:00
 
 #### Human date — with year
 
-Month-name formats. Both day-before-month and month-before-day are accepted. Abbreviations and ordinal suffixes (`st`, `nd`, `rd`, `th`) are accepted. Always resolves to an absolute date.
+Month-name formats. Both day-before-month and month-before-day are accepted. Abbreviations and ordinal suffixes (`st`, `nd`, `rd`, `th`) are accepted. Always an absolute date.
 
 ```yaml
 arrives: September 15, 2026
@@ -786,6 +802,46 @@ arrives: Sep
 
 ---
 
+#### Human date — approximate
+
+For planning when you know roughly when something will happen but not a specific date. Year may be omitted — when it is, the current or next upcoming occurrence is assumed, the same rule as "Human date — without year".
+
+```yaml
+arrives: early October 2026
+arrives: mid March 2026
+arrives: late October
+arrives: sometime in October 2026
+arrives: around October 15, 2026
+arrives: around 15 October
+```
+
+Seasons are also valid approximate dates. Year is required for season forms.
+
+```yaml
+arrives: spring 2026
+arrives: summer 2026
+arrives: fall 2026
+arrives: autumn 2026
+arrives: winter 2026
+```
+
+All recognized approximate forms:
+
+| Form | Example |
+|---|---|
+| `early [Month] [Year?]` | `early October 2026`, `early October` |
+| `mid [Month] [Year?]` | `mid March 2026`, `mid-March` |
+| `late [Month] [Year?]` | `late October 2026`, `late October` |
+| `sometime in [Month] [Year?]` | `sometime in October 2026` |
+| `around [Month] [Day][, Year?]` | `around October 15, 2026`, `around October 15` |
+| `around [Day] [Month] [Year?]` | `around 15 October 2026` |
+| `spring [Year]` | `spring 2026` |
+| `summer [Year]` | `summer 2026` |
+| `fall [Year]` / `autumn [Year]` | `fall 2026`, `autumn 2026` |
+| `winter [Year]` | `winter 2026` |
+
+---
+
 #### Human time
 
 12-hour clock. Case-insensitive. Space between number and `am`/`pm` is optional.
@@ -805,7 +861,7 @@ time: 11:30 PM
 
 A fixed vocabulary of time-of-day labels.
 
-| Value | Approximate span |
+| Value | Refers to |
 |---|---|
 | `early morning` | 5am – 8am |
 | `morning` | 8am – noon |
@@ -833,7 +889,7 @@ time: midnight
 
 #### Relative
 
-Position within a place stay, relative to the place's arrival date. When no arrival date is set, these values are used as-is for display.
+Position within a place stay, relative to the place's arrival date. When no arrival date is set, relative values describe position within the stay without resolving to a calendar date.
 
 ```yaml
 # Ordinal day — two equivalent forms. Day 1 / 1st day = arrives date.
@@ -899,8 +955,6 @@ time: Saturday night
 
 ## For tool builders
 
-The following reference documents are aimed at tool builders implementing parsers or consuming the output data model.
-
-- **[Parser Reference](reference/parser.md)** — the three-pass parsing pipeline (classify → resolve → infer), field resolution rules, a worked example, and the raw data model (Pass 1 output).
-- **[Output Data Model](reference/data-model.md)** — the complete `CrumbDocument` TypeScript interface definitions. The canonical source is `src/types/`; this document is a readable companion.
+- [Parser Reference](reference/parser.md) — parsing pipeline, field resolution rules, worked example
+- [Output Data Model](reference/data-model.md) — CrumbDocument TypeScript interfaces
 

@@ -2,11 +2,26 @@
 
 > *Leave a trail.*
 
-An open format for travel itineraries. Write trips in plain YAML — a list of city names is a valid crumb, and so is a fully timed, day-by-day schedule with geocoded locations. Both live in the same format.
+Crumb is an open format for travel itineraries. It is designed to be readable without any tools, editable in any text editor, and structured enough that tools can display it as a map, a timeline, or a day-by-day planner — and precise enough that AI can generate it from a conversation.
+
+The core idea is **progressive detail**. A list of city names is a valid crumb. So is a fully timed schedule with bookings, activities, and transport legs. You add detail as plans take shape.
+
+Crumbs are designed to be shared, remixed, and assembled — the way a recipe is adapted each time someone makes it their own.
 
 ---
 
 ## Quick example
+
+The simplest possible crumb — just places in order:
+
+```yaml
+itinerary:
+  - Tokyo
+  - Kyoto
+  - Osaka
+```
+
+The same trip with more detail:
 
 ```yaml
 itinerary:
@@ -39,18 +54,18 @@ itinerary:
 
 ## Render a crumb
 
+This repository includes a reference renderer. It takes any crumb file and produces a self-contained HTML file with an interactive map, a visual itinerary, and an in-browser editor with live re-rendering.
+
 ```sh
 npm install
-npx ts-node src/cli.ts examples/japan-2-weeks.crumb > out.html
+npx ts-node src/cli.ts examples/europe-backpacking.crumb > out.html
 open out.html
 ```
-
-Produces a self-contained HTML file with an interactive map, a visual itinerary, and an in-browser editor with live re-rendering.
 
 To write to a file directly:
 
 ```sh
-npx ts-node src/cli.ts examples/japan-2-weeks.crumb dist/japan.html
+npx ts-node src/cli.ts examples/europe-backpacking.crumb dist/europe.html
 ```
 
 ---
@@ -59,7 +74,7 @@ npx ts-node src/cli.ts examples/japan-2-weeks.crumb dist/japan.html
 
 ```sh
 npx tsc --noEmit
-npx ts-node src/cli.ts examples/japan-2-weeks.crumb > /dev/null
+npx ts-node src/cli.ts examples/europe-backpacking.crumb > /dev/null
 ```
 
 ---
@@ -86,7 +101,8 @@ src/
     resolved.ts            Pass 3 output types (public contract)
 examples/                  sample .crumb files
 spec/
-  CRUMB_SPEC.md            user guide
+  CRUMB_SPEC.md            format specification — what valid crumb documents look like
+  SPEC_STYLE.md            editorial rules for AI systems updating the SPEC
   reference/
     parser.md              three-pass pipeline + worked example (for tool builders)
     data-model.md          CrumbDocument TypeScript interfaces (for tool builders)
@@ -96,7 +112,7 @@ spec/
 
 ## Specification
 
-- [spec/CRUMB_SPEC.md](spec/CRUMB_SPEC.md) — format overview, field reference, examples
+- [spec/CRUMB_SPEC.md](spec/CRUMB_SPEC.md) — format specification: valid fields, types, and date forms
 - [spec/reference/parser.md](spec/reference/parser.md) — parsing pipeline, resolution rules, worked example
 - [spec/reference/data-model.md](spec/reference/data-model.md) — output TypeScript interfaces
 

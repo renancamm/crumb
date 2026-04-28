@@ -99,6 +99,8 @@ Recognised fields on a `RawStay` node: `arrives`, `departs`, `duration`, `locati
 
 Every field value is resolved independently. Resolution never inspects neighbouring nodes — that is the job of Pass 3. The original string is always preserved in `label` on `ResolvedMoment` and in `label` on `ResolvedDuration`, regardless of whether resolution succeeds.
 
+Valid input forms for all field types are defined in CRUMB_SPEC.md. This section defines how each form is classified and what output type it produces.
+
 ### 2.1 `Moment` → `ResolvedMoment`
 
 Resolve each Moment string into a `ResolvedMoment`. The string is parsed into an optional `date` part, an optional `time` part, and a `label` preserving the original. All three can coexist independently.
@@ -116,6 +118,15 @@ Resolve each Moment string into a `ResolvedMoment`. The string is parsed into an
 | Month-name + day (no year) | relative | Resolved against current year at parse time in Pass 3; rolls forward if date has passed. Stored as-is in `value`. |
 | Month-name + year (no day) | relative | Month precision only. Stored as-is in `value`. |
 | Month-name only | relative | No day or year. Stored as-is in `value`. |
+| `early [Month] [Year?]` | approximate | `estimate` = 5th of that month. Year inferred if omitted: current year if month is upcoming, next year if passed. |
+| `mid [Month] [Year?]` / `middle of [Month] [Year?]` | approximate | `estimate` = 15th of that month. Same year inference rule. |
+| `late [Month] [Year?]` | approximate | `estimate` = 25th of that month. Same year inference rule. |
+| `sometime in [Month] [Year?]` | approximate | `estimate` = 15th of that month. Same year inference rule. |
+| `around [Month] [Day][, Year?]` / `around [Day] [Month] [Year?]` | approximate | `estimate` = that calendar date. Ordinal suffixes accepted and stripped. Same year inference rule. |
+| `spring [Year]` | approximate | `estimate` = Apr 1 of that year. Year required. |
+| `summer [Year]` | approximate | `estimate` = Jul 1 of that year. Year required. |
+| `fall [Year]` / `autumn [Year]` | approximate | `estimate` = Oct 1 of that year. Year required. |
+| `winter [Year]` | approximate | `estimate` = Jan 1 of year+1 (e.g. `winter 2026` → `2027-01-01`). Year required. |
 | `Day N` / `Nth day` (N a positive integer) | relative | Both forms equivalent. `Day 0` / `0th day` invalid — treated as unrecognised. |
 | `Week N` / `Nth week` (N a positive integer) | relative | Both forms equivalent. `Week 0` invalid. |
 | `first day` | relative | Equivalent to `Day 1`. |
@@ -315,6 +326,8 @@ Transport leg `duration` contributes to forward propagation using the same rules
 ### 3.5 Relative date resolution
 
 This step walks every `ResolvedMoment` in the document that has a `date.precision` of `"relative"` and attempts to resolve it to a calendar date, stored in `anchor.date`. The `DateRef` itself is never modified — the resolved date is always placed on the `anchor`.
+
+`approximate` DateRef values are not processed in this step — their `estimate` is already a resolved calendar date assigned in Pass 2. They carry no `anchor`.
 
 Resolution depends on what relative form was authored or injected:
 

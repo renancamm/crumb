@@ -1,6 +1,6 @@
 # Crumb Output Data Model
 
-The output data model is the contract between the parser and any tool that consumes a Crumb document. A fully parsed document is a `CrumbDocument` value. All ambiguity and contradiction in the source is resolved before this point — consuming tools never need to infer, cascade, or handle missing data.
+The output data model is the contract between the parser and any tool that consumes a Crumb document. A fully parsed document is a `CrumbDocument` value. The parser has resolved all authored date expressions, assembled activity groups, and inferred transport endpoints and activity anchors where possible. Optional fields may still be absent — consuming tools should treat all optional fields as nullable.
 
 The model is defined as TypeScript interfaces. The TypeScript files in `src/types/` are canonical. If this document diverges from those files, the TypeScript files win.
 
@@ -83,6 +83,12 @@ type TimeOfDay =
 //
 // absolute: a resolved calendar date. Always "YYYY-MM-DD".
 //
+// approximate: a parser-assigned midpoint calendar date for fuzzy human
+//              expressions ("early October 2026", "fall 2026", "around March 15").
+//              estimate is always "YYYY-MM-DD" — use it for calendar arithmetic only.
+//              The original authored text is preserved in ResolvedMoment.label.
+//              Never carries an Anchor — estimate is already a resolved calendar date.
+//
 // relative: the authored value preserved exactly — "Day 1", "1st day",
 //           "first day", "last day", "next day", "next week", "Monday",
 //           "Week 2", "September 15" (year-less), "September 2026"
@@ -91,8 +97,9 @@ type TimeOfDay =
 //           a relative DateRef on ResolvedMoment when a date can be inferred.
 
 type DateRef =
-  | { precision: "absolute"; value: string }
-  | { precision: "relative"; value: string }
+  | { precision: "absolute";    value: string }
+  | { precision: "approximate"; estimate: string }
+  | { precision: "relative";    value: string }
 
 // ─── ResolvedMoment ──────────────────────────────────────────────────────────
 //
@@ -112,7 +119,8 @@ type DateRef =
 //
 // anchor: set whenever a date can be inferred from context. Present when
 //         date.precision is "relative" OR when date is absent entirely.
-//         Never present when date.precision is "absolute".
+//         Never present when date.precision is "absolute" or "approximate"
+//         (both already carry a resolved calendar date).
 //         Parser-inferred — never authored. Discard to round-trip back to source.
 //
 // label: the original input string, always preserved. Sufficient on its own
