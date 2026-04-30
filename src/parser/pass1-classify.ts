@@ -55,11 +55,12 @@ function parseTripMeta(raw: unknown): TripMeta {
   const r = raw as Record<string, unknown>
 
   return {
-    name:   asString(r["name"]),
-    author: asString(r["author"]),
-    tags:   asStringArray(r["tags"]),
-    info:   parseInfo(r["info"]),
-    note:   asString(r["note"]),
+    name:     asString(r["name"]),
+    author:   asString(r["author"]),
+    duration: asString(r["duration"]),
+    tags:     asStringArray(r["tags"]),
+    info:     parseInfo(r["info"]),
+    note:     asString(r["note"]),
   }
 }
 
@@ -128,7 +129,6 @@ function parsePlace(name: string, value: unknown): RawPlace {
     arrives:   asString(r["arrives"]),
     departs:   asString(r["departs"]),
     duration:  asString(r["duration"]),
-    timezone:  asString(r["timezone"]),
     location:  parseGeolocation(r["location"]),
     tags:      asStringArray(r["tags"]),
     stay:      parseStays(r["stay"]),

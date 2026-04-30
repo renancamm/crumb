@@ -1,5 +1,5 @@
 trip:
-  name: Taiwan — 12 Days
+  name: Taiwan trip
   author: Mei-Lin Ostrowski
   tags: [asia, food, nature, temples, hiking]
   note: Best in spring (March–May) or autumn (September–November). Avoid typhoon season.
@@ -22,7 +22,6 @@ itinerary:
   - Taipei:
       arrives: 2026-03-15T18:00+08:00
       departs: 2026-03-20
-      timezone: Asia/Taipei
       stay:
         - Amba Zhongshan Hotel:
             arrives: 2026-03-15
@@ -104,7 +103,6 @@ itinerary:
   - Tainan:
       arrives: 2026-03-20
       departs: 2026-03-23
-      timezone: Asia/Taipei
       stay:
         - Silks Place Tainan:
             arrives: 2026-03-20
@@ -144,7 +142,6 @@ itinerary:
   - Taroko Gorge:
       arrives: 2026-03-23
       departs: 2026-03-26
-      timezone: Asia/Taipei
       stay:
         - Silks Place Taroko:
             arrives: 2026-03-23

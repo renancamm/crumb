@@ -13,6 +13,15 @@ import {
 
 export type { TripMeta } from "./primitives"
 
+export interface ResolvedTripMeta {
+  name?:     string
+  author?:   string
+  duration?: ResolvedDuration
+  tags?:     string[]
+  info?:     MetadataItem[]
+  note?:     string
+}
+
 export interface Anchor {
   date?:      string
   offset?:    number
@@ -20,7 +29,7 @@ export interface Anchor {
 }
 
 export type TimeOfDay =
-  | { precision: "exact"; value: string }
+  | { precision: "exact"; value: string; utcOffset?: string }
   | { precision: "loose"; value: import("./primitives").LoosePeriod; estimate: string }
 
 export type DateRef =
@@ -105,7 +114,6 @@ export interface Place {
   arrives?:   ResolvedMoment
   departs?:   ResolvedMoment
   duration?:  ResolvedDuration
-  timezone?:  string
   location?:  ResolvedGeolocation
   tags?:      string[]
   stay?:      Stay[]
@@ -129,6 +137,6 @@ export interface TransportLeg {
 export type ItineraryItem = Place | TransportLeg
 
 export interface CrumbDocument {
-  trip?:     TripMeta
+  trip?:     ResolvedTripMeta
   itinerary: ItineraryItem[]
 }

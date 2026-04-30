@@ -105,6 +105,47 @@ export const ICON_GLOBE_OFF = icon(
   `<line x1="2" y1="2" x2="22" y2="22"/>`
 )
 
+// ─── Direction ───────────────────────────────────────────────────────────────
+
+export const ICON_ARRIVES = icon(
+  `<polyline points="10 15 15 20 20 15"/>` +
+  `<path d="M4 4h7a4 4 0 0 1 4 4v12"/>`
+)
+
+export const ICON_DEPARTS = icon(
+  `<polyline points="10 9 15 4 20 9"/>` +
+  `<path d="M4 20h7a4 4 0 0 0 4-4V4"/>`
+)
+
+export const ICON_CORNER_DOWN_RIGHT = icon(
+  `<polyline points="15 10 20 15 15 20"/>` +
+  `<path d="M4 4v7a4 4 0 0 0 4 4h12"/>`
+)
+
+export const ICON_CORNER_UP_RIGHT = icon(
+  `<polyline points="15 14 20 9 15 4"/>` +
+  `<path d="M4 20v-7a4 4 0 0 1 4-4h12"/>`
+)
+
+// ─── Duration ─────────────────────────────────────────────────────────────────
+
+export const ICON_CLOCK = icon(
+  `<circle cx="12" cy="12" r="10"/>` +
+  `<polyline points="12 6 12 12 16 14"/>`
+)
+
+// ─── Priority ─────────────────────────────────────────────────────────────────
+
+export const ICON_PRIORITY_MUST = icon(
+  `<path fill="currentColor" stroke="none" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>`
+)
+
+export const ICON_PRIORITY_MAYBE = icon(
+  `<line x1="12" x2="12" y1="2" y2="22"/>` +
+  `<line x1="20" x2="4" y1="8" y2="16"/>` +
+  `<line x1="20" x2="4" y1="16" y2="8"/>`
+)
+
 // ─── Mode → icon lookup ───────────────────────────────────────────────────────
 
 const MODE_ICONS: Record<string, string> = {

@@ -517,8 +517,8 @@ body.map-zoom-close .detail-marker--hub  .crumb-icon { display: block; }
 /* ── Trip header ─────────────────────────────────────────────────────── */
 .trip-header { padding: 16px 0 14px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
 .trip-header h1 { font-size: var(--text-xl); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 3px; }
-.trip-meta { display: flex; flex-wrap: wrap; gap: 4px; font-size: var(--text-xs); color: var(--muted); margin-bottom: 16px; }
-.author { color: var(--muted); }
+.trip-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0; font-size: var(--text-xs); color: var(--muted); margin-bottom: 16px; }
+.trip-sep { opacity: 0.5; margin: 0 6px; }
 
 /* ── Place ───────────────────────────────────────────────────────────── */
 .place { padding: 14px 0 12px; }
@@ -530,7 +530,7 @@ body.map-zoom-close .detail-marker--hub  .crumb-icon { display: block; }
   gap: 10px;
   margin-bottom: 8px;
 }
-.place-header:has(.place-dates, .place-tz) {
+.place-header:has(.place-meta) {
   align-items: flex-start;
 }
 
@@ -550,10 +550,11 @@ body.map-zoom-close .detail-marker--hub  .crumb-icon { display: block; }
 
 .place-heading { flex: 1; }
 .place-name-text { display: block; font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.01em; line-height: 1.3; }
-.place-dates { display: block; font-size: var(--text-sm); color: var(--muted); margin-top: 2px; }
-.place-tz { display: block; font-size: var(--text-xs); color: var(--muted); opacity: 0.6; margin-top: 1px; }
-.date-inferred { font-style: italic; opacity: 0.75; }
-.date-inferred::before { content: "~"; }
+.place-meta { display: flex; flex-wrap: wrap; align-items: baseline; margin-top: 3px; }
+.place-meta-sep { opacity: 0.5; margin: 0 6px; font-size: var(--text-xs); }
+.place-duration { font-size: var(--text-sm); color: var(--text); font-weight: 500; }
+.place-dates { font-size: var(--text-xs); color: var(--muted); }.date-inferred { font-style: italic; opacity: 0.75; }
+.value-unknown { text-decoration: line-through; opacity: 0.5; }
 
 .place-body { padding-left: 38px; }
 
@@ -567,6 +568,9 @@ body.map-zoom-close .detail-marker--hub  .crumb-icon { display: block; }
   gap: 10px;
   margin: 4px 0;
 }
+.transport-simple { align-items: center; }
+.transport-simple .transport-icon { padding-top: 0; }
+.transport-mode { font-size: var(--text-sm); font-weight: 500; color: var(--text); line-height: 1.3; }
 
 .transport-icon {
   display: inline-flex;
@@ -594,9 +598,10 @@ body.map-zoom-close .detail-marker--hub  .crumb-icon { display: block; }
 .tl-meta { display: flex; flex-direction: column; gap: 2px; padding: 3px 0; }
 .tl-meta .waypoint-time { margin-bottom: 6px; }
 .tl-indent { padding-left: 18px; }
-.waypoint-time { font-size: var(--text-xs); color: var(--muted); }
-.segment-duration { font-size: var(--text-xs); color: var(--muted); }
-.transport-note { font-size: var(--text-sm); color: var(--muted); font-style: italic; margin-top: 6px; }
+.waypoint-time { font-size: var(--text-xs); color: var(--muted); display: inline-flex; align-items: center; gap: 4px; }
+.waypoint-time .crumb-icon { width: 11px; height: 11px; }
+.segment-duration { font-size: var(--text-xs); color: var(--text); opacity: 0.7; }
+.transport-note { font-size: var(--text-sm); font-weight: 300; color: #52525b; margin-top: 6px; }
 .transport-info { margin-top: 6px; }
 
 /* ── Stays ───────────────────────────────────────────────────────────── */
@@ -628,7 +633,9 @@ body.map-zoom-close .detail-marker--hub  .crumb-icon { display: block; }
 }
 .stay-content { display: flex; flex-direction: column; gap: 2px; }
 .stay-name { font-weight: 500; color: var(--text); font-size: var(--text-base); }
-.stay-note { font-style: italic; }
+.stay-date { display: flex; align-items: center; gap: 4px; font-size: var(--text-sm); color: var(--muted); }
+.stay-date .crumb-icon { width: 12px; height: 12px; flex-shrink: 0; }
+.stay-note { font-weight: 300; color: #52525b; }
 .stay-info { margin-top: 3px; }
 
 /* ── Activities ──────────────────────────────────────────────────────── */
@@ -660,11 +667,17 @@ body.map-zoom-close .detail-marker--hub  .crumb-icon { display: block; }
 
 
 .act-content { flex: 1; min-width: 0; }
-.act-main { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; }
+.act-title-row { display: flex; flex-wrap: wrap; align-items: baseline; }
+.act-priority { display: inline-flex; align-items: center; margin-left: 5px; vertical-align: middle; }
+.act-priority .crumb-icon { width: 11px; height: 11px; vertical-align: middle; }
+.act-priority-must  { color: var(--text); }
+.act-priority-maybe { color: #a1a1aa; }
+.act-meta { display: flex; flex-wrap: wrap; align-items: baseline; margin-top: 2px; }
 .act-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
-.act-time { font-size: var(--text-sm); color: var(--muted); }
-.act-duration { font-size: var(--text-sm); color: var(--muted); opacity: 0.7; }
-.act-note { font-size: var(--text-sm); color: var(--muted); font-style: italic; margin-top: 5px; margin-bottom: 8px; }
+.act-time { font-size: var(--text-xs); color: var(--muted); }
+.act-meta-sep { opacity: 0.5; margin: 0 6px; }
+.act-duration { font-size: var(--text-xs); color: var(--muted); }
+.act-note { font-size: var(--text-sm); font-weight: 300; color: #52525b; margin-top: 5px; margin-bottom: 8px; }
 .act-info { margin-top: 5px; }
 
 .activity-group { margin: 0; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 6px; }
@@ -672,10 +685,10 @@ body.map-zoom-close .detail-marker--hub  .crumb-icon { display: block; }
 .ungrouped .activity-item:first-child { border-top: none; }
 
 .group-header {
-  font-size: var(--text-xs); font-weight: 700; color: var(--muted);
-  padding: 4px 0 3px;
+  font-size: var(--text-xs); font-weight: 700; color: var(--text);
+  padding: 4px 0 6px;
 }
-.group-date { font-weight: 400; opacity: 0.8; }
+.group-date { display: block; font-weight: 400; color: var(--muted); margin-top: 2px; }
 
 .plan-group { padding-left: 10px; }
 
@@ -690,12 +703,10 @@ body.map-zoom-close .detail-marker--hub  .crumb-icon { display: block; }
   padding: 2px 7px;
   font-size: var(--text-xs);
 }
-.priority-must,
-.priority-maybe { background: var(--surface); border-color: var(--border); color: var(--muted); }
 
 /* ── Notes ───────────────────────────────────────────────────────────── */
 .note, .place-note {
-  font-size: var(--text-sm); color: var(--muted); font-style: italic;
+  font-size: var(--text-sm); font-weight: 300; color: #52525b;
   margin: 4px 0 8px;
 }
 

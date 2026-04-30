@@ -6,7 +6,7 @@
  *   RawDuration   → ResolvedDuration
  *   RawGeolocation → ResolvedGeolocation
  *
- * All other fields (priority, tags, info, note, timezone) are validated
+ * All other fields (priority, tags, info, note) are validated
  * and passed through. The output is structurally identical to the final
  * CrumbDocument except that inference (Pass 3) has not yet run.
  */
@@ -42,6 +42,7 @@ import {
   ResolvedDuration,
   ResolvedGeolocation,
   ResolvedMoment,
+  ResolvedTripMeta,
   Stay,
   TimeOfDay,
   TransportLeg,
@@ -59,9 +60,15 @@ export function resolve(raw: RawCrumbDocument): CrumbDocument {
 
 // ─── Trip meta ───────────────────────────────────────────────────────────────
 
-function resolveTripMeta(meta: TripMeta): TripMeta {
-  // TripMeta has no moment/duration/geo fields — pass through as-is
-  return meta
+function resolveTripMeta(meta: TripMeta): ResolvedTripMeta {
+  return {
+    name:     meta.name,
+    author:   meta.author,
+    duration: meta.duration != null ? resolveDuration(meta.duration) : undefined,
+    tags:     meta.tags,
+    info:     meta.info,
+    note:     meta.note,
+  }
 }
 
 // ─── Itinerary items ─────────────────────────────────────────────────────────
@@ -78,7 +85,6 @@ function resolvePlace(raw: RawPlace): Place {
     arrives:    raw.arrives  != null ? resolveMoment(raw.arrives)  : undefined,
     departs:    raw.departs  != null ? resolveMoment(raw.departs)  : undefined,
     duration:   raw.duration != null ? resolveDuration(raw.duration) : undefined,
-    timezone:   raw.timezone,
     location:   raw.location != null ? resolveGeolocation(raw.location) : undefined,
     tags:       raw.tags,
     stay:       raw.stay?.map(resolveStay),
@@ -194,9 +200,13 @@ export function resolveMoment(raw: RawMoment): ResolvedMoment {
   // ISO datetime with timezone offset: 2026-09-18T17:00+09:00
   const isoFull = s.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})([+-]\d{2}:\d{2}|Z)?$/)
   if (isoFull) {
+    const rawOffset = isoFull[3]
+    const utcOffset = rawOffset === "Z" ? "+00:00" : rawOffset
     return {
-      date:  { precision: "absolute", value: isoFull[1] },
-      time:  { precision: "exact", value: isoFull[2] },
+      date: { precision: "absolute", value: isoFull[1] },
+      time: utcOffset
+        ? { precision: "exact", value: isoFull[2], utcOffset }
+        : { precision: "exact", value: isoFull[2] },
       label,
     }
   }
@@ -283,14 +293,14 @@ function parseRelativeDate(s: string): DateRef | null {
     return { precision: "relative", value: lower }
   }
 
-  // "Day 1", "Day 2", "day 1"
-  const dayN = lower.match(/^day\s+(\d+)$/)
+  // "Day 1", "Day 2", "day 1" — and ordinal forms "1st day", "3rd day"
+  const dayN = lower.match(/^day\s+(\d+)$/) ?? lower.match(/^(\d+)(?:st|nd|rd|th)\s+day$/)
   if (dayN) {
     return { precision: "relative", value: `Day ${dayN[1]}` }
   }
 
-  // "Week 1", "Week 2"
-  const weekN = lower.match(/^week\s+(\d+)$/)
+  // "Week 1", "Week 2" — and ordinal forms "1st week", "2nd week"
+  const weekN = lower.match(/^week\s+(\d+)$/) ?? lower.match(/^(\d+)(?:st|nd|rd|th)\s+week$/)
   if (weekN) {
     return { precision: "relative", value: `Week ${weekN[1]}` }
   }
@@ -337,12 +347,16 @@ export function resolveDuration(raw: RawDuration): ResolvedDuration {
   if (approxMatch) {
     const inner = parseExactDuration(approxMatch[1])
     if (inner) return { type: "approximate", value: inner.value, unit: inner.unit, label }
+    const span = parseNamedSpan(approxMatch[1].trim())
+    if (span) return { type: "named-approximate", span, estimate: namedSpanEstimate(span), label }
   }
 
   const minMatch = s.match(/^(?:at least|minimum|min)\s+(.+)$/)
   if (minMatch) {
     const inner = parseExactDuration(minMatch[1])
     if (inner) return { type: "minimum", value: inner.value, unit: inner.unit, label }
+    const span = parseNamedSpan(minMatch[1].trim())
+    if (span) return { type: "named-minimum", span, estimate: namedSpanEstimate(span), label }
   }
 
   // Range: "2-3 hours", "2 to 3 nights"
@@ -376,6 +390,14 @@ function parseExactDuration(s: string): { value: number; unit: DurationUnit } | 
     if (minutes > 0 && hours === 0) return { value: minutes, unit: "minutes" }
     // Combined h+m: store as total minutes
     return { value: hours * 60 + minutes, unit: "minutes" }
+  }
+
+  // Single-letter unit shorthand: 3d, 2w, 3n
+  const singleUnit = s.match(/^(\d+)([dwn])$/)
+  if (singleUnit) {
+    const value = parseInt(singleUnit[1], 10)
+    const unitMap: Record<string, DurationUnit> = { d: "days", w: "weeks", n: "nights" }
+    return { value, unit: unitMap[singleUnit[2]] }
   }
 
   // Plain English: "2 hours", "3 nights", "1 week", "45 minutes", "2 days"

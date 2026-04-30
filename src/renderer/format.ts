@@ -16,12 +16,12 @@ export function formatMoment(m: ResolvedMoment): string {
   const parts: string[] = []
   if (m.date) parts.push(formatDateRef(m.date))
   if (m.time) parts.push(formatTime(m.time))
-  return parts.join(" ")
+  return parts.join(" • ")
 }
 
 export function formatMomentDate(m: ResolvedMoment): string {
   if (!m.date) return ""
-  if (m.date.precision === "approximate") return formatISODate(m.date.estimate)
+  if (m.date.precision === "approximate") return formatSmartDate(m.date.estimate)
   return formatDateRef(m.date)
 }
 
@@ -30,17 +30,25 @@ export function formatMomentTime(m: ResolvedMoment): string {
   return formatTime(m.time)
 }
 
-/** For activity group headers: prefer resolved anchor date over relative label. */
+/** For activity group headers: prefer authored relative label ("Day 3", weekday) over calendar date. */
 export function formatGroupDate(m: ResolvedMoment): string {
-  if (m.date?.precision === "absolute") return formatDateRef(m.date)
-  if (m.anchor?.date)                   return formatISODate(m.anchor.date)
-  if (m.date)                           return formatDateRef(m.date)
+  if (m.date?.precision === "relative") {
+    const v = m.date.value
+    if (/^(day\s+\d+|first day|last day)$/i.test(v)) return v
+    if (/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/i.test(v)) {
+      return v.charAt(0).toUpperCase() + v.slice(1)
+    }
+  }
+  if (m.date?.precision === "absolute") return formatSmartDate(m.date.value)
+  if (m.anchor?.date)                   return formatSmartDate(m.anchor.date)
+  if (m.date?.precision === "approximate") return formatSmartDate(m.date.estimate)
+  if (m.date)                           return m.date.value
   return ""
 }
 
 export function formatDateRef(d: DateRef): string {
-  if (d.precision === "absolute")    return formatISODate(d.value)
-  if (d.precision === "approximate") return formatISODate(d.estimate)
+  if (d.precision === "absolute")    return formatSmartDate(d.value)
+  if (d.precision === "approximate") return formatSmartDate(d.estimate)
   return d.value
 }
 
@@ -48,6 +56,24 @@ export function formatISODate(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number)
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
   return `${months[m - 1]} ${d}, ${y}`
+}
+
+export function formatShortDate(iso: string): string {
+  const [, m, d] = iso.split("-").map(Number)
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+  return `${months[m - 1]} ${d}`
+}
+
+export function formatSmartDate(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number)
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+  const days   = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
+  const weekday = days[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]
+  return `${weekday}, ${months[m - 1]} ${d}`
+}
+
+export function isInferredMoment(m: ResolvedMoment): boolean {
+  return m.anchor?.precedence === "inferred"
 }
 
 export function formatTime(t: TimeOfDay): string {

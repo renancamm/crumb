@@ -205,6 +205,7 @@ Optional metadata about the trip.
 trip:
   name: Japan in 2 Weeks
   author: Ana Yamamoto
+  duration: 2 weeks
   tags: [asia, food, city]
   note: A two-week circuit through Japan's most iconic cities.
 ```
@@ -213,6 +214,7 @@ trip:
 |---|---|---|
 | `name` | string | Title of the trip |
 | `author` | string | Name or handle of the person who wrote this crumb |
+| `duration` | Duration | Total length of the trip. |
 | `tags` | list | Keywords describing the trip style and focus |
 | `info` | MetadataList | Supplementary key-value details (e.g. booking platform, guide website, trip code) |
 | `note` | Text | Free-text description of the trip |
@@ -255,7 +257,6 @@ A place can have accommodation, activities, and notes — or none of these.
     arrives: 2026-09-10
     departs: 2026-09-15
     duration: 5 nights
-    timezone: Asia/Tokyo
     location: Tokyo, Japan
     tags: [city, food, culture]
     stay:
@@ -276,9 +277,8 @@ A place can have accommodation, activities, and notes — or none of these.
 | `arrives` | Moment | When you arrive at this place |
 | `departs` | Moment | When you leave this place |
 | `duration` | Duration | How long you are spending here |
-| `timezone` | string | IANA timezone name for this place (e.g. `Asia/Tokyo`, `Europe/London`). Applies to all times within this place that don't carry an explicit UTC offset. |
 | `location` | Geolocation | Geographic reference for this place |
-| `tags` | list | Keywords for filtering and display |
+| `tags` | list | Keywords |
 | `stay` | list | Accommodation — see [Stay](#stay) |
 | `activities` | list | Things to do — see [Activities](#activities) |
 | `info` | MetadataList | Supplementary key-value details |
@@ -485,13 +485,15 @@ Transport mode keywords are lowercase-only. `train` is a transport leg; `Train` 
 
 | Field | Type | Description |
 |---|---|---|
-| `from` | Geolocation | Departure point. Inferred from previous place when omitted. |
-| `to` | Geolocation | Arrival point. Inferred from next place when omitted. |
+| `from` | Geolocation | Departure point. When absent, the nearest preceding place in the itinerary is used. |
+| `to` | Geolocation | Arrival point. When absent, the nearest following place in the itinerary is used. |
 | `departs` | Moment | Departure time |
 | `arrives` | Moment | Arrival time |
-| `duration` | Duration | Journey time |
+| `duration` | Duration | Journey time. Computed from `departs` and `arrives` when both carry a UTC offset. |
 | `info` | MetadataList | Supplementary key-value details |
 | `note` | Text | Free-text notes |
+
+> **Tip:** For flights and cross-timezone transport, include a UTC offset in `departs` and `arrives` (e.g. `2026-06-01T10:00+09:00`). When both carry an offset, `duration` is computed from the elapsed UTC time, correctly accounting for timezone differences.
 
 ---
 

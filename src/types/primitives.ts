@@ -30,9 +30,10 @@ export interface MetadataItem {
 }
 
 export interface TripMeta {
-  name?:   string
-  author?: string
-  tags?:   string[]
-  info?:   MetadataItem[]
-  note?:   string
+  name?:     string
+  author?:   string
+  duration?: string
+  tags?:     string[]
+  info?:     MetadataItem[]
+  note?:     string
 }

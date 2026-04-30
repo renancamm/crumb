@@ -71,12 +71,16 @@ type LoosePeriod =
 //
 // exact:  normalised 24h clock time. Any authored format (9am, 9:00 AM,
 //         09:00) normalises to "HH:MM". Use value directly for sorting.
+//         utcOffset is present only when the authored string carried an explicit
+//         UTC offset (e.g. "2026-06-01T10:00+09:00" → utcOffset "+09:00").
+//         "Z" is normalised to "+00:00". Use utcOffset for cross-timezone
+//         arithmetic (e.g. flight duration); display value as local time.
 //
 // loose:  a canonical LoosePeriod with a parser-assigned estimate for
 //         sorting. The original label is preserved in ResolvedMoment.label.
 
 type TimeOfDay =
-  | { precision: "exact"; value: string }
+  | { precision: "exact"; value: string; utcOffset?: string }
   | { precision: "loose"; value: LoosePeriod; estimate: string }
 
 // ─── DateRef ─────────────────────────────────────────────────────────────────
@@ -275,7 +279,6 @@ interface Place {
   arrives?:   ResolvedMoment
   departs?:   ResolvedMoment
   duration?:  ResolvedDuration
-  timezone?:  string          // IANA timezone name. Applies to times within this place lacking an explicit UTC offset.
   location?:  ResolvedGeolocation
   tags?:      string[]
   stay?:      Stay[]
@@ -303,18 +306,19 @@ interface TransportLeg {
 
 // ─── Document root ───────────────────────────────────────────────────────────
 
-interface TripMeta {
-  name?:   string
-  author?: string
-  tags?:   string[]
-  info?:   MetadataItem[]
-  note?:   string
+interface ResolvedTripMeta {
+  name?:     string
+  author?:   string
+  duration?: ResolvedDuration
+  tags?:     string[]
+  info?:     MetadataItem[]
+  note?:     string
 }
 
 type ItineraryItem = Place | TransportLeg
 
 interface CrumbDocument {
-  trip?:     TripMeta
+  trip?:     ResolvedTripMeta
   itinerary: ItineraryItem[]  // always an array; empty if no itinerary key present
 }
 ```

@@ -24,6 +24,10 @@ itinerary:
 The same trip with more detail:
 
 ```yaml
+trip:
+  name: Japan in 10 Days
+  duration: 10 days
+
 itinerary:
   - Tokyo:
       duration: 5 nights

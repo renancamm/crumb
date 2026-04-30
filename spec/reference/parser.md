@@ -42,9 +42,7 @@ Transport keywords (case-sensitive, lowercase only): `train`, `flight`, `bus`, `
 
 ### 1.3 Place fields
 
-Recognised fields on a `RawPlace` node: `arrives`, `departs`, `duration`, `timezone`, `location`, `tags`, `stay`, `activities`, `info`, `note`. All other keys are ignored.
-
-- `timezone` must be a string. A non-string value is ignored and `timezone` is treated as absent. No validation of the timezone name is performed by the parser — it is stored as-is and passed to consumers.
+Recognised fields on a `RawPlace` node: `arrives`, `departs`, `duration`, `location`, `tags`, `stay`, `activities`, `info`, `note`. All other keys are ignored.
 
 - `stay` must be a YAML list. A non-list value is ignored and `stay` is treated as absent.
 - `activities` must be a YAML list. A non-list value is ignored and `activities` is treated as absent.
@@ -95,7 +93,7 @@ Recognised fields on a `RawStay` node: `arrives`, `departs`, `duration`, `locati
 
 ## Pass 2 — Field resolution
 
-*Input: `RawCrumbDocument`. Output: resolved node tree — same structure as `RawCrumbDocument` but with all `RawMoment`, `RawDuration`, and `RawGeolocation` fields replaced by their resolved counterparts. `priority` is narrowed to `Priority` or omitted. `tags` is validated to `string[]` or absent. `info` is validated to `MetadataItem[]`. `note` is validated to `string` or absent.*
+*Input: `RawCrumbDocument`. Output: resolved node tree — same structure as `RawCrumbDocument` but with all `RawMoment`, `RawDuration`, and `RawGeolocation` fields replaced by their resolved counterparts. `priority` is narrowed to `Priority` or omitted. `tags` is validated to `string[]` or absent. `info` is validated to `MetadataItem[]`. `note` is validated to `string` or absent. `trip.duration` is resolved from a raw string to `ResolvedDuration` using the same rules as all other duration fields.*
 
 Every field value is resolved independently. Resolution never inspects neighbouring nodes — that is the job of Pass 3. The original string is always preserved in `label` on `ResolvedMoment` and in `label` on `ResolvedDuration`, regardless of whether resolution succeeds.
 
@@ -241,7 +239,7 @@ Each item in the `info` list must be a single-key mapping where the key is a non
 
 *Input: resolved node tree. Output: `CrumbDocument`.*
 
-Pass 3 runs five steps in order. Each step may produce information that a later step depends on.
+Pass 3 runs six steps in order. Each step may produce information that a later step depends on.
 
 ### 3.1 `UngroupedActivities` assembly
 
@@ -308,6 +306,8 @@ Qualified durations:
 - `unknown`: duration is ignored; no propagation.
 
 Transport leg `duration` contributes to forward propagation using the same rules (hours/minutes are ignored, days/nights advance the date).
+
+**`trip.duration` as time budget:** If `trip.duration` is authored and at least one explicit `Place.arrives` exists in the itinerary, the total is used as a budget for the even-distribution phase. When the last place has no explicit `departs`, a virtual end date is computed as `firstExplicitArrives + trip.duration` and used to bound the distribution window. Duration-less places within that window receive an even share of the remaining budget.
 
 **`plan` groups:** `plan` groups and their activities do not participate in anchor propagation. Any `time` field on a `plan` group or its activities is stored as-is and receives no anchor.
 
@@ -382,7 +382,16 @@ Resolution depends on what relative form was authored or injected:
 - Activities with an absolute `time` are not affected.
 - Activities inside a `plan` group are **not** affected by this rule — they receive no anchor from the group.
 
-### 3.6 Contradiction resolution
+### 3.6 Trip duration inference
+
+After anchor propagation (step 3.4), if `trip.duration` was not authored, the parser attempts to compute and set it:
+
+1. **From absolute itinerary span**: find the first resolved `Place.arrives` and last resolved `Place.departs` in the itinerary. Compute the total days between them. If all contributing anchors were user-authored, set `trip.duration` as `exact`; if any were inferred, set it as `approximate` (i.e. prefixed with `~` in the label).
+2. **From place duration sum** (fallback when no absolute dates exist): sum `placeDays()` across all places. If the total is positive, set `trip.duration` as an `approximate` duration in days.
+
+If neither strategy yields a positive value, `trip.duration` remains absent. An already-authored `trip.duration` is never overwritten.
+
+### 3.7 Contradiction resolution
 
 **`arrives`/`departs` vs `duration` on the same node:**
 - If both are present on a `Place` or `Stay`, `arrives` and `departs` take precedence.
@@ -446,7 +455,7 @@ itinerary:
 
 **Pass 2** resolves all field values. ISO dates become absolute `DateRef` values. `morning` and `afternoon` become loose `TimeOfDay` values with estimates. `8am` and `11am` become exact `TimeOfDay` values. `must` becomes `Priority`. `2h` and `1h` become exact `ResolvedDuration` values. `2 nights` becomes an exact `ResolvedDuration`.
 
-**Pass 3** runs five steps:
+**Pass 3** runs six steps:
 - **3.1** — `Nishiki Market` is standalone; it is wrapped in `UngroupedActivities` and placed first in `Kyoto.activities`. The two `day` groups follow in source order.
 - **3.2** — The train has no `from` or `to`; both are inferred from neighbouring places: `from: { label: "Kyoto" }`, `to: { label: "Osaka" }`.
 - **3.3** — Neither `day` group has a `time`; `next day` is injected on both.
@@ -689,7 +698,6 @@ interface RawPlace {
   arrives?:   RawMoment
   departs?:   RawMoment
   duration?:  RawDuration
-  timezone?:  string          // IANA timezone name, stored as-is — not validated by the parser
   location?:  RawGeolocation
   tags?:      string[]
   stay?:      RawStay[]
@@ -718,7 +726,8 @@ type RawItineraryItem = RawPlace | RawTransportLeg
 
 // ─── RawCrumbDocument ────────────────────────────────────────────────────────
 //
-// TripMeta is reused unchanged — it contains no fields that require resolution.
+// trip uses TripMeta at this stage; Pass 2 resolves trip.duration (raw string → ResolvedDuration).
+// All other trip fields are strings or string arrays and pass through unchanged.
 // itinerary is always an array; empty if no itinerary key is present in source.
 
 interface RawCrumbDocument {

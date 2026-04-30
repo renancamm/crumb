@@ -55,7 +55,6 @@ export interface RawPlace {
   arrives?:   RawMoment
   departs?:   RawMoment
   duration?:  RawDuration
-  timezone?:  string
   location?:  RawGeolocation
   tags?:      string[]
   stay?:      RawStay[]

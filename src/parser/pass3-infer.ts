@@ -39,7 +39,7 @@ export function infer(doc: CrumbDocument): CrumbDocument {
     }
   }
 
-  // 3.2 — Infer transport endpoints
+  // 3.2 — Infer transport endpoints and duration
   for (let i = 0; i < itinerary.length; i++) {
     const item = itinerary[i]
     if (item.type !== "transport") continue
@@ -51,6 +51,14 @@ export function infer(doc: CrumbDocument): CrumbDocument {
     if (!item.to) {
       const next = nearestPlace(itinerary, i, +1)
       if (next) item.to = { label: next.name }
+    }
+
+    if (!item.duration && item.departs && item.arrives) {
+      const d = momentToUTCMinutes(item.departs)
+      const a = momentToUTCMinutes(item.arrives)
+      if (d !== null && a !== null && a > d) {
+        item.duration = makeExactDurationMinutes(a - d)
+      }
     }
   }
 
@@ -72,7 +80,13 @@ export function infer(doc: CrumbDocument): CrumbDocument {
   }
 
   // 3.4 — Timeline inference
-  inferTimeline(itinerary)
+  inferTimeline(itinerary, doc.trip?.duration)
+
+  // 3.6 — Infer trip-level duration from resolved itinerary span (when not authored)
+  if (doc.trip && !doc.trip.duration) {
+    const inferred = inferTripDuration(itinerary)
+    if (inferred) doc.trip.duration = inferred
+  }
 
   // 3.5 — Relative date resolution (runs after inferTimeline so place.arrives may be inferred)
   for (let i = 0; i < itinerary.length; i++) {
@@ -141,14 +155,14 @@ export function infer(doc: CrumbDocument): CrumbDocument {
 
 // ─── 3.4 — Timeline inference ─────────────────────────────────────────────────
 
-function inferTimeline(itinerary: ItineraryItem[]): void {
+function inferTimeline(itinerary: ItineraryItem[], tripDuration?: ResolvedDuration): void {
   // Phase 1 — intra-item: derive missing field from any 2 known fields
   runIntraItem(itinerary)
 
   // Phase 4 — distribute remaining time across duration-less places within anchored spans.
   // Must run BEFORE the forward/backward sweeps so that explicit-only anchor detection
   // works correctly (sweeps would otherwise fill everything with incorrect inferred dates).
-  distributeRemainingTime(itinerary)
+  distributeRemainingTime(itinerary, tripDuration)
 
   // Phase 1 again — re-run with newly distributed durations
   runIntraItem(itinerary)
@@ -267,7 +281,7 @@ function runIntraItem(itinerary: ItineraryItem[]): void {
 
 // Phase 4: distribute remaining time evenly across duration-less places within spans
 // bounded by EXPLICIT (non-inferred) anchor dates.
-function distributeRemainingTime(itinerary: ItineraryItem[]): void {
+function distributeRemainingTime(itinerary: ItineraryItem[], tripDuration?: ResolvedDuration): void {
   // Collect explicit anchor points: (place index, ISO date)
   // We only use user-authored dates — not engine-inferred ones.
   type Anchor = { idx: number; date: string }
@@ -286,6 +300,29 @@ function distributeRemainingTime(itinerary: ItineraryItem[]): void {
     }
     if (dISO && place.departs?.anchor?.precedence !== "inferred") {
       anchors.push({ idx: i, date: dISO })
+    }
+  }
+
+  // If trip duration is authored and there's a start anchor but no explicit end on the last
+  // place, inject a virtual end anchor so duration-less places get time sliced from the budget.
+  if (tripDuration && anchors.length > 0) {
+    const tripDays = durationToDays(tripDuration)
+    if (tripDays > 0) {
+      const virtualEndISO = addDays(anchors[0].date, tripDays)
+      let lastPlaceIdx = -1
+      let lastPlaceHasExplicitEnd = false
+      for (let i = itinerary.length - 1; i >= 0; i--) {
+        if (itinerary[i].type === "place") {
+          lastPlaceIdx = i
+          const p = itinerary[i] as Place
+          const dISO = momentToISO(p.departs)
+          lastPlaceHasExplicitEnd = !!dISO && p.departs?.anchor?.precedence !== "inferred"
+          break
+        }
+      }
+      if (lastPlaceIdx >= 0 && !lastPlaceHasExplicitEnd) {
+        anchors.push({ idx: lastPlaceIdx, date: virtualEndISO })
+      }
     }
   }
 
@@ -337,6 +374,32 @@ function distributeRemainingTime(itinerary: ItineraryItem[]): void {
         p.duration = makeSyntheticDuration(nights)
       }
     })
+  }
+
+  // Fallback: no calendar anchors at all — spread trip duration purely by count.
+  // Applies when trip duration is authored but no place has any resolved date.
+  if (tripDuration && anchors.length === 0) {
+    const tripDays = durationToDays(tripDuration)
+    if (tripDays > 0) {
+      let committed = 0
+      const durationless: Place[] = []
+      for (const item of itinerary) {
+        if (item.type !== "place") continue
+        const p = item as Place
+        const days = placeDays(p)
+        if (days > 0) committed += days
+        else durationless.push(p)
+      }
+      const remaining = Math.max(0, tripDays - committed)
+      if (remaining > 0 && durationless.length > 0) {
+        const perPlace = Math.floor(remaining / durationless.length)
+        const extra    = remaining % durationless.length
+        durationless.forEach((p, idx) => {
+          const n = perPlace + (idx < extra ? 1 : 0)
+          if (n > 0) p.duration = makeSyntheticDuration(n)
+        })
+      }
+    }
   }
 }
 
@@ -461,6 +524,26 @@ function transportBridgeDays(leg: TransportLeg): number {
   return leg.duration ? durationToDays(leg.duration) : 0
 }
 
+function momentToUTCMinutes(m: ResolvedMoment): number | null {
+  if (m.date?.precision !== "absolute") return null
+  if (m.time?.precision !== "exact")    return null
+  const { utcOffset } = m.time
+  if (!utcOffset) return null
+  const [y, mo, d]  = m.date.value.split("-").map(Number)
+  const [h, min]    = m.time.value.split(":").map(Number)
+  const sign        = utcOffset.startsWith("-") ? -1 : 1
+  const [oh, om]    = utcOffset.slice(1).split(":").map(Number)
+  const offsetMins  = sign * (oh * 60 + om)
+  return Date.UTC(y, mo - 1, d) / 60000 + h * 60 + min - offsetMins
+}
+
+function makeExactDurationMinutes(minutes: number): ResolvedDuration {
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  const label = h > 0 && m > 0 ? `${h}h ${m}m` : h > 0 ? `${h}h` : `${m}m`
+  return { type: "exact", value: minutes, unit: "minutes", label }
+}
+
 function durationToDays(dur: ResolvedDuration): number {
   switch (dur.type) {
     case "exact":
@@ -514,6 +597,44 @@ function makeExactDuration(nights: number): ResolvedDuration {
 
 function isAbsoluteOrApproxDate(m: ResolvedMoment): boolean {
   return m.date?.precision === "absolute" || m.date?.precision === "approximate"
+}
+
+function inferTripDuration(itinerary: ItineraryItem[]): ResolvedDuration | null {
+  // Strategy 1: first arrives → last departs (when resolved absolute dates exist)
+  let firstArrives: string | null = null
+  let lastDeparts:  string | null = null
+  let anyInferred = false
+
+  for (const item of itinerary) {
+    if (item.type !== "place") continue
+    const p = item as Place
+    const aISO = momentToISO(p.arrives)
+    const dISO = momentToISO(p.departs)
+    if (aISO && !firstArrives) {
+      firstArrives = aISO
+      if (p.arrives?.anchor?.precedence === "inferred") anyInferred = true
+    }
+    if (dISO) {
+      lastDeparts = dISO
+      if (p.departs?.anchor?.precedence === "inferred") anyInferred = true
+    }
+  }
+
+  if (firstArrives && lastDeparts) {
+    const n = daysBetween(firstArrives, lastDeparts)
+    if (n > 0) return anyInferred
+      ? { type: "approximate", value: n, unit: "days", label: `~${n} ${n === 1 ? "day" : "days"}` }
+      : { type: "exact",       value: n, unit: "days", label: `${n} ${n === 1 ? "day" : "days"}` }
+  }
+
+  // Strategy 2: sum place durations (relative-only itinerary with no absolute dates)
+  let totalDays = 0
+  for (const item of itinerary) {
+    if (item.type === "place") totalDays += placeDays(item as Place)
+  }
+  if (totalDays > 0) return { type: "approximate", value: totalDays, unit: "days", label: `~${totalDays} ${totalDays === 1 ? "day" : "days"}` }
+
+  return null
 }
 
 // ─── Date arithmetic ─────────────────────────────────────────────────────────
