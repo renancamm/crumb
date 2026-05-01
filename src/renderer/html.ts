@@ -95,6 +95,7 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
   const title          = "Crumb" + (doc.trip?.name ? " — " + escape(doc.trip.name) : "")
   const body           = renderItineraryBody(doc)
   const docJson        = JSON.stringify(doc)
+  const popupMetaJson  = JSON.stringify(buildPopupMeta(doc))
   const sourceJson     = JSON.stringify(options.source)
   const specJson       = JSON.stringify(options.specContent ?? "")
   const examplesJson   = JSON.stringify(options.examples)
@@ -257,10 +258,11 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
   <script>${GEO_SCRIPT}</script>
   <script>
     // ── Embedded data ─────────────────────────────────────────────────────────
-    const SOURCE   = ${sourceJson}
-    const SPEC     = ${specJson}
-    const EXAMPLES = ${examplesJson}
-    let   DATA     = ${docJson}
+    const SOURCE     = ${sourceJson}
+    const SPEC       = ${specJson}
+    const EXAMPLES   = ${examplesJson}
+    let   DATA       = ${docJson}
+    let   POPUP_META = ${popupMetaJson}
 
     // ── DOM refs ──────────────────────────────────────────────────────────────
     const editorEl    = document.getElementById("editor")
@@ -285,6 +287,9 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
       bike:      ${JSON.stringify(ICON_BIKE)},
       transport: ${JSON.stringify(ICON_ROUTE)},
       globe_off: ${JSON.stringify(ICON_GLOBE_OFF)},
+      arrives:   ${JSON.stringify(ICON_ARRIVES)},
+      departs:   ${JSON.stringify(ICON_DEPARTS)},
+      clock:     ${JSON.stringify(ICON_CLOCK)},
     }
     const GEO_FAIL_ICON = \`<span class="geo-no-loc">\${ICONS.globe_off}</span>\`
 
@@ -503,10 +508,11 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
     let placeMarkers  = []
     let detailMarkers = []
 
-    function popupHtml(title, sub) {
-      return sub
-        ? \`<span class="popup-title">\${escHtml(title)}</span><br><span class="popup-sub">\${escHtml(sub)}</span>\`
-        : \`<span class="popup-title">\${escHtml(title)}</span>\`
+    function popupHtml(p) {
+      const meta = POPUP_META[p.name]
+      return meta
+        ? \`<span class="popup-title">\${escHtml(p.name)}</span><br><span class="popup-sub">\${escHtml(meta)}</span>\`
+        : \`<span class="popup-title">\${escHtml(p.name)}</span>\`
     }
 
     function applyZoomClass() {
@@ -591,7 +597,7 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
         if (geo) {
           setPlaceLoading(i + 1, false)
           writeBackGeo(place, geo)
-          resolved.push({ name: place.name, lat: geo.lat, lng: geo.lng, arrives: place.arrives?.label ?? null })
+          resolved.push({ name: place.name, lat: geo.lat, lng: geo.lng })
           resolvedPlaceCoords.set(place.name, geo)
         } else {
           retryWithContext.push({ place, i })
@@ -611,7 +617,7 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
         setPlaceLoading(i + 1, false)
         if (geo) {
           writeBackGeo(place, geo)
-          resolved.push({ name: place.name, lat: geo.lat, lng: geo.lng, arrives: place.arrives?.label ?? null })
+          resolved.push({ name: place.name, lat: geo.lat, lng: geo.lng })
           resolvedPlaceCoords.set(place.name, geo)
         } else {
           const nameEl = document.querySelector(\`.place[data-place-index="\${i + 1}"] .place-name-text\`)
@@ -635,7 +641,7 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
       setDetailSource(detailPoints)
 
       function actPoint(t, geo) {
-        return { name: t.name, lat: geo.lat, lng: geo.lng, pinType: t.priority === "must" ? "must" : t.priority === "maybe" ? "maybe" : "activity", subtitle: t.priority === "must" ? "must do" : null, placeIdx: t.placeIdx, actLabel: t.actLabel }
+        return { name: t.name, lat: geo.lat, lng: geo.lng, pinType: t.priority === "must" ? "must" : t.priority === "maybe" ? "maybe" : "activity", placeIdx: t.placeIdx, actLabel: t.actLabel }
       }
       for (const t of actTargets) {
         const loc = t.location
@@ -674,7 +680,7 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
         setStayLoading(t.stayName, false)
         if (epoch !== geocodeEpoch) return
         if (!t.hasCoords && !isCached) staysFetched++
-        if (geo) { geoIndex.stays.set(t.stayName, geo); detailPoints = [...detailPoints, { name: t.stayName, lat: geo.lat, lng: geo.lng, pinType: "stay", subtitle: t.checkin ?? null, placeIdx: t.placeIdx }]; setDetailSource(detailPoints) }
+        if (geo) { geoIndex.stays.set(t.stayName, geo); detailPoints = [...detailPoints, { name: t.stayName, lat: geo.lat, lng: geo.lng, pinType: "stay", placeIdx: t.placeIdx }]; setDetailSource(detailPoints) }
         else if (!t.hasCoords) {
           const stayEl = [...listEl.querySelectorAll(".stay[data-stay-name]")].find(el => el.dataset.stayName === t.stayName)
           const nameEl = stayEl?.querySelector(".stay-name")
@@ -694,7 +700,7 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
         el.className = "place-marker"
         el.innerHTML = \`<span class="place-marker-num">\${i + 1}</span>\`
         const popup = new maplibregl.Popup({ closeButton: false, offset: 20, className: "place-popup" })
-          .setHTML(popupHtml(p.name, p.arrives))
+          .setHTML(popupHtml(p))
         el.addEventListener("mouseenter", () => popup.setLngLat([p.lng, p.lat]).addTo(map))
         el.addEventListener("mouseleave", () => popup.remove())
         el.addEventListener("click", e => { e.stopPropagation(); focusPlace(i + 1) })
@@ -726,7 +732,7 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
         else if (p.pinType === "hub") el.innerHTML = ICONS[p.mode] ?? ICONS.transport
         else if (p.actLabel) el.innerHTML = \`<span class="detail-marker-label">\${escHtml(p.actLabel)}</span>\`
         const popup = new maplibregl.Popup({ closeButton: false, offset: 14, className: "detail-popup" })
-          .setHTML(popupHtml(p.name, p.subtitle))
+          .setHTML(popupHtml(p))
         el.addEventListener("mouseenter", () => popup.setLngLat([p.lng, p.lat]).addTo(map))
         el.addEventListener("mouseleave", () => popup.remove())
         el.dataset.name = p.name
@@ -769,7 +775,7 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
         for (const stay of (item.stay ?? [])) {
           if (stay.location?.geocodingDisabled) continue
           const hasCoords = stay.location?.lat != null
-          targets.push({ name: hasCoords ? stay.name : \`\${stay.name}, \${item.name}\`, stayName: stay.name, location: stay.location ?? null, hasCoords, checkin: stay.arrives ? \`check-in \${stay.arrives.label}\` : null, placeIdx })
+          targets.push({ name: hasCoords ? stay.name : \`\${stay.name}, \${item.name}\`, stayName: stay.name, location: stay.location ?? null, hasCoords, placeIdx })
         }
       }
       return targets
@@ -798,6 +804,7 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
       try {
         const doc = Crumb.parse(src)
         DATA = doc
+        POPUP_META = Crumb.buildPopupMeta(doc)
         document.title = "Crumb" + (doc.trip?.name ? " — " + doc.trip.name : "")
         listEl.innerHTML = Crumb.renderItineraryBody(doc)
         clearEditorError()
@@ -1229,6 +1236,59 @@ function renderMarkdown(text: string): string {
   return escape(text)
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g,     "<em>$1</em>")
+}
+
+// ─── Popup meta ───────────────────────────────────────────────────────────────
+
+function plainDateRange(a: ResolvedMoment | undefined, d: ResolvedMoment | undefined): string {
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+  const getIso = (m: ResolvedMoment) =>
+    m.date?.precision === "absolute" ? m.date.value : m.anchor?.date ?? null
+  const aIso = a ? getIso(a) : null
+  const dIso = d ? getIso(d) : null
+  if (aIso && dIso) {
+    const [, am, ad] = aIso.split("-").map(Number)
+    const [, dm, dd] = dIso.split("-").map(Number)
+    if (am === dm) return `${months[am - 1]} ${ad}–${dd}`
+    return `${formatShortDate(aIso)}–${formatShortDate(dIso)}`
+  }
+  if (aIso) return formatShortDate(aIso)
+  if (dIso) return formatShortDate(dIso)
+  return ""
+}
+
+export function buildPopupMeta(doc: CrumbDocument): Record<string, string> {
+  const meta: Record<string, string> = {}
+
+  for (const item of doc.itinerary) {
+    if (item.type !== "place") continue
+
+    const parts: string[] = []
+    const dur = resolvePlaceDisplayDuration(item)
+    if (dur && dur.type !== "unknown") parts.push(formatDuration(dur))
+    const range = plainDateRange(item.arrives, item.departs)
+    if (range) parts.push(range)
+    if (parts.length) meta[item.name] = parts.join(" • ")
+
+    for (const stay of item.stay ?? []) {
+      const r = plainDateRange(stay.arrives, stay.departs)
+      if (r) meta[stay.name] = r
+    }
+
+    for (const group of item.activities) {
+      for (const act of group.items) {
+        const ap: string[] = []
+        if (act.time) {
+          const t = formatMomentTime(act.time)
+          if (t) ap.push(t)
+        }
+        if (act.duration && act.duration.type !== "unknown") ap.push(formatDuration(act.duration))
+        if (ap.length) meta[act.name] = ap.join(" • ")
+      }
+    }
+  }
+
+  return meta
 }
 
 // ─── HtmlRenderer — reference implementation of CrumbRenderer ────────────────
