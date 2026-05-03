@@ -28,7 +28,6 @@ import type {
   UngroupedActivities,
 } from "../types/resolved"
 import { CSS } from "./css"
-import { GEO_SCRIPT } from "./geocoder"
 import { ICON_STAY, ICON_ARRIVES, ICON_DEPARTS, ICON_CLOCK, ICON_CORNER_DOWN_RIGHT, ICON_CORNER_UP_RIGHT, ICON_PLANE, ICON_TRAIN, ICON_BUS, ICON_CAR, ICON_SHIP, ICON_WALK, ICON_BIKE, ICON_ROUTE, ICON_GLOBE_OFF, ICON_PRIORITY_MUST, ICON_PRIORITY_MAYBE, modeIconSvg } from "./icons"
 import {
   escape,
@@ -39,7 +38,10 @@ import {
   formatMomentTime,
   formatSmartDate,
   formatShortDate,
+  formatPlainDateRange,
+  isoFromMoment,
   isInferredMoment,
+  activityLabel,
 } from "./format"
 import type { CrumbRenderer, RenderContext } from "./types"
 
@@ -48,10 +50,12 @@ import type { CrumbRenderer, RenderContext } from "./types"
 export interface AppOptions {
   /** Original YAML source — embedded for the editor. */
   source: string
-  /** Example files (unused in this renderer, kept for API compat). */
+  /** Example files keyed by filename. */
   examples: Record<string, string>
-  /** Esbuild browser bundle output (parse + renderItineraryBody). */
+  /** Esbuild bundle: parse + renderItineraryBody (sets window.Crumb). */
   parserBundle: string
+  /** Esbuild bundle: map, geocoding, editor, UI interactions. */
+  appBundle: string
   /** CRUMB_SPEC.md content for the "Download spec" button. Optional. */
   specContent?: string
 }
@@ -255,578 +259,14 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <script>${options.parserBundle}</script>
-  <script>${GEO_SCRIPT}</script>
   <script>
-    // ── Embedded data ─────────────────────────────────────────────────────────
-    const SOURCE     = ${sourceJson}
-    const SPEC       = ${specJson}
-    const EXAMPLES   = ${examplesJson}
-    let   DATA       = ${docJson}
-    let   POPUP_META = ${popupMetaJson}
-
-    // ── DOM refs ──────────────────────────────────────────────────────────────
-    const editorEl    = document.getElementById("editor")
-    const listEl      = document.getElementById("list")
-    const mapStatusEl = document.getElementById("map-status")
-    const editorPanel = document.getElementById("editor-panel")
-    const errorBar    = document.getElementById("editor-error-bar")
-    const newModal      = document.getElementById("new-modal")
-    const newTextarea   = document.getElementById("new-textarea")
-    const generateModal = document.getElementById("generate-modal")
-    const aboutModal    = document.getElementById("about-modal")
-
-    // ── Embedded icons ────────────────────────────────────────────────────────
-    const ICONS = {
-      stay:      ${JSON.stringify(ICON_STAY)},
-      flight:    ${JSON.stringify(ICON_PLANE)},
-      train:     ${JSON.stringify(ICON_TRAIN)},
-      bus:       ${JSON.stringify(ICON_BUS)},
-      car:       ${JSON.stringify(ICON_CAR)},
-      ferry:     ${JSON.stringify(ICON_SHIP)},
-      walk:      ${JSON.stringify(ICON_WALK)},
-      bike:      ${JSON.stringify(ICON_BIKE)},
-      transport: ${JSON.stringify(ICON_ROUTE)},
-      globe_off: ${JSON.stringify(ICON_GLOBE_OFF)},
-      arrives:   ${JSON.stringify(ICON_ARRIVES)},
-      departs:   ${JSON.stringify(ICON_DEPARTS)},
-      clock:     ${JSON.stringify(ICON_CLOCK)},
-    }
-    const GEO_FAIL_ICON = \`<span class="geo-no-loc">\${ICONS.globe_off}</span>\`
-
-    // ── Color palette ─────────────────────────────────────────────────────────
-    const COLORS = { route: "#18181b" }
-
-    // ── Geo index (for list → map fly-to) ────────────────────────────────────
-    const geoIndex = { places: [null], activities: new Map(), stays: new Map(), hubs: new Map() }
-
-    // ── Focus state (list ↔ marker sync) ─────────────────────────────────────
-    let focusedPlaceIdx = null
-    let focusedActName  = null
-    let focusedStayName = null
-    let focusedHubName  = null
-
-    function clearFocus() {
-      focusedPlaceIdx = null; focusedActName = null; focusedStayName = null; focusedHubName = null
-      document.querySelectorAll(".place.--focused").forEach(el => el.classList.remove("--focused"))
-      document.querySelectorAll(".activity-item.--focused").forEach(el => el.classList.remove("--focused"))
-      document.querySelectorAll(".stay.--focused").forEach(el => el.classList.remove("--focused"))
-      placeMarkers.forEach(m => m.getElement().classList.remove("--focused"))
-      detailMarkers.forEach(m => m.getElement().classList.remove("--focused"))
-    }
-
-    function focusPlace(placeIdx) {
-      clearFocus(); focusedPlaceIdx = placeIdx
-      const placeEl = document.querySelector(\`.place[data-place-index="\${placeIdx}"]\`)
-      if (placeEl) { placeEl.classList.add("--focused"); placeEl.scrollIntoView({ block: "nearest", behavior: "smooth" }) }
-      const marker = placeMarkers[placeIdx - 1]
-      if (marker) marker.getElement().classList.add("--focused")
-      const geo = geoIndex.places[placeIdx]
-      if (geo) map.flyTo({ center: [geo.lng, geo.lat], zoom: Math.max(map.getZoom(), 10), duration: 800 })
-    }
-
-    function focusActivity(actName) {
-      clearFocus(); focusedActName = actName
-      for (const item of listEl.querySelectorAll(".activity-item[data-act-name]")) {
-        if (item.dataset.actName === actName) {
-          item.classList.add("--focused"); item.scrollIntoView({ block: "nearest", behavior: "smooth" }); break
-        }
-      }
-      for (const m of detailMarkers) {
-        if (m.getElement().dataset.name === actName) { m.getElement().classList.add("--focused"); break }
-      }
-      const geo = geoIndex.activities.get(actName)
-      if (geo) map.flyTo({ center: [geo.lng, geo.lat], zoom: Math.max(map.getZoom(), 14), duration: 800 })
-    }
-
-    function focusStay(stayName) {
-      clearFocus(); focusedStayName = stayName
-      const stayEl = [...listEl.querySelectorAll(".stay[data-stay-name]")].find(el => el.dataset.stayName === stayName)
-      if (stayEl) { stayEl.classList.add("--focused"); stayEl.scrollIntoView({ block: "nearest", behavior: "smooth" }) }
-      for (const m of detailMarkers) {
-        if (m.getElement().dataset.name === stayName) { m.getElement().classList.add("--focused"); break }
-      }
-      const geo = geoIndex.stays.get(stayName)
-      if (geo) map.flyTo({ center: [geo.lng, geo.lat], zoom: Math.max(map.getZoom(), 14), duration: 800 })
-    }
-
-    function focusHub(hubName) {
-      clearFocus(); focusedHubName = hubName
-      for (const m of detailMarkers) {
-        if (m.getElement().dataset.name === hubName) { m.getElement().classList.add("--focused"); break }
-      }
-      const geo = geoIndex.hubs.get(hubName)
-      if (geo) map.flyTo({ center: [geo.lng, geo.lat], zoom: Math.max(map.getZoom(), 12), duration: 800 })
-    }
-
-    function setPlaceLoading(placeIdx, loading) {
-      const el = document.querySelector(\`.place[data-place-index="\${placeIdx}"] .place-num\`)
-      if (el) el.classList.toggle("--loading", loading)
-    }
-
-    function setStayLoading(stayName, loading) {
-      const stayEl = [...listEl.querySelectorAll(".stay[data-stay-name]")].find(el => el.dataset.stayName === stayName)
-      if (stayEl) stayEl.querySelector(".stay-icon")?.classList.toggle("--loading", loading)
-    }
-
-    function setActLoading(actName, loading) {
-      for (const item of listEl.querySelectorAll(".activity-item[data-act-name]")) {
-        if (item.dataset.actName === actName) {
-          const label = item.querySelector(".act-label")
-          if (label) label.classList.toggle("--loading", loading)
-          break
-        }
-      }
-    }
-
-    // ── Pill menu ─────────────────────────────────────────────────────────────
-    const menuTrigger = document.getElementById("menu-trigger")
-    const mainMenu    = document.getElementById("main-menu")
-
-    function closeMenu() {
-      mainMenu.classList.remove("open")
-      menuTrigger.classList.remove("open")
-    }
-
-    menuTrigger.addEventListener("click", e => {
-      e.stopPropagation()
-      mainMenu.classList.toggle("open")
-      menuTrigger.classList.toggle("open")
-    })
-    document.addEventListener("click", closeMenu)
-    mainMenu.addEventListener("click", e => e.stopPropagation())
-
-    // ── Menu → New ────────────────────────────────────────────────────────────
-    document.getElementById("menu-new").addEventListener("click", () => {
-      closeMenu()
-      newModal.classList.add("open")
-      setTimeout(() => newTextarea.focus(), 50)
-    })
-
-    function closeNewModal() { newModal.classList.remove("open"); newTextarea.value = "" }
-    document.getElementById("new-close-x").addEventListener("click",  closeNewModal)
-    document.getElementById("new-cancel").addEventListener("click",   closeNewModal)
-    newModal.addEventListener("click", e => { if (e.target === newModal) closeNewModal() })
-    document.getElementById("new-load").addEventListener("click", () => {
-      const src = newTextarea.value.trim()
-      if (!src) return
-      editorEl.value = src
-      render()
-      closeEditor()
-      closeNewModal()
-    })
-
-    // ── Menu → Edit ───────────────────────────────────────────────────────────
-    document.getElementById("menu-edit").addEventListener("click", () => { closeMenu(); openEditor() })
-
-    function openEditor() {
-      if (editorEl.value === "") editorEl.value = SOURCE
-      editorPanel.style.display = "flex"
-      editorEl.focus()
-    }
-
-    function closeEditor() {
-      editorPanel.style.display = "none"
-    }
-
-    document.getElementById("editor-close-btn").addEventListener("click", closeEditor)
-
-    // ── Menu → Examples ───────────────────────────────────────────────────────
-    document.getElementById("menu-examples").addEventListener("click", e => {
-      e.stopPropagation()
-      document.getElementById("examples-sub").classList.toggle("open")
-      e.currentTarget.classList.toggle("open")
-    })
-    document.querySelectorAll("[data-example]").forEach(el => {
-      el.addEventListener("click", () => {
-        const src = EXAMPLES[el.dataset.example]
-        if (!src) return
-        editorEl.value = src
-        render()
-        closeEditor()
-        closeMenu()
-      })
-    })
-
-    // ── Menu → How to generate ────────────────────────────────────────────────
-    document.getElementById("menu-generate").addEventListener("click", () => {
-      closeMenu()
-      generateModal.classList.add("open")
-    })
-    function closeGenerate() { generateModal.classList.remove("open") }
-    document.getElementById("generate-close-x").addEventListener("click", closeGenerate)
-    document.getElementById("generate-close").addEventListener("click",   closeGenerate)
-    generateModal.addEventListener("click", e => { if (e.target === generateModal) closeGenerate() })
-
-    document.getElementById("dl-spec-btn").addEventListener("click", () => {
-      if (!SPEC) return
-      const blob = new Blob([SPEC], { type: "text/markdown" })
-      const url  = URL.createObjectURL(blob)
-      const a    = document.createElement("a")
-      a.href = url; a.download = "CRUMB_SPEC.md"; a.click()
-      URL.revokeObjectURL(url)
-    })
-
-    // ── Menu → About ──────────────────────────────────────────────────────────
-    document.getElementById("menu-about").addEventListener("click", () => {
-      closeMenu()
-      aboutModal.classList.add("open")
-    })
-    function closeAbout() { aboutModal.classList.remove("open") }
-    document.getElementById("about-close-x").addEventListener("click",   closeAbout)
-    document.getElementById("about-close-btn").addEventListener("click", closeAbout)
-    aboutModal.addEventListener("click", e => { if (e.target === aboutModal) closeAbout() })
-
-    // ── List click: focus on name/title click only ───────────────────────────
-    listEl.addEventListener("click", e => {
-      const link = e.target.closest("[data-map-link]")
-      if (!link) return
-      const act  = link.closest("[data-act-name]")
-      const stay = link.closest("[data-stay-name]")
-      if (act)                  { focusActivity(act.dataset.actName); return }
-      if (stay)                 { focusStay(stay.dataset.stayName); return }
-      if (link.dataset.hubName) { focusHub(link.dataset.hubName); return }
-      const place = link.closest("[data-place-index]")
-      if (place) { focusPlace(parseInt(place.dataset.placeIndex, 10)); return }
-    })
-
-    // ── MapLibre GL ───────────────────────────────────────────────────────────
-    const map = new maplibregl.Map({
-      container:        "map",
-      style:            "https://tiles.openfreemap.org/styles/liberty",
-      center:           [10, 30],
-      zoom:             2,
-      attributionControl: false,
-    })
-    const attribution = new maplibregl.AttributionControl({ compact: true })
-    map.addControl(attribution)
-    setTimeout(() => {
-      attribution._container?.querySelector(".maplibregl-ctrl-attrib-button")?.click()
-    }, 5000)
-
-    let mapReady      = false
-    let pendingDoc    = null
-    let placeMarkers  = []
-    let detailMarkers = []
-
-    function popupHtml(p) {
-      const meta = POPUP_META[p.name]
-      return meta
-        ? \`<span class="popup-title">\${escHtml(p.name)}</span><br><span class="popup-sub">\${escHtml(meta)}</span>\`
-        : \`<span class="popup-title">\${escHtml(p.name)}</span>\`
-    }
-
-    function applyZoomClass() {
-      const z = map.getZoom()
-      document.body.classList.toggle("map-zoom-medium", z >= 8)
-      document.body.classList.toggle("map-zoom-close",  z >= 12)
-    }
-    map.on("zoom",    applyZoomClass)
-    map.on("zoomend", applyZoomClass)
-
-    map.on("load", () => {
-      map.addSource("route", { type: "geojson", data: { type: "FeatureCollection", features: [] } })
-
-      // Route line
-      map.addLayer({ id: "route-line", type: "line", source: "route",
-        paint: { "line-color": COLORS.route, "line-width": 2, "line-opacity": ["step", ["zoom"], 0.5, 12, 0], "line-dasharray": [2, 2] } })
-
-      mapReady = true
-      if (pendingDoc) { updateMap(pendingDoc); pendingDoc = null }
-    })
-
-    // ── Geocoding epoch (functions provided by GEO_SCRIPT) ───────────────────
-    let geocodeEpoch = 0
-
-    // ── Map rendering ─────────────────────────────────────────────────────────
-    async function updateMap(doc) {
-      if (!mapReady) { pendingDoc = doc; return }
-      const epoch  = ++geocodeEpoch
-      document.querySelectorAll(".--loading").forEach(el => el.classList.remove("--loading"))
-      const places = doc.itinerary.filter(item => item.type === "place")
-      geoIndex.places     = [null]
-      geoIndex.activities = new Map()
-      geoIndex.stays      = new Map()
-      geoIndex.hubs       = new Map()
-
-      if (!places.length) {
-        map.getSource("route").setData({ type: "FeatureCollection", features: [] })
-        placeMarkers.forEach(m => m.remove());  placeMarkers = []
-        detailMarkers.forEach(m => m.remove()); detailMarkers = []
-        setMapStatus(""); return
-      }
-
-      const needsFetch = places.filter(p => !p.location?.geocodingDisabled && p.location?.lat == null && !cachedGeo(p.location?.label || p.name))
-      const needsFetchSet = new Set(needsFetch)
-
-      // Collect all targets early so we can show all spinners at once
-      const actTargets  = collectActivityGeoTargets(doc)
-      const stayTargets = collectStayGeoTargets(doc)
-
-      // Show all pending spinners upfront before any geocoding starts
-      for (const [i, place] of places.entries()) {
-        if (needsFetchSet.has(place)) setPlaceLoading(i + 1, true)
-      }
-      for (const t of actTargets) {
-        if (t.location?.lat != null) continue
-        const actQ = t.query ?? t.name
-        if (!cachedGeo(actQ)) setActLoading(t.name, true)
-      }
-      let staysMarked = 0
-      for (const t of stayTargets) {
-        if (t.hasCoords) continue
-        if (staysMarked >= 3) break
-        const cacheKey = t.location?.label && t.location.label !== "none" ? t.location.label : t.name
-        if (!cachedGeo(cacheKey)) {
-          setStayLoading(t.stayName, true)
-          staysMarked++
-        }
-      }
-      if (needsFetch.length) setMapStatus("geocoding…")
-
-      const resolved = []
-      const resolvedPlaceCoords = new Map()
-      const retryWithContext = []
-      let done = 0
-
-      // Pass 1: geocode each place independently
-      for (const [i, place] of places.entries()) {
-        if (epoch !== geocodeEpoch) return
-        const geo = await resolveGeo(place)
-        done++
-        if (needsFetch.length) setMapStatus(\`geocoding \${done}/\${places.length}…\`)
-        if (geo) {
-          setPlaceLoading(i + 1, false)
-          writeBackGeo(place, geo)
-          resolved.push({ name: place.name, lat: geo.lat, lng: geo.lng })
-          resolvedPlaceCoords.set(place.name, geo)
-        } else {
-          retryWithContext.push({ place, i })
-        }
-        geoIndex.places.push(geo ?? null)
-      }
-
-      // Pass 2: retry failed places — spinner stays on from upfront marking
-      for (const { place, i } of retryWithContext) {
-        if (epoch !== geocodeEpoch) return
-        const prev = places[i - 1]?.name
-        const next = places[i + 1]?.name
-        const neighbor = resolvedPlaceCoords.get(prev) ? prev
-                       : resolvedPlaceCoords.get(next) ? next : null
-        const q = neighbor ? place.name + ", " + neighbor : null
-        const geo = q ? (cachedGeo(q) ?? await fetchGeo(q)) : null
-        setPlaceLoading(i + 1, false)
-        if (geo) {
-          writeBackGeo(place, geo)
-          resolved.push({ name: place.name, lat: geo.lat, lng: geo.lng })
-          resolvedPlaceCoords.set(place.name, geo)
-        } else {
-          const nameEl = document.querySelector(\`.place[data-place-index="\${i + 1}"] .place-name-text\`)
-          if (nameEl && !nameEl.querySelector(".geo-no-loc")) nameEl.insertAdjacentHTML("beforeend", GEO_FAIL_ICON)
-        }
-        geoIndex.places[i + 1] = geo ?? null
-      }
-
-      if (epoch !== geocodeEpoch) return
-      drawPlaceMarkers(resolved)
-      setMapStatus("")
-
-      let detailPoints = await geocodeTransportHubs(doc, resolvedPlaceCoords, () => epoch !== geocodeEpoch)
-      for (const p of detailPoints) {
-        if (p.pinType !== "hub") continue
-        geoIndex.hubs.set(p.name, { lat: p.lat, lng: p.lng })
-        listEl.querySelectorAll('.waypoint-name[data-hub-name]').forEach(el => {
-          if (el.dataset.hubName === p.name) el.setAttribute('data-map-link', '')
-        })
-      }
-      setDetailSource(detailPoints)
-
-      function actPoint(t, geo) {
-        return { name: t.name, lat: geo.lat, lng: geo.lng, pinType: t.priority === "must" ? "must" : t.priority === "maybe" ? "maybe" : "activity", placeIdx: t.placeIdx, actLabel: t.actLabel }
-      }
-      for (const t of actTargets) {
-        const loc = t.location
-        if (loc?.lat != null && loc?.lng != null) {
-          const geo = { lat: loc.lat, lng: loc.lng }
-          geoIndex.activities.set(t.name, geo)
-          detailPoints = [...detailPoints, actPoint(t, geo)]
-        }
-      }
-      if (detailPoints.length) setDetailSource(detailPoints)
-
-      for (const t of actTargets) {
-        if (t.location?.lat != null) continue
-        if (epoch !== geocodeEpoch) return
-        const geo = await resolveGeo(t)
-        setActLoading(t.name, false)
-        if (epoch !== geocodeEpoch) return
-        if (geo) { geoIndex.activities.set(t.name, geo); detailPoints = [...detailPoints, actPoint(t, geo)]; setDetailSource(detailPoints) }
-        else {
-          const item = [...listEl.querySelectorAll(".activity-item[data-act-name]")].find(el => el.dataset.actName === t.name)
-          const nameEl = item?.querySelector(".act-name")
-          if (nameEl && !nameEl.querySelector(".geo-no-loc")) nameEl.insertAdjacentHTML("beforeend", GEO_FAIL_ICON)
-        }
-      }
-
-      let staysFetched = 0
-      for (const t of stayTargets) {
-        if (epoch !== geocodeEpoch) return
-        const cacheKey = t.location?.label && t.location.label !== "none" ? t.location.label : t.name
-        const isCached = t.hasCoords || cachedGeo(cacheKey) != null
-        if (!isCached && staysFetched >= 3) {
-          setStayLoading(t.stayName, false)
-          continue
-        }
-        const geo = await resolveGeo(t)
-        setStayLoading(t.stayName, false)
-        if (epoch !== geocodeEpoch) return
-        if (!t.hasCoords && !isCached) staysFetched++
-        if (geo) { geoIndex.stays.set(t.stayName, geo); detailPoints = [...detailPoints, { name: t.stayName, lat: geo.lat, lng: geo.lng, pinType: "stay", placeIdx: t.placeIdx }]; setDetailSource(detailPoints) }
-        else if (!t.hasCoords) {
-          const stayEl = [...listEl.querySelectorAll(".stay[data-stay-name]")].find(el => el.dataset.stayName === t.stayName)
-          const nameEl = stayEl?.querySelector(".stay-name")
-          if (nameEl && !nameEl.querySelector(".geo-no-loc")) nameEl.insertAdjacentHTML("beforeend", GEO_FAIL_ICON)
-        }
-      }
-    }
-
-    function drawPlaceMarkers(points) {
-      map.getSource("route").setData({ type: "FeatureCollection", features: points.length > 1
-        ? [{ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: points.map(p => [p.lng, p.lat]) } }] : [] })
-
-      placeMarkers.forEach(m => m.remove()); placeMarkers = []
-
-      for (const [i, p] of points.entries()) {
-        const el = document.createElement("div")
-        el.className = "place-marker"
-        el.innerHTML = \`<span class="place-marker-num">\${i + 1}</span>\`
-        const popup = new maplibregl.Popup({ closeButton: false, offset: 20, className: "place-popup" })
-          .setHTML(popupHtml(p))
-        el.addEventListener("mouseenter", () => popup.setLngLat([p.lng, p.lat]).addTo(map))
-        el.addEventListener("mouseleave", () => popup.remove())
-        el.addEventListener("click", e => { e.stopPropagation(); focusPlace(i + 1) })
-        const marker = new maplibregl.Marker({ element: el, anchor: "center" })
-          .setLngLat([p.lng, p.lat]).addTo(map)
-        placeMarkers.push(marker)
-      }
-
-      if (focusedPlaceIdx !== null) {
-        const m = placeMarkers[focusedPlaceIdx - 1]
-        if (m) m.getElement().classList.add("--focused")
-      }
-
-      if (points.length) {
-        const bounds = new maplibregl.LngLatBounds()
-        points.forEach(p => bounds.extend([p.lng, p.lat]))
-        map.fitBounds(bounds, { padding: 60, maxZoom: 10 })
-        applyZoomClass()
-      }
-    }
-
-    function setDetailSource(points) {
-      detailMarkers.forEach(m => m.remove()); detailMarkers = []
-
-      for (const p of points) {
-        const el = document.createElement("div")
-        el.className = \`detail-marker detail-marker--\${p.pinType ?? "activity"}\`
-        if (p.pinType === "stay") el.innerHTML = ICONS.stay
-        else if (p.pinType === "hub") el.innerHTML = ICONS[p.mode] ?? ICONS.transport
-        else if (p.actLabel) el.innerHTML = \`<span class="detail-marker-label">\${escHtml(p.actLabel)}</span>\`
-        const popup = new maplibregl.Popup({ closeButton: false, offset: 14, className: "detail-popup" })
-          .setHTML(popupHtml(p))
-        el.addEventListener("mouseenter", () => popup.setLngLat([p.lng, p.lat]).addTo(map))
-        el.addEventListener("mouseleave", () => popup.remove())
-        el.dataset.name = p.name
-        if (p.pinType === "stay")
-          el.addEventListener("click", e => { e.stopPropagation(); focusStay(p.name) })
-        else if (p.pinType === "hub")
-          el.addEventListener("click", e => { e.stopPropagation(); focusHub(p.name) })
-        else
-          el.addEventListener("click", e => { e.stopPropagation(); focusActivity(p.name) })
-        const marker = new maplibregl.Marker({ element: el, anchor: "center" })
-          .setLngLat([p.lng, p.lat]).addTo(map)
-        detailMarkers.push(marker)
-      }
-
-      const focusedDetailName = focusedActName ?? focusedStayName ?? focusedHubName
-      if (focusedDetailName !== null) {
-        for (const m of detailMarkers) {
-          if (m.getElement().dataset.name === focusedDetailName) { m.getElement().classList.add("--focused"); break }
-        }
-      }
-    }
-
-    function collectActivityGeoTargets(doc) {
-      const targets = []; let placeIdx = 0
-      for (const item of doc.itinerary) {
-        if (item.type !== "place") continue; placeIdx++
-        let actIdx = 0
-        for (const group of (item.activities ?? []))
-          for (const act of (group.items ?? []))
-            if (!act.location?.geocodingDisabled)
-              targets.push({ name: act.name, location: act.location ?? null, query: act.location ? null : \`\${act.name}, \${item.name}\`, priority: act.priority ?? null, placeIdx, actLabel: String.fromCharCode(65 + actIdx++) })
-      }
-      return targets
-    }
-
-    function collectStayGeoTargets(doc) {
-      const targets = []; let placeIdx = 0
-      for (const item of doc.itinerary) {
-        if (item.type !== "place") continue; placeIdx++
-        for (const stay of (item.stay ?? [])) {
-          if (stay.location?.geocodingDisabled) continue
-          const hasCoords = stay.location?.lat != null
-          targets.push({ name: hasCoords ? stay.name : \`\${stay.name}, \${item.name}\`, stayName: stay.name, location: stay.location ?? null, hasCoords, placeIdx })
-        }
-      }
-      return targets
-    }
-
-    function setMapStatus(text) { mapStatusEl.textContent = text }
-    function escHtml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/'/g,"&#39;") }
-
-    // ── Live editor ───────────────────────────────────────────────────────────
-    function setEditorError(msg) { errorBar.textContent = msg; errorBar.style.display = msg ? "" : "none" }
-    function clearEditorError() { setEditorError("") }
-
-    let debounce
-    function render() {
-      const src = editorEl.value.trim()
-      if (!src) {
-        listEl.innerHTML = '<div class="list-empty">Start typing a .crumb document…</div>'
-        clearEditorError()
-        if (mapReady) {
-          map.getSource("route").setData({ type: "FeatureCollection", features: [] })
-          placeMarkers.forEach(m => m.remove());  placeMarkers = []
-          detailMarkers.forEach(m => m.remove()); detailMarkers = []
-        }
-        setMapStatus(""); return
-      }
-      try {
-        const doc = Crumb.parse(src)
-        DATA = doc
-        POPUP_META = Crumb.buildPopupMeta(doc)
-        document.title = "Crumb" + (doc.trip?.name ? " — " + doc.trip.name : "")
-        listEl.innerHTML = Crumb.renderItineraryBody(doc)
-        clearEditorError()
-        updateMap(doc)
-      } catch (e) {
-        const msg = (e instanceof Error ? e.message : String(e)).split("\\n")[0]
-        setEditorError("⚠ " + msg)
-      }
-    }
-
-    editorEl.addEventListener("input", () => { clearTimeout(debounce); debounce = setTimeout(render, 220) })
-    editorEl.addEventListener("keydown", e => {
-      if (e.key !== "Tab") return
-      e.preventDefault()
-      const s = editorEl.selectionStart, v = editorEl.value
-      editorEl.value = v.slice(0, s) + "  " + v.slice(editorEl.selectionEnd)
-      editorEl.selectionStart = editorEl.selectionEnd = s + 2
-    })
-
-    // ── Boot ─────────────────────────────────────────────────────────────────
-    updateMap(DATA)
+    window.__CRUMB_SOURCE   = ${sourceJson};
+    window.__CRUMB_SPEC     = ${specJson};
+    window.__CRUMB_EXAMPLES = ${examplesJson};
+    window.__CRUMB_DATA     = ${docJson};
+    window.__CRUMB_POPUPS   = ${popupMetaJson};
   </script>
+  <script>${options.appBundle}</script>
 </body>
 </html>`
 }
@@ -1000,38 +440,27 @@ function renderPlaceDates(place: Place): string {
 
 function formatDateRange(a: ResolvedMoment, d: ResolvedMoment): string {
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-
-  function getIso(m: ResolvedMoment): string | null {
-    if (m.date?.precision === "absolute") return m.date.value
-    if (m.anchor?.date) return m.anchor.date
-    return null
-  }
-
-  function shortFrag(iso: string): string {
-    return formatShortDate(iso)
-  }
-
-  const aIso = getIso(a)
-  const dIso = getIso(d)
+  const aIso = isoFromMoment(a)
+  const dIso = isoFromMoment(d)
 
   if (aIso && dIso) {
     const [ay, am, ad] = aIso.split("-").map(Number)
-    const [dy, dm, dd] = dIso.split("-").map(Number)
-    const aInferred = isInferredMoment(a)
-    const dInferred = isInferredMoment(d)
+    const [, dm, dd]   = dIso.split("-").map(Number)
+    const aInferred    = isInferredMoment(a)
+    const dInferred    = isInferredMoment(d)
 
-    if (ay === dy && am === dm) {
-      // Compact same-month range: "Jan 15–20" (italic if either endpoint is inferred)
+    if (ay === parseInt(dIso.split("-")[0], 10) && am === dm) {
+      // Same-month compact: "Jan 15–20"
       const range = `${months[am - 1]} ${ad}–${dd}`
       return (aInferred || dInferred) ? `<span class="date-inferred">${range}</span>` : range
     }
 
-    const aFrag = aInferred ? `<span class="date-inferred">${shortFrag(aIso)}</span>` : shortFrag(aIso)
-    const dFrag = dInferred ? `<span class="date-inferred">${shortFrag(dIso)}</span>` : shortFrag(dIso)
+    const aFrag = aInferred ? `<span class="date-inferred">${formatShortDate(aIso)}</span>` : formatShortDate(aIso)
+    const dFrag = dInferred ? `<span class="date-inferred">${formatShortDate(dIso)}</span>` : formatShortDate(dIso)
     return `${aFrag} • ${dFrag}`
   }
 
-  // Fallback: label-aware fragments (no weekday — place context)
+  // Fallback: label-aware fragments with direction icons
   function dateFrag(m: ResolvedMoment): string {
     const isInferred = isInferredMoment(m)
     let str: string
@@ -1059,9 +488,9 @@ function formatDateRange(a: ResolvedMoment, d: ResolvedMoment): string {
 }
 
 function renderTransportLeg(leg: TransportLeg): string {
-  const icon = modeIconSvg(leg.mode)
+  const icon        = modeIconSvg(leg.mode)
+  const hasContent  = !!(leg.departs || leg.arrives || leg.duration || leg.info?.length || leg.note)
 
-  const hasContent = !!(leg.departs || leg.arrives || leg.duration || leg.info?.length || leg.note)
   if (!hasContent) {
     return `<div class="transport transport-simple">
   <span class="transport-icon">${icon}</span>
@@ -1069,23 +498,35 @@ function renderTransportLeg(leg: TransportLeg): string {
 </div>`
   }
 
-  const from = leg.from ? leg.from.label : null
-  const to   = leg.to   ? leg.to.label   : null
-
+  const from         = leg.from?.label ?? null
+  const to           = leg.to?.label   ?? null
   const departsHtml  = leg.departs  ? wrapInferred(momentOrUnknown(leg.departs),  leg.departs)  : null
   const arrivesHtml  = leg.arrives  ? wrapInferred(momentOrUnknown(leg.arrives),  leg.arrives)  : null
   const durationText = leg.duration ? durOrUnknown(leg.duration) : null
-
-  const noteHtml = leg.note ? `<div class="transport-note">${renderMarkdown(leg.note)}</div>` : ""
-  const infoHtml = leg.info?.length
+  const noteHtml     = leg.note ? `<div class="transport-note">${renderMarkdown(leg.note)}</div>` : ""
+  const infoHtml     = leg.info?.length
     ? `<div class="transport-info">${leg.info.map(i => `<div class="info-item"><span class="info-key">${escape(String(i.key))}</span><span class="info-val">${escape(String(i.value))}</span></div>`).join("")}</div>`
     : ""
 
-  const hasBoth = !!(from || departsHtml) && !!(to || arrivesHtml)
+  const hasBoth  = !!(from || departsHtml) && !!(to || arrivesHtml)
+  const routeHtml = hasBoth
+    ? renderDetailedRoute(from, to, departsHtml, arrivesHtml, durationText)
+    : renderSimpleRoute(from, to, departsHtml, arrivesHtml, durationText)
 
-  let routeHtml: string
-  if (hasBoth) {
-    routeHtml = `<div class="transport-route-block">
+  return `<div class="transport">
+  <span class="transport-icon">${icon}</span>
+  <div class="transport-body">
+    ${routeHtml}${noteHtml}${infoHtml}
+  </div>
+</div>`
+}
+
+function renderDetailedRoute(
+  from: string | null, to: string | null,
+  departsHtml: string | null, arrivesHtml: string | null,
+  durationText: string | null,
+): string {
+  return `<div class="transport-route-block">
       <div class="tl-row">
         <div class="tl-marker"><div class="tl-dot"></div></div>
         <span class="waypoint-name"${from ? ` data-hub-name="${escape(from)}"` : ""}>${from ? escape(from) : ""}</span>
@@ -1093,7 +534,7 @@ function renderTransportLeg(leg: TransportLeg): string {
       <div class="tl-row">
         <div class="tl-marker tl-marker-line"><div class="tl-line"></div></div>
         <div class="tl-meta">
-          ${departsHtml ? `<span class="waypoint-time">${ICON_DEPARTS}${departsHtml}</span>` : ""}
+          ${departsHtml  ? `<span class="waypoint-time">${ICON_DEPARTS}${departsHtml}</span>`                : ""}
           ${durationText ? `<span class="waypoint-time segment-duration">${ICON_CLOCK}${durationText}</span>` : ""}
         </div>
       </div>
@@ -1103,21 +544,19 @@ function renderTransportLeg(leg: TransportLeg): string {
       </div>
       ${arrivesHtml ? `<div class="tl-indent"><span class="waypoint-time">${ICON_ARRIVES}${arrivesHtml}</span></div>` : ""}
     </div>`
-  } else {
-    const parts: string[] = []
-    if (from || to) parts.push([from, to].filter(Boolean).map(s => escape(s!)).join(" → "))
-    if (departsHtml) parts.push(`${ICON_DEPARTS}${departsHtml}`)
-    if (arrivesHtml) parts.push(`${ICON_ARRIVES}${arrivesHtml}`)
-    if (durationText) parts.push(`<span class="waypoint-time">${ICON_CLOCK}${durationText}</span>`)
-    routeHtml = parts.length ? `<div class="transport-simple">${parts.join(" · ")}</div>` : ""
-  }
+}
 
-  return `<div class="transport">
-  <span class="transport-icon">${icon}</span>
-  <div class="transport-body">
-    ${routeHtml}${noteHtml}${infoHtml}
-  </div>
-</div>`
+function renderSimpleRoute(
+  from: string | null, to: string | null,
+  departsHtml: string | null, arrivesHtml: string | null,
+  durationText: string | null,
+): string {
+  const parts: string[] = []
+  if (from || to) parts.push([from, to].filter(Boolean).map(s => escape(s!)).join(" → "))
+  if (departsHtml)  parts.push(`${ICON_DEPARTS}${departsHtml}`)
+  if (arrivesHtml)  parts.push(`${ICON_ARRIVES}${arrivesHtml}`)
+  if (durationText) parts.push(`<span class="waypoint-time">${ICON_CLOCK}${durationText}</span>`)
+  return parts.length ? `<div class="transport-simple">${parts.join(" · ")}</div>` : ""
 }
 
 function renderStays(stays: Stay[]): string {
@@ -1182,8 +621,8 @@ function renderActivityGroup(group: ActivityGroup, counter: ActCounter, groupInd
 
 function renderActivityItem(act: Activity, actIndex?: number): string {
   // Letter label (A, B, C…) as map reference — shown only when index is provided
-  const label = actIndex !== undefined && actIndex < 26
-    ? `<span class="act-label">${String.fromCharCode(65 + actIndex)}</span>`
+  const label = actIndex !== undefined
+    ? `<span class="act-label">${activityLabel(actIndex)}</span>`
     : ""
 
   const actGeoIcon = act.location?.geocodingDisabled ? `<span class="geo-no-loc">${ICON_GLOBE_OFF}</span>` : ""
@@ -1233,29 +672,43 @@ function renderInfoList(info: MetadataItem[], indent: string): string {
 }
 
 function renderMarkdown(text: string): string {
-  return escape(text)
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.+?)\*/g,     "<em>$1</em>")
+  const inline = (s: string): string =>
+    escape(s)
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.+?)\*/g,     "<em>$1</em>")
+      .replace(/`([^`]+)`/g,     "<code>$1</code>")
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
+        '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+
+  const blocks: string[] = []
+  let paraLines: string[] = []
+  let listItems: string[] = []
+
+  const flushPara = () => {
+    if (paraLines.length) { blocks.push(paraLines.join(" ")); paraLines = [] }
+  }
+  const flushList = () => {
+    if (listItems.length) {
+      blocks.push(`<ul>${listItems.map(li => `<li>${li}</li>`).join("")}</ul>`)
+      listItems = []
+    }
+  }
+
+  for (const raw of text.split("\n")) {
+    const line    = raw.trimEnd()
+    const liMatch = /^[-*]\s+(.+)/.exec(line)
+    if (liMatch)      { flushPara(); listItems.push(inline(liMatch[1])) }
+    else if (!line)   { flushPara(); flushList() }
+    else              { flushList(); paraLines.push(inline(line)) }
+  }
+  flushPara()
+  flushList()
+
+  if (blocks.length === 1 && !blocks[0].startsWith("<ul>")) return blocks[0]
+  return blocks.map(b => b.startsWith("<ul>") ? b : `<p>${b}</p>`).join("")
 }
 
 // ─── Popup meta ───────────────────────────────────────────────────────────────
-
-function plainDateRange(a: ResolvedMoment | undefined, d: ResolvedMoment | undefined): string {
-  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-  const getIso = (m: ResolvedMoment) =>
-    m.date?.precision === "absolute" ? m.date.value : m.anchor?.date ?? null
-  const aIso = a ? getIso(a) : null
-  const dIso = d ? getIso(d) : null
-  if (aIso && dIso) {
-    const [, am, ad] = aIso.split("-").map(Number)
-    const [, dm, dd] = dIso.split("-").map(Number)
-    if (am === dm) return `${months[am - 1]} ${ad}–${dd}`
-    return `${formatShortDate(aIso)}–${formatShortDate(dIso)}`
-  }
-  if (aIso) return formatShortDate(aIso)
-  if (dIso) return formatShortDate(dIso)
-  return ""
-}
 
 export function buildPopupMeta(doc: CrumbDocument): Record<string, string> {
   const meta: Record<string, string> = {}
@@ -1266,12 +719,12 @@ export function buildPopupMeta(doc: CrumbDocument): Record<string, string> {
     const parts: string[] = []
     const dur = resolvePlaceDisplayDuration(item)
     if (dur && dur.type !== "unknown") parts.push(formatDuration(dur))
-    const range = plainDateRange(item.arrives, item.departs)
+    const range = formatPlainDateRange(item.arrives, item.departs)
     if (range) parts.push(range)
     if (parts.length) meta[item.name] = parts.join(" • ")
 
     for (const stay of item.stay ?? []) {
-      const r = plainDateRange(stay.arrives, stay.departs)
+      const r = formatPlainDateRange(stay.arrives, stay.departs)
       if (r) meta[stay.name] = r
     }
 

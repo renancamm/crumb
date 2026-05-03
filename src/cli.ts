@@ -39,7 +39,7 @@ async function main() {
   const doc    = parse(source)
 
   // 2 — Bundle parser + renderer for the browser (live re-parsing)
-  const result = await esbuild.build({
+  const parserResult = await esbuild.build({
     entryPoints: [path.resolve(__dirname, "browser-entry.ts")],
     bundle:      true,
     format:      "iife",
@@ -48,7 +48,18 @@ async function main() {
     write:       false,
     logLevel:    "silent",
   })
-  const parserBundle = result.outputFiles[0].text
+  const parserBundle = parserResult.outputFiles[0].text
+
+  // 2b — Bundle browser app (map, geocoding, editor, UI interactions)
+  const appResult = await esbuild.build({
+    entryPoints: [path.resolve(__dirname, "renderer/browser-app.ts")],
+    bundle:      true,
+    format:      "iife",
+    platform:    "browser",
+    write:       false,
+    logLevel:    "silent",
+  })
+  const appBundle = appResult.outputFiles[0].text
 
   // 3 — Collect examples
   const examplesDir = path.resolve(__dirname, "../examples")
@@ -68,7 +79,7 @@ async function main() {
   const specContent = specPath ? fs.readFileSync(specPath, "utf8") : undefined
 
   // 5 — Render
-  const options: AppOptions = { source, examples, parserBundle, specContent }
+  const options: AppOptions = { source, examples, parserBundle, appBundle, specContent }
   const html = renderHtml(doc, options)
 
   if (outPath) {

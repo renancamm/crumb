@@ -8,10 +8,12 @@
  *   colors, editor theme, radius scale, shadows, motion, layout, type.
  */
 
-export const CSS = `
+const resetCSS = `
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; overflow: hidden; }
+`
 
+const tokensCSS = `
 :root {
   /* ── Light theme ─────────────────────────────────────────────────── */
   --bg:            #ffffff;
@@ -73,7 +75,9 @@ html, body { height: 100%; overflow: hidden; }
 }
 
 body { font-family: var(--font); font-size: var(--text-base); color: var(--text); background: var(--bg); }
+`
 
+const iconsCSS = `
 /* ── Icons ──────────────────────────────────────────────────────────── */
 .crumb-icon {
   width: 14px; height: 14px;
@@ -84,7 +88,9 @@ body { font-family: var(--font); font-size: var(--text-base); color: var(--text)
 }
 .geo-no-loc { display: inline-flex; align-items: center; margin-left: 5px; color: var(--text); vertical-align: middle; opacity: 0.4; }
 .geo-no-loc .crumb-icon { width: 12px; height: 12px; }
+`
 
+const layoutCSS = `
 /* ── Layout ─────────────────────────────────────────────────────────── */
 #main { display: flex; height: 100vh; overflow: hidden; }
 
@@ -110,7 +116,9 @@ body { font-family: var(--font); font-size: var(--text-base); color: var(--text)
 }
 
 #map { flex: 1; min-width: 0; }
+`
 
+const menuCSS = `
 /* ── Sidebar pill ────────────────────────────────────────────────────── */
 .sidebar-header {
   position: absolute;
@@ -207,7 +215,9 @@ body { font-family: var(--font); font-size: var(--text-base); color: var(--text)
   user-select: none;
 }
 .menu-sub-item:hover { background: var(--muted-bg); color: var(--text); }
+`
 
+const editorCSS = `
 /* ── Editor panel ────────────────────────────────────────────────────── */
 .editor-header {
   flex-shrink: 0;
@@ -274,7 +284,9 @@ body { font-family: var(--font); font-size: var(--text-base); color: var(--text)
   min-height: 0;
 }
 .editor-textarea::placeholder { color: var(--ed-placeholder); }
+`
 
+const listCSS = `
 /* ── List view ───────────────────────────────────────────────────────── */
 #list-view {
   flex: 1;
@@ -293,7 +305,9 @@ body { font-family: var(--font); font-size: var(--text-base); color: var(--text)
 }
 
 .place, .activity-item, .stay { scroll-margin-top: 64px; }
+`
 
+const modalCSS = `
 /* ── Modals ──────────────────────────────────────────────────────────── */
 .modal-overlay {
   display: none;
@@ -388,7 +402,9 @@ body { font-family: var(--font); font-size: var(--text-base); color: var(--text)
 }
 .new-textarea:focus { border-color: var(--muted); }
 .new-textarea::placeholder { color: var(--muted); opacity: 0.6; }
+`
 
+const mapCSS = `
 /* ── Geocoding status chip ───────────────────────────────────────────── */
 .map-status-chip {
   position: fixed;
@@ -507,7 +523,9 @@ body.map-zoom-close .detail-marker--hub  .crumb-icon { display: block; }
   border: 1.5px solid rgba(249,115,22,.15); border-top-color: var(--activity);
   animation: geo-spin 700ms linear infinite;
 }
+`
 
+const itineraryCSS = `
 /* ─────────────────────────────────────────────────────────────────────
    Itinerary content
    ───────────────────────────────────────────────────────────────────── */
@@ -717,6 +735,38 @@ body.map-zoom-close .detail-marker--hub  .crumb-icon { display: block; }
 .info-item .info-key { color: var(--muted); min-width: 64px; flex-shrink: 0; }
 .info-item .info-val { color: var(--muted); }
 
+/* ── Markdown in notes ───────────────────────────────────────────────── */
+.note, .place-note, .act-note, .stay-note, .transport-note { line-height: 1.6; }
+.note ul, .place-note ul, .act-note ul, .stay-note ul, .transport-note ul {
+  padding-left: 20px; margin: 4px 0; list-style: disc;
+}
+.note li, .place-note li, .act-note li, .stay-note li, .transport-note li {
+  padding-left: 2px; line-height: 1.5;
+}
+.note li + li, .place-note li + li, .act-note li + li, .stay-note li + li, .transport-note li + li { margin-top: 2px; }
+.note p + p, .place-note p + p, .act-note p + p, .stay-note p + p, .transport-note p + p { margin-top: 4px; }
+.note a, .place-note a, .act-note a, .stay-note a, .transport-note a {
+  color: var(--text); text-decoration: underline; text-decoration-color: var(--border);
+}
+.note a:hover, .place-note a:hover, .act-note a:hover, .stay-note a:hover, .transport-note a:hover { text-decoration-color: var(--muted); }
+.note code, .place-note code, .act-note code, .stay-note code, .transport-note code {
+  font-family: var(--mono); font-size: 0.9em;
+  background: var(--muted-bg); padding: 1px 4px; border-radius: var(--radius-xs);
+}
+
 /* ── Empty state ─────────────────────────────────────────────────────── */
 .list-empty { padding: 40px 0; text-align: center; color: var(--muted); font-size: var(--text-sm); }
 `
+
+export const CSS = [
+  resetCSS,
+  tokensCSS,
+  iconsCSS,
+  layoutCSS,
+  menuCSS,
+  editorCSS,
+  listCSS,
+  modalCSS,
+  mapCSS,
+  itineraryCSS,
+].join("\n")

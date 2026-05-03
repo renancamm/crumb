@@ -1,15 +1,8 @@
 /**
- * Geocoder script — browser-side geocoding module.
- *
- * Exported as a string constant (GEO_SCRIPT) following the same pattern as
- * css.ts, so it can be injected into the self-contained HTML output as an
- * inline <script> block before the main app script.
- *
- * Functions defined here use `function` declarations so they are globally
- * accessible to the main app script that runs in the subsequent <script> block.
+ * Browser-side geocoding module.
  *
  * Geocoding strategy:
- *   Places     — geocode independently first; retry failures with a neighbor
+ *   Places     — geocode independently first; retry failures with a neighbour
  *                place name appended as context (e.g. "Alfama, Lisbon").
  *   Activities — caller appends parent place name; geocodingDisabled opt-out
  *                via `location: none` in YAML.
@@ -21,126 +14,180 @@
  *                code reads from the model directly.
  */
 
-export const GEO_SCRIPT = `
-  // ── Geocoding ───────────────────────────────────────────────────────────────
+import type { CrumbDocument, Place, ResolvedGeolocation, TransportLeg } from "../types/resolved"
 
-  const GEO_CACHE_PREFIX = "crumb-geo:"
-  let geoQueue = Promise.resolve()
+// ─── Shared types ─────────────────────────────────────────────────────────────
 
-  function cachedGeo(name) {
-    try { const r = localStorage.getItem(GEO_CACHE_PREFIX + name.toLowerCase()); return r ? JSON.parse(r) : null } catch { return null }
+export interface GeoResult {
+  lat: number
+  lng: number
+}
+
+export interface GeoTarget {
+  name: string
+  location?: ResolvedGeolocation | null
+  query?: string | null
+}
+
+export interface DetailPoint {
+  name: string
+  lat: number
+  lng: number
+  pinType: "hub" | "stay" | "must" | "maybe" | "activity"
+  mode?: string
+  subtitle?: string
+  placeIdx: number | null
+  actLabel?: string
+}
+
+// ─── Geocoding ────────────────────────────────────────────────────────────────
+
+const GEO_CACHE_PREFIX = "crumb-geo:"
+let geoQueue: Promise<void> = Promise.resolve()
+
+export function cachedGeo(name: string): GeoResult | null {
+  try {
+    const r = localStorage.getItem(GEO_CACHE_PREFIX + name.toLowerCase())
+    return r ? (JSON.parse(r) as GeoResult) : null
+  } catch {
+    return null
   }
+}
 
-  function cacheGeo(name, result) {
-    try { localStorage.setItem(GEO_CACHE_PREFIX + name.toLowerCase(), JSON.stringify(result)) } catch {}
-  }
+export function cacheGeo(name: string, result: GeoResult): void {
+  try {
+    localStorage.setItem(GEO_CACHE_PREFIX + name.toLowerCase(), JSON.stringify(result))
+  } catch { /* storage quota exceeded */ }
+}
 
-  function fetchGeo(name) {
-    const promise = geoQueue.then(() => new Promise(resolve => {
-      fetch("https://nominatim.openstreetmap.org/search?" + new URLSearchParams({ q: name, format: "json", limit: "1", "accept-language": "en" }))
-        .then(r => r.json()).then(data => {
-          const result = data?.length > 0 ? { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) } : null
+export function fetchGeo(name: string): Promise<GeoResult | null> {
+  const promise = geoQueue.then(
+    () => new Promise<GeoResult | null>(resolve => {
+      fetch(
+        "https://nominatim.openstreetmap.org/search?" +
+        new URLSearchParams({ q: name, format: "json", limit: "1", "accept-language": "en" })
+      )
+        .then(r => r.json())
+        .then((data: Array<{ lat: string; lon: string }>) => {
+          const result = data?.length > 0
+            ? { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
+            : null
           if (result) cacheGeo(name, result)
-          setTimeout(() => resolve(result), 1100)
-        }).catch(() => setTimeout(() => resolve(null), 1100))
-    }))
-    geoQueue = promise.then(() => {})
-    return promise
-  }
+          setTimeout(() => resolve(result), 1100)  // Nominatim ToS: ≤1 req/sec
+        })
+        .catch(() => setTimeout(() => resolve(null), 1100))
+    })
+  )
+  geoQueue = promise.then(() => {})
+  return promise
+}
 
-  async function resolveGeo(target) {
-    if (target.location) {
-      if (target.location.geocodingDisabled) return null
-      if (target.location.lat != null && target.location.lng != null) return { lat: target.location.lat, lng: target.location.lng }
-      const label = target.location.label
-      if (label && label !== "none") { const c = cachedGeo(label); return c ?? await fetchGeo(label) }
+export async function resolveGeo(target: GeoTarget): Promise<GeoResult | null> {
+  if (target.location) {
+    if (target.location.geocodingDisabled) return null
+    if (target.location.lat != null && target.location.lng != null) {
+      return { lat: target.location.lat, lng: target.location.lng }
     }
-    const q = target.query ?? target.name
-    return cachedGeo(q) ?? fetchGeo(q)
-  }
-
-  // ── Location write-back ─────────────────────────────────────────────────────
-
-  function writeBackGeo(place, geo) {
-    if (!place.location) place.location = { label: place.name }
-    place.location.lat = geo.lat
-    place.location.lng = geo.lng
-  }
-
-  function writeBackEndpointGeo(endpoint, geo) {
-    endpoint.lat = geo.lat
-    endpoint.lng = geo.lng
-  }
-
-  // ── Transport hub geocoding ─────────────────────────────────────────────────
-
-  function nearPlace(pt, name, coords) {
-    const g = coords.get(name)
-    return g && Math.abs(pt.lat - g.lat) < 0.8 && Math.abs(pt.lng - g.lng) < 1.2
-  }
-
-  const TRANSPORT_HUBS = new Set(["flight", "train", "ferry", "bus"])
-
-  function shouldGeocodeTransport(leg) {
-    // walk/bike: skip unless the leg carries an explicit label or coordinates
-    if (leg.mode === "walk" || leg.mode === "bike") {
-      const hasFrom = leg.from?.lat != null || (leg.from?.label && leg.from.label !== "none")
-      const hasTo   = leg.to?.lat   != null || (leg.to?.label   && leg.to.label   !== "none")
-      return hasFrom || hasTo
+    const label = target.location.label
+    if (label && label !== "none") {
+      const c = cachedGeo(label)
+      return c ?? await fetchGeo(label)
     }
-    // car/generic transport: only geocode when a from/to label is explicitly set
-    if (!TRANSPORT_HUBS.has(leg.mode)) {
-      return (leg.from?.label && leg.from.label !== "none") ||
-             (leg.to?.label   && leg.to.label   !== "none")
-    }
-    return true
   }
+  const q = target.query ?? target.name
+  return cachedGeo(q) ?? fetchGeo(q)
+}
 
-  async function geocodeTransportHubs(doc, resolvedPlaceCoords, isStale) {
-    const items  = doc.itinerary
-    const points = []
+// ─── Location write-back ──────────────────────────────────────────────────────
 
-    for (let i = 0; i < items.length; i++) {
-      const leg = items[i]
-      if (leg.type === "place" || !shouldGeocodeTransport(leg)) continue
-      if (isStale()) return points
+export function writeBackGeo(place: Place, geo: GeoResult): void {
+  place.location ??= { label: place.name }
+  place.location.lat = geo.lat
+  place.location.lng = geo.lng
+}
 
-      const prev     = [...items.slice(0, i)].reverse().find(x => x.type === "place")
-      const next     = items.slice(i + 1).find(x => x.type === "place")
-      const prevName = prev?.name ?? ""
-      const nextName = next?.name ?? ""
-      const suffix   = leg.mode === "flight" ? "airport"
-                     : leg.mode === "train"  ? "train station"
-                     : ""
+export function writeBackEndpointGeo(endpoint: ResolvedGeolocation, geo: GeoResult): void {
+  endpoint.lat = geo.lat
+  endpoint.lng = geo.lng
+}
 
-      for (const [endpoint, side] of [[leg.from, "from"], [leg.to, "to"]]) {
-        if (!endpoint || endpoint.geocodingDisabled) continue
+// ─── Transport hub geocoding ──────────────────────────────────────────────────
 
-        // Already has explicit coordinates — proximity-filter and use as-is
-        if (endpoint.lat != null && endpoint.lng != null) {
-          const pt = { lat: endpoint.lat, lng: endpoint.lng }
-          if (!nearPlace(pt, prevName, resolvedPlaceCoords) && !nearPlace(pt, nextName, resolvedPlaceCoords))
-            points.push({ name: endpoint.label, lat: pt.lat, lng: pt.lng, pinType: "hub", mode: leg.mode, subtitle: leg.mode + " hub", placeIdx: null })
-          continue
+function nearPlace(pt: GeoResult, name: string, coords: Map<string, GeoResult>): boolean {
+  const g = coords.get(name)
+  return !!(g && Math.abs(pt.lat - g.lat) < 0.8 && Math.abs(pt.lng - g.lng) < 1.2)
+}
+
+const TRANSPORT_HUBS = new Set(["flight", "train", "ferry", "bus"])
+
+export function shouldGeocodeTransport(leg: TransportLeg): boolean {
+  if (leg.mode === "walk" || leg.mode === "bike") {
+    const hasFrom = leg.from?.lat != null || !!(leg.from?.label && leg.from.label !== "none")
+    const hasTo   = leg.to?.lat   != null || !!(leg.to?.label   && leg.to.label   !== "none")
+    return hasFrom || hasTo
+  }
+  if (!TRANSPORT_HUBS.has(leg.mode)) {
+    return !!(leg.from?.label && leg.from.label !== "none") ||
+           !!(leg.to?.label   && leg.to.label   !== "none")
+  }
+  return true
+}
+
+export async function geocodeTransportHubs(
+  doc: CrumbDocument,
+  resolvedPlaceCoords: Map<string, GeoResult>,
+  isStale: () => boolean,
+): Promise<DetailPoint[]> {
+  const items = doc.itinerary
+  const points: DetailPoint[] = []
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i]
+    if (item.type === "place") continue
+    const leg = item
+    if (!shouldGeocodeTransport(leg)) continue
+    if (isStale()) return points
+
+    const prev     = [...items.slice(0, i)].reverse().find((x): x is Place => x.type === "place")
+    const next     = items.slice(i + 1).find((x): x is Place => x.type === "place")
+    const prevName = prev?.name ?? ""
+    const nextName = next?.name ?? ""
+    const suffix   = leg.mode === "flight" ? "airport"
+                   : leg.mode === "train"  ? "train station"
+                   : ""
+
+    const sides: Array<{ endpoint: ResolvedGeolocation | undefined; side: "from" | "to" }> = [
+      { endpoint: leg.from, side: "from" },
+      { endpoint: leg.to,   side: "to"   },
+    ]
+
+    for (const { endpoint, side } of sides) {
+      if (!endpoint || endpoint.geocodingDisabled) continue
+
+      if (endpoint.lat != null && endpoint.lng != null) {
+        const pt = { lat: endpoint.lat, lng: endpoint.lng }
+        if (!nearPlace(pt, prevName, resolvedPlaceCoords) && !nearPlace(pt, nextName, resolvedPlaceCoords)) {
+          points.push({ name: endpoint.label, lat: pt.lat, lng: pt.lng, pinType: "hub", mode: leg.mode, subtitle: leg.mode + " hub", placeIdx: null })
         }
+        continue
+      }
 
-        const label = endpoint.label
-        if (!label || label === "none") continue
+      const label = endpoint.label
+      if (!label || label === "none") continue
 
-        // Build contextual query: label + mode suffix + nearest place
-        const contextName = side === "from" ? prevName : nextName
-        const q = suffix
-          ? label + " " + suffix + (contextName ? ", " + contextName : "")
-          : contextName ? label + ", " + contextName : label
+      const contextName = side === "from" ? prevName : nextName
+      const q = suffix
+        ? label + " " + suffix + (contextName ? ", " + contextName : "")
+        : contextName ? label + ", " + contextName : label
 
-        const geo = cachedGeo(q) ?? await fetchGeo(q)
-        if (!geo) continue
+      const geo = cachedGeo(q) ?? await fetchGeo(q)
+      if (!geo) continue
 
-        writeBackEndpointGeo(endpoint, geo)
-        if (!nearPlace(geo, prevName, resolvedPlaceCoords) && !nearPlace(geo, nextName, resolvedPlaceCoords))
-          points.push({ name: label, lat: geo.lat, lng: geo.lng, pinType: "hub", mode: leg.mode, subtitle: leg.mode + " hub", placeIdx: null })
+      writeBackEndpointGeo(endpoint, geo)
+      if (!nearPlace(geo, prevName, resolvedPlaceCoords) && !nearPlace(geo, nextName, resolvedPlaceCoords)) {
+        points.push({ name: label, lat: geo.lat, lng: geo.lng, pinType: "hub", mode: leg.mode, subtitle: leg.mode + " hub", placeIdx: null })
       }
     }
-    return points
   }
-`
+  return points
+}

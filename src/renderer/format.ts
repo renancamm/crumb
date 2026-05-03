@@ -147,6 +147,50 @@ export function escape(s: string): string {
     .replace(/'/g, "&#39;")
 }
 
+// ─── Activity labels ─────────────────────────────────────────────────────────
+
+/** Activity label: A–Z then A2–Z2, A3–Z3… */
+export function activityLabel(idx: number): string {
+  const letter = String.fromCharCode(65 + (idx % 26))
+  const cycle  = Math.floor(idx / 26)
+  return cycle === 0 ? letter : `${letter}${cycle + 1}`
+}
+
+// ─── Date range ──────────────────────────────────────────────────────────────
+
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+
+/** Extract the best ISO date string from a moment, or null if unavailable. */
+export function isoFromMoment(m: ResolvedMoment): string | null {
+  if (m.date?.precision === "absolute")    return m.date.value
+  if (m.anchor?.date)                      return m.anchor.date
+  if (m.date?.precision === "approximate") return m.date.estimate
+  return null
+}
+
+/**
+ * Plain-text date range for a place or stay (no HTML).
+ * Produces compact same-month ranges ("Jan 15–20") or dash-joined cross-month
+ * ranges ("Jan 15–Feb 3"). Falls back to individual dates if only one endpoint
+ * is available.
+ */
+export function formatPlainDateRange(
+  a: ResolvedMoment | null | undefined,
+  d: ResolvedMoment | null | undefined,
+): string {
+  const aIso = a ? isoFromMoment(a) : null
+  const dIso = d ? isoFromMoment(d) : null
+  if (aIso && dIso) {
+    const [, am, ad] = aIso.split("-").map(Number)
+    const [, dm, dd] = dIso.split("-").map(Number)
+    if (am === dm) return `${MONTHS[am - 1]} ${ad}–${dd}`
+    return `${formatShortDate(aIso)}–${formatShortDate(dIso)}`
+  }
+  if (aIso) return formatShortDate(aIso)
+  if (dIso) return formatShortDate(dIso)
+  return ""
+}
+
 // ─── RenderContext factory ────────────────────────────────────────────────────
 
 /** Create a RenderContext backed by the standard formatting helpers above. */
