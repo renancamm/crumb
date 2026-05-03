@@ -165,6 +165,78 @@ function focusMarker(type: FocusType, id: string | number, coords?: GeoResult): 
     const zoom = type === "hub" ? ZOOM_DETAIL : ZOOM_DETAIL_FLY
     if (coords) map.flyTo({ center: [coords.lng, coords.lat], zoom: Math.max(map.getZoom(), zoom), duration: 800 })
   }
+
+  expandSheetForFocus()
+}
+
+// ─── Mobile sheet ─────────────────────────────────────────────────────────────
+
+const SHEET_PEEK   = 72   // px — matches CSS calc(100% - 72px)
+const MOBILE_MAX_W = 768
+
+function isMobile(): boolean { return window.innerWidth < MOBILE_MAX_W }
+
+let sheetY = 0
+
+function setSheetY(y: number, animate = false): void {
+  const sidebar = document.getElementById("sidebar")!
+  sidebar.style.transition = animate ? "transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)" : "none"
+  sidebar.style.transform  = `translateY(${y}px)`
+  sheetY = y
+}
+
+function sheetSnaps(): { peek: number; half: number; full: number } {
+  const h = document.getElementById("sidebar")!.offsetHeight
+  return { peek: h - SHEET_PEEK, half: h * 0.45, full: h * 0.05 }
+}
+
+function snapSheet(to: "peek" | "half" | "full"): void {
+  setSheetY(sheetSnaps()[to], true)
+}
+
+function expandSheetForFocus(): void {
+  if (!isMobile()) return
+  if (sheetY >= sheetSnaps().half - 10) snapSheet("half")
+}
+
+function setupMobileSheet(): void {
+  const handle = document.getElementById("sheet-drag-handle")!
+  let startY = 0, startSheetY = 0, dragging = false
+
+  handle.addEventListener("touchstart", e => {
+    if (!isMobile()) return
+    dragging    = true
+    startY      = e.touches[0].clientY
+    startSheetY = sheetY
+  }, { passive: true })
+
+  handle.addEventListener("touchmove", e => {
+    if (!dragging || !isMobile()) return
+    const { full, peek } = sheetSnaps()
+    const dy = e.touches[0].clientY - startY
+    setSheetY(Math.max(full, Math.min(peek, startSheetY + dy)))
+  }, { passive: true })
+
+  handle.addEventListener("touchend", () => {
+    if (!dragging) return
+    dragging = false
+    const s = sheetSnaps()
+    const nearest = ([s.full, s.half, s.peek] as const)
+      .reduce((a, b) => Math.abs(a - sheetY) < Math.abs(b - sheetY) ? a : b)
+    setSheetY(nearest, true)
+  })
+
+  handle.addEventListener("click", () => {
+    if (!isMobile()) return
+    const s = sheetSnaps()
+    snapSheet(sheetY > s.half + 10 ? "half" : "peek")
+  })
+
+  // Initialize now if on mobile, and re-initialize whenever the viewport enters mobile range
+  const mq = window.matchMedia(`(max-width: ${MOBILE_MAX_W - 1}px)`)
+  const init = (): void => snapSheet("peek")
+  if (mq.matches) init()
+  mq.addEventListener("change", e => { if (e.matches) init() })
 }
 
 // ─── Spinner helpers ──────────────────────────────────────────────────────────
@@ -358,6 +430,7 @@ map.on("load", () => {
     },
   })
   mapReady = true
+  if (isMobile()) map.setPadding({ bottom: SHEET_PEEK })
   if (pendingDoc) { updateMap(pendingDoc); pendingDoc = null }
 })
 
@@ -738,4 +811,5 @@ editorEl.addEventListener("keydown", e => {
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
+setupMobileSheet()
 updateMap(DATA)

@@ -149,6 +149,9 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
     <!-- Sidebar -->
     <div id="sidebar">
 
+      <!-- Mobile sheet drag handle -->
+      <div class="sheet-handle" id="sheet-drag-handle"></div>
+
       <!-- Pill header with dropdown menu -->
       <div class="sidebar-header">
         <div class="pill-wrap">

@@ -758,6 +758,75 @@ const itineraryCSS = `
 .list-empty { padding: 40px 0; text-align: center; color: var(--muted); font-size: var(--text-sm); }
 `
 
+const mobileCSS = `
+/* ── Mobile sheet handle (hidden on desktop) ─────────────────────────── */
+.sheet-handle { display: none; flex-shrink: 0; }
+
+@media (max-width: 767px) {
+
+  /* Map: full viewport */
+  #map {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+  }
+
+  /* Sidebar → bottom sheet */
+  #sidebar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    width: 100%;
+    height: 90vh;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -4px 24px rgba(0,0,0,.12);
+    transform: translateY(calc(100% - 72px));
+    z-index: 100;
+    will-change: transform;
+  }
+
+  /* Drag handle strip */
+  .sheet-handle {
+    display: flex;
+    justify-content: center;
+    padding: 10px 0 8px;
+    flex-shrink: 0;
+    cursor: grab;
+    touch-action: none;
+  }
+  .sheet-handle::before {
+    content: '';
+    display: block;
+    width: 36px; height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+  }
+
+  /* Pill menu: from absolute overlay → in-flow */
+  .sidebar-header {
+    position: relative;
+    top: unset; left: unset;
+    padding: 2px 12px 6px;
+  }
+
+  /* List top padding: pill is now in flow */
+  #list { padding-top: 12px; }
+
+  /* Editor: full-screen overlay */
+  #editor-panel {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    z-index: 200;
+  }
+
+  /* MapLibre controls: lift above peek sheet */
+  .maplibregl-ctrl-bottom-right { bottom: 80px; }
+  .maplibregl-ctrl-bottom-left  { bottom: 80px; }
+}
+`
+
 export const CSS = [
   resetCSS,
   tokensCSS,
@@ -769,4 +838,5 @@ export const CSS = [
   modalCSS,
   mapCSS,
   itineraryCSS,
+  mobileCSS,
 ].join("\n")
