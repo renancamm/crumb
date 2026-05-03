@@ -18,6 +18,7 @@
 import type { CrumbDocument } from "../types/resolved"
 import {
   cachedGeo,
+  cacheGeo,
   fetchGeo,
   resolveGeo,
   writeBackGeo,
@@ -478,6 +479,7 @@ async function geocodePlaces(
     const geo = q ? (cachedGeo(q) ?? await fetchGeo(q)) : null
     setPlaceLoading(i + 1, false)
     if (geo) {
+      cacheGeo(place.name, geo)
       writeBackGeo(place, geo)
       resolved.push({ name: place.name, lat: geo.lat, lng: geo.lng })
       resolvedCoords.set(place.name, geo)
