@@ -152,46 +152,46 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
       <!-- Mobile sheet drag handle -->
       <div class="sheet-handle" id="sheet-drag-handle"></div>
 
-      <!-- Pill header with dropdown menu -->
-      <div class="sidebar-header">
-        <div class="pill-wrap">
-          <button class="pill-trigger" id="menu-trigger">
-            <span class="pill-brand">crumb</span>
-            <svg class="pill-chevron" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
-          </button>
-          <div class="dropdown-menu" id="main-menu">
-            <div class="menu-item" id="menu-new">New</div>
-            <div class="menu-item" id="menu-edit">Edit</div>
-            <div class="menu-separator"></div>
-            <div class="menu-item" id="menu-examples">
-              Examples
-              <svg class="menu-chevron-r" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <polyline points="9 18 15 12 9 6"/>
-              </svg>
-            </div>
-            <div class="menu-sub" id="examples-sub">
-              ${exampleItemsHtml}
-            </div>
-            <div class="menu-separator"></div>
-            <div class="menu-item" id="menu-generate">How to generate</div>
-            <div class="menu-item" id="menu-about">About</div>
-          </div>
-        </div>
-      </div>
-
       <!-- List view -->
       <div id="list-view">
         <div id="list">${body}</div>
       </div>
-
 
     </div>
 
     <!-- Map -->
     <div id="map"></div>
 
+  </div>
+
+  <!-- Pill menu: lives outside #main so CSS transforms on #sidebar (mobile sheet)
+       never break its position:fixed viewport anchoring -->
+  <div class="sidebar-header">
+    <div class="pill-wrap">
+      <button class="pill-trigger" id="menu-trigger">
+        <span class="pill-brand">crumb</span>
+        <svg class="pill-chevron" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+      <div class="dropdown-menu" id="main-menu">
+        <div class="menu-item" id="menu-new">New</div>
+        <div class="menu-item" id="menu-edit">Edit</div>
+        <div class="menu-separator"></div>
+        <div class="menu-item" id="menu-examples">
+          Examples
+          <svg class="menu-chevron-r" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </div>
+        <div class="menu-sub" id="examples-sub">
+          ${exampleItemsHtml}
+        </div>
+        <div class="menu-separator"></div>
+        <div class="menu-item" id="menu-generate">How to generate</div>
+        <div class="menu-item" id="menu-about">About</div>
+      </div>
+    </div>
   </div>
 
   <!-- New itinerary modal -->

@@ -121,9 +121,9 @@ const layoutCSS = `
 const menuCSS = `
 /* ── Sidebar pill ────────────────────────────────────────────────────── */
 .sidebar-header {
-  position: absolute;
+  position: fixed;
   top: 10px; left: 12px;
-  z-index: 20;
+  z-index: 150;
 }
 
 .pill-wrap { position: relative; display: inline-block; }
@@ -771,19 +771,21 @@ const mobileCSS = `
     z-index: 0;
   }
 
-  /* Sidebar → bottom sheet */
+  /* Sidebar → bottom sheet.
+     top+bottom instead of height+transform so the sidebar always ends at the
+     viewport boundary — the scroll container never extends off-screen. */
   #sidebar {
     position: fixed;
-    left: 0; right: 0; bottom: 0;
+    left: 0; right: 0;
+    top: calc(100vh - 72px);
+    bottom: 0;
     width: 100%;
-    height: 90vh;
     border-right: none;
     border-top: 1px solid var(--border);
     border-radius: 20px 20px 0 0;
     box-shadow: 0 -4px 24px rgba(0,0,0,.12);
-    transform: translateY(calc(100% - 72px));
     z-index: 100;
-    will-change: transform;
+    will-change: top;
   }
 
   /* Drag handle strip */
@@ -803,14 +805,7 @@ const mobileCSS = `
     background: var(--border);
   }
 
-  /* Pill menu: from absolute overlay → in-flow */
-  .sidebar-header {
-    position: relative;
-    top: unset; left: unset;
-    padding: 2px 12px 6px;
-  }
-
-  /* List top padding: pill is now in flow */
+  /* List top padding: pill is viewport-fixed, sheet content starts clean */
   #list { padding-top: 12px; }
 
   /* Editor: full-screen overlay */

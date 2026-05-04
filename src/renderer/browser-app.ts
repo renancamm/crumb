@@ -133,6 +133,10 @@ function clearFocus(): void {
 function focusMarker(type: FocusType, id: string | number, coords?: GeoResult): void {
   clearFocus()
 
+  // Expand sheet and update map padding before flyTo so the animation
+  // uses the correct inset from the start and isn't cancelled by setPadding.
+  expandSheetForFocus()
+
   if (type === "place") {
     const idx = id as number
     focusedPlaceIdx = idx
@@ -165,8 +169,6 @@ function focusMarker(type: FocusType, id: string | number, coords?: GeoResult): 
     const zoom = type === "hub" ? ZOOM_DETAIL : ZOOM_DETAIL_FLY
     if (coords) map.flyTo({ center: [coords.lng, coords.lat], zoom: Math.max(map.getZoom(), zoom), duration: 800 })
   }
-
-  expandSheetForFocus()
 }
 
 // ─── Mobile sheet ─────────────────────────────────────────────────────────────
@@ -178,20 +180,21 @@ function isMobile(): boolean { return window.innerWidth < MOBILE_MAX_W }
 
 let sheetY = 0
 
-function setSheetY(y: number, animate = false): void {
+function setSheetY(top: number, animate = false): void {
   const sidebar = document.getElementById("sidebar")!
-  sidebar.style.transition = animate ? "transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)" : "none"
-  sidebar.style.transform  = `translateY(${y}px)`
-  sheetY = y
+  sidebar.style.transition = animate ? "top 0.35s cubic-bezier(0.32, 0.72, 0, 1)" : "none"
+  sidebar.style.top = `${top}px`
+  sheetY = top
 }
 
 function sheetSnaps(): { peek: number; half: number; full: number } {
-  const h = document.getElementById("sidebar")!.offsetHeight
-  return { peek: h - SHEET_PEEK, half: h * 0.45, full: h * 0.05 }
+  const vh = window.innerHeight
+  return { peek: vh - SHEET_PEEK, half: vh * 0.5, full: vh * 0.1 }
 }
 
 function snapSheet(to: "peek" | "half" | "full"): void {
   setSheetY(sheetSnaps()[to], true)
+  updateMapPadding()
 }
 
 function expandSheetForFocus(): void {
@@ -201,42 +204,75 @@ function expandSheetForFocus(): void {
 
 function setupMobileSheet(): void {
   const handle = document.getElementById("sheet-drag-handle")!
-  let startY = 0, startSheetY = 0, dragging = false
+  let startY = 0, startSheetY = 0, dragging = false, didDrag = false
 
-  handle.addEventListener("touchstart", e => {
-    if (!isMobile()) return
+  function dragStart(y: number): void {
     dragging    = true
-    startY      = e.touches[0].clientY
+    didDrag     = false
+    startY      = y
     startSheetY = sheetY
-  }, { passive: true })
+  }
 
-  handle.addEventListener("touchmove", e => {
-    if (!dragging || !isMobile()) return
+  function dragMove(y: number): void {
+    if (!dragging) return
+    didDrag = true
     const { full, peek } = sheetSnaps()
-    const dy = e.touches[0].clientY - startY
+    const dy = y - startY
     setSheetY(Math.max(full, Math.min(peek, startSheetY + dy)))
-  }, { passive: true })
+  }
 
-  handle.addEventListener("touchend", () => {
+  function dragEnd(): void {
     if (!dragging) return
     dragging = false
     const s = sheetSnaps()
     const nearest = ([s.full, s.half, s.peek] as const)
       .reduce((a, b) => Math.abs(a - sheetY) < Math.abs(b - sheetY) ? a : b)
     setSheetY(nearest, true)
+    updateMapPadding()
+  }
+
+  // Touch
+  handle.addEventListener("touchstart",  e => { if (isMobile()) dragStart(e.touches[0].clientY) }, { passive: true })
+  handle.addEventListener("touchmove",   e => { if (isMobile()) dragMove(e.touches[0].clientY)  }, { passive: true })
+  handle.addEventListener("touchend",    () => dragEnd())
+
+  // Mouse (move/up on document so fast drags don't lose tracking)
+  handle.addEventListener("mousedown", e => {
+    if (!isMobile()) return
+    e.preventDefault()
+    dragStart(e.clientY)
+    document.body.style.userSelect = "none"
+    document.body.style.cursor     = "grabbing"
+  })
+  document.addEventListener("mousemove", e => { if (isMobile()) dragMove(e.clientY) })
+  document.addEventListener("mouseup",   () => {
+    if (!dragging) return
+    dragEnd()
+    document.body.style.userSelect = ""
+    document.body.style.cursor     = ""
   })
 
+  // Click to toggle peek ↔ half (suppressed if a drag just happened)
   handle.addEventListener("click", () => {
-    if (!isMobile()) return
+    if (!isMobile() || didDrag) return
     const s = sheetSnaps()
     snapSheet(sheetY > s.half + 10 ? "half" : "peek")
   })
 
-  // Initialize now if on mobile, and re-initialize whenever the viewport enters mobile range
+  // Initialize now if on mobile, and re-initialize whenever the viewport enters mobile range.
+  // On desktop entry, clear inline styles left by the JS sheet so CSS layout is unaffected.
   const mq = window.matchMedia(`(max-width: ${MOBILE_MAX_W - 1}px)`)
+  const sidebar = document.getElementById("sidebar")!
   const init = (): void => snapSheet("peek")
   if (mq.matches) init()
-  mq.addEventListener("change", e => { if (e.matches) init() })
+  mq.addEventListener("change", e => {
+    if (e.matches) {
+      init()
+    } else {
+      sidebar.style.top        = ""
+      sidebar.style.transition = ""
+    }
+  })
 }
 
 // ─── Spinner helpers ──────────────────────────────────────────────────────────
@@ -430,9 +466,14 @@ map.on("load", () => {
     },
   })
   mapReady = true
-  if (isMobile()) map.setPadding({ bottom: SHEET_PEEK })
+  updateMapPadding()
   if (pendingDoc) { updateMap(pendingDoc); pendingDoc = null }
 })
+
+function updateMapPadding(): void {
+  if (!isMobile() || !mapReady) return
+  map.setPadding({ bottom: Math.max(0, Math.round(window.innerHeight - sheetY)) })
+}
 
 // ─── Geocoding epoch ──────────────────────────────────────────────────────────
 
