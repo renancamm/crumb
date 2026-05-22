@@ -4,7 +4,10 @@
   "description": "Crumb — open format for travel itineraries",
   "scripts": {
     "render": "ts-node src/cli.ts",
-    "build": "ts-node src/cli.ts examples/europe-backpacking.crumb dist/index.html"
+    "build": "ts-node src/cli.ts examples/europe-backpacking.crumb dist/index.html",
+    "typecheck": "node_modules/.bin/tsc --noEmit",
+    "test": "node_modules/.bin/vitest run",
+    "test:watch": "node_modules/.bin/vitest"
   },
   "dependencies": {
     "js-yaml": "^4.1.0"
@@ -14,6 +17,7 @@
     "@types/node": "^20.0.0",
     "esbuild": "^0.21.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vitest": "^4.1.6"
   }
 }
