@@ -38,12 +38,26 @@ export interface DetailPoint {
   subtitle?: string
   placeIdx: number | null
   actLabel?: string
+  transportIdx?: number
 }
 
 // ─── Geocoding ────────────────────────────────────────────────────────────────
 
-const GEO_CACHE_PREFIX = "crumb-geo:"
+const GEO_CACHE_VERSION = "v2"
+const GEO_CACHE_PREFIX  = `crumb-geo-${GEO_CACHE_VERSION}:`
 let geoQueue: Promise<void> = Promise.resolve()
+
+function migrateGeoCache(): void {
+  const OLD_PREFIX = "crumb-geo:"
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const key = localStorage.key(i)
+    if (key?.startsWith(OLD_PREFIX) && !key.startsWith(GEO_CACHE_PREFIX)) {
+      localStorage.removeItem(key)
+    }
+  }
+}
+
+migrateGeoCache()
 
 export function cachedGeo(name: string): GeoResult | null {
   try {
@@ -140,10 +154,12 @@ export async function geocodeTransportHubs(
 ): Promise<DetailPoint[]> {
   const items = doc.itinerary
   const points: DetailPoint[] = []
+  let transportIdx = -1
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i]
     if (item.type === "place") continue
+    transportIdx++
     const leg = item
     if (!shouldGeocodeTransport(leg)) continue
     if (isStale()) return points
@@ -167,7 +183,7 @@ export async function geocodeTransportHubs(
       if (endpoint.lat != null && endpoint.lng != null) {
         const pt = { lat: endpoint.lat, lng: endpoint.lng }
         if (!nearPlace(pt, prevName, resolvedPlaceCoords) && !nearPlace(pt, nextName, resolvedPlaceCoords)) {
-          points.push({ name: endpoint.label, lat: pt.lat, lng: pt.lng, pinType: "hub", mode: leg.mode, subtitle: leg.mode + " hub", placeIdx: null })
+          points.push({ name: endpoint.label, lat: pt.lat, lng: pt.lng, pinType: "hub", mode: leg.mode, subtitle: leg.mode + " hub", placeIdx: null, transportIdx })
         }
         continue
       }
@@ -176,6 +192,10 @@ export async function geocodeTransportHubs(
       if (!label || label === "none") continue
 
       const contextName = side === "from" ? prevName : nextName
+      // When the endpoint label matches the neighboring place name, this is an
+      // inferred endpoint (pass3 sets label = placeName) — skip hub geocoding
+      // and let fitTransportHubs fall back to the already-resolved place coords.
+      if (label === contextName) continue
       const q = suffix
         ? label + " " + suffix + (contextName ? ", " + contextName : "")
         : contextName ? label + ", " + contextName : label
@@ -185,7 +205,7 @@ export async function geocodeTransportHubs(
 
       writeBackEndpointGeo(endpoint, geo)
       if (!nearPlace(geo, prevName, resolvedPlaceCoords) && !nearPlace(geo, nextName, resolvedPlaceCoords)) {
-        points.push({ name: label, lat: geo.lat, lng: geo.lng, pinType: "hub", mode: leg.mode, subtitle: leg.mode + " hub", placeIdx: null })
+        points.push({ name: label, lat: geo.lat, lng: geo.lng, pinType: "hub", mode: leg.mode, subtitle: leg.mode + " hub", placeIdx: null, transportIdx })
       }
     }
   }

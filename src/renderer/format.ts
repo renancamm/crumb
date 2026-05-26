@@ -92,7 +92,7 @@ export function formatHHMM(hhmm: string): string {
 export function formatDuration(d: ResolvedDuration): string {
   switch (d.type) {
     case "exact":                                   return formatDurValue(d.value, d.unit)
-    case "approximate":                             return `~${formatDurValue(d.value, d.unit)}`
+    case "approximate":                             return formatDurValue(d.value, d.unit)
     case "minimum":                                 return `${formatDurValue(d.value, d.unit)}+`
     case "range":                                   return `${d.min}–${d.max} ${d.unit}`
     case "named":
@@ -150,10 +150,11 @@ export function escape(s: string): string {
 // ─── Activity labels ─────────────────────────────────────────────────────────
 
 /** Activity label: A–Z then A2–Z2, A3–Z3… */
-export function activityLabel(idx: number): string {
+export function activityLabel(idx: number, groupNum?: number): string {
   const letter = String.fromCharCode(65 + (idx % 26))
-  const cycle  = Math.floor(idx / 26)
-  return cycle === 0 ? letter : `${letter}${cycle + 1}`
+  if (groupNum != null) return `${letter}${groupNum}`
+  const cycle = Math.floor(idx / 26) + 1
+  return cycle > 1 ? `${letter}${cycle}` : letter
 }
 
 // ─── Date range ──────────────────────────────────────────────────────────────
@@ -173,6 +174,9 @@ export function isoFromMoment(m: ResolvedMoment): string | null {
  * Produces compact same-month ranges ("Jan 15–20") or dash-joined cross-month
  * ranges ("Jan 15–Feb 3"). Falls back to individual dates if only one endpoint
  * is available.
+ *
+ * NOTE: For HTML output with inferred-date styling, use formatDateRange() in
+ * html.ts instead. The two functions are intentionally separate.
  */
 export function formatPlainDateRange(
   a: ResolvedMoment | null | undefined,

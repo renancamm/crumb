@@ -52,7 +52,7 @@ describe("formatDurValue", () => {
 
 describe("formatDuration", () => {
   it("formats exact duration",       () => expect(formatDuration({ type: "exact",       value: 2, unit: "hours",  label: "2h"            })).toBe("2 hours"))
-  it("formats approximate duration", () => expect(formatDuration({ type: "approximate", value: 3, unit: "days",   label: "~3 days"       })).toBe("~3 days"))
+  it("formats approximate duration", () => expect(formatDuration({ type: "approximate", value: 3, unit: "days",   label: "~3 days"       })).toBe("3 days"))
   it("formats minimum duration",     () => expect(formatDuration({ type: "minimum",     value: 1, unit: "hours",  label: "at least 1h"   })).toBe("1 hour+"))
   it("formats range duration",       () => expect(formatDuration({ type: "range",       min: 2, max: 3, unit: "hours", label: "2-3h"    })).toBe("2–3 hours"))
   it("falls back to label for named",() => expect(formatDuration({ type: "named",       span: "all day", estimate: { value: 10, unit: "hours" }, label: "all day" })).toBe("all day"))
