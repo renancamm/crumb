@@ -48,15 +48,19 @@ import type { CrumbRenderer, RenderContext } from "./types"
 // ─── AppOptions ───────────────────────────────────────────────────────────────
 
 export interface AppOptions {
-  /** Original YAML source — embedded for the editor. */
-  source: string
-  /** Example files keyed by filename. */
-  examples: Record<string, string>
-  /** Esbuild bundle: parse + renderItineraryBody (sets window.Crumb). */
+  /** Esbuild bundle: parse + render functions (sets window.Crumb). */
   parserBundle: string
-  /** Esbuild bundle: map, geocoding, editor, UI interactions. */
-  appBundle: string
-  /** CRUMB_SPEC.md content for the "Download spec" button. Optional. */
+  /** Esbuild bundle: map, panel navigation, geocoding, mobile sheet. */
+  viewerBundle: string
+  /** Esbuild bundle: YAML editor, menus, dialogs. Only injected when includeEditor is true. */
+  editorBundle: string
+  /** When true (default), inject the editor bundle and editor-specific globals. */
+  includeEditor?: boolean
+  /** Original YAML source — embedded for the editor. Only used when includeEditor is true. */
+  source?: string
+  /** Example files keyed by filename. Only used when includeEditor is true. */
+  examples?: Record<string, string>
+  /** CRUMB_SPEC.md content for the "Download spec" button. Only used when includeEditor is true. */
   specContent?: string
 }
 
@@ -306,43 +310,8 @@ export function renderTripPanel(doc: CrumbDocument): string {
 
 // ─── Place level renders ──────────────────────────────────────────────────────
 
-/** Desktop panel content for a single place (placeIdx is 1-based). */
-export function renderPlacePanel(doc: CrumbDocument, placeIdx: number): string {
-  const places = doc.itinerary.filter(i => i.type === "place") as Place[]
-  const place  = places[placeIdx - 1]
-  if (!place) return ""
-
+function renderPlaceActivities(place: Place): string {
   const parts: string[] = []
-  const { icon: geoIcon, mapLink: placeMapLink } = renderGeoAttrs(place.location)
-  const durHtml   = renderPlaceDuration(resolvePlaceDisplayDuration(place))
-  const datesHtml = renderPlaceDates(place)
-  const sep       = (durHtml && datesHtml) ? `<span class="place-meta-sep">•</span>` : ""
-
-  const metaLine = [durHtml, datesHtml].filter(Boolean).join(`<span class="place-meta-sep"> · </span>`)
-  const stickyMeta = metaLine ? `<span class="sticky-bar-meta">${metaLine}</span>` : ""
-  parts.push(
-    `<div class="panel-sticky-bar">` +
-    `<span class="place-num place-num--sm sticky-bar-badge">${placeIdx}</span>` +
-    `<span class="sticky-bar-body"><span class="sticky-bar-name">${escape(place.name)}</span>${stickyMeta}</span>` +
-    `<button class="panel-close sticky-bar-close" id="nav-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>` +
-    `</div>`
-  )
-  parts.push(`<div class="panel-header">`)
-  parts.push(`  <div class="panel-header-body">`)
-  parts.push(`    <div class="panel-title-row">`)
-  parts.push(`      <span class="place-num place-num--sm">${placeIdx}</span>`)
-  parts.push(`      <div class="panel-title-body">`)
-  parts.push(`        <h1 class="panel-place-name">${escape(place.name)}${geoIcon}</h1>`)
-  if (metaLine) parts.push(`        <div class="trip-duration">${metaLine}</div>`)
-  parts.push(`      </div>`)
-  parts.push(`    </div>`)
-  if (place.tags?.length) parts.push(`    <div class="tags">${place.tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>`)
-  if (place.note) parts.push(`    <div class="note panel-note">${renderInlineNote(place.note)}</div>`)
-  parts.push(`  </div>`)
-  parts.push(`  <button class="panel-close" id="nav-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`)
-  parts.push(`</div>`)
-
-  parts.push(`<ul class="panel-toc">`)
 
   if (place.stay?.length) {
     place.stay.forEach((stay, sIdx) => {
@@ -417,6 +386,101 @@ export function renderPlacePanel(doc: CrumbDocument, placeIdx: number): string {
       }
     }
   }
+  return parts.join("\n")
+}
+
+/** Desktop panel content for a single place (placeIdx is 1-based). */
+export function renderPlacePanel(doc: CrumbDocument, placeIdx: number): string {
+  const places = doc.itinerary.filter(i => i.type === "place") as Place[]
+  const place  = places[placeIdx - 1]
+  if (!place) return ""
+
+  const parts: string[] = []
+  const { icon: geoIcon, mapLink: placeMapLink } = renderGeoAttrs(place.location)
+  const durHtml   = renderPlaceDuration(resolvePlaceDisplayDuration(place))
+  const datesHtml = renderPlaceDates(place)
+  const sep       = (durHtml && datesHtml) ? `<span class="place-meta-sep">•</span>` : ""
+
+  const metaLine = [durHtml, datesHtml].filter(Boolean).join(`<span class="place-meta-sep"> · </span>`)
+  const stickyMeta = metaLine ? `<span class="sticky-bar-meta">${metaLine}</span>` : ""
+  parts.push(
+    `<div class="panel-sticky-bar">` +
+    `<span class="place-num place-num--sm sticky-bar-badge">${placeIdx}</span>` +
+    `<span class="sticky-bar-body"><span class="sticky-bar-name">${escape(place.name)}</span>${stickyMeta}</span>` +
+    `<button class="panel-close sticky-bar-close" id="nav-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>` +
+    `</div>`
+  )
+  parts.push(`<div class="panel-header">`)
+  parts.push(`  <div class="panel-header-body">`)
+  parts.push(`    <div class="panel-title-row">`)
+  parts.push(`      <span class="place-num place-num--sm">${placeIdx}</span>`)
+  parts.push(`      <div class="panel-title-body">`)
+  parts.push(`        <h1 class="panel-place-name">${escape(place.name)}${geoIcon}</h1>`)
+  if (metaLine) parts.push(`        <div class="trip-duration">${metaLine}</div>`)
+  parts.push(`      </div>`)
+  parts.push(`    </div>`)
+  if (place.tags?.length) parts.push(`    <div class="tags">${place.tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>`)
+  if (place.note) parts.push(`    <div class="note panel-note">${renderInlineNote(place.note)}</div>`)
+  parts.push(`  </div>`)
+  parts.push(`  <button class="panel-close" id="nav-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`)
+  parts.push(`</div>`)
+
+  parts.push(`<ul class="panel-toc">`)
+  parts.push(renderPlaceActivities(place))
+  parts.push(`</ul>`)
+  return parts.join("\n")
+}
+
+/** Combined flat view for single-place docs: trip header + activities, no navigation chrome. */
+export function renderSinglePlacePanel(doc: CrumbDocument): string {
+  const places = doc.itinerary.filter(i => i.type === "place") as Place[]
+  const place  = places[0]
+  if (!place) return renderTripPanel(doc)
+
+  const parts: string[] = []
+
+  if (doc.trip) {
+    const { name, duration } = doc.trip
+    const stickyDur = duration && duration.type !== "unknown"
+      ? `<span class="sticky-bar-meta">${escape(formatDuration(duration))}</span>` : ""
+    parts.push(`<div class="panel-sticky-bar"><span class="sticky-bar-name">${escape(name ?? "Itinerary")}</span>${stickyDur}</div>`)
+  }
+
+  if (doc.trip) {
+    const { name, duration, author, note, tags } = doc.trip
+    parts.push(`<div class="panel-trip-header">`)
+    parts.push(`  <h1 class="panel-trip-name">${escape(name ?? "Itinerary")}</h1>`)
+    if (duration && duration.type !== "unknown")
+      parts.push(`  <div class="trip-duration">${escape(formatDuration(duration))}</div>`)
+    else if (duration?.type === "unknown")
+      parts.push(`  <div class="trip-duration"><span class="value-unknown">${escape(duration.label)}</span></div>`)
+    if (tags?.length) parts.push(`  <div class="tags">${tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>`)
+    if (note) parts.push(`  <div class="note">${renderInlineNote(note)}</div>`)
+    if (author) parts.push(`  <p class="trip-author">by ${escape(author)}</p>`)
+    parts.push(`</div>`)
+  }
+
+  const { icon: geoIcon } = renderGeoAttrs(place.location)
+  const durHtml   = renderPlaceDuration(resolvePlaceDisplayDuration(place))
+  const datesHtml = renderPlaceDates(place)
+  const metaLine  = [durHtml, datesHtml].filter(Boolean).join(`<span class="place-meta-sep"> · </span>`)
+  const metaHtml  = metaLine ? `<span class="list-item-meta">${metaLine}</span>` : ""
+  parts.push(`<div class="panel-header">`)
+  parts.push(`  <div class="panel-header-body">`)
+  parts.push(`    <div class="panel-title-row">`)
+  parts.push(`      <span class="place-num place-num--sm">1</span>`)
+  parts.push(`      <div class="panel-title-body">`)
+  parts.push(`        <span class="panel-activity-name">${escape(place.name)}${geoIcon}</span>`)
+  if (metaHtml) parts.push(`        <div class="trip-duration">${metaHtml}</div>`)
+  parts.push(`      </div>`)
+  parts.push(`    </div>`)
+  if (place.tags?.length) parts.push(`    <div class="tags">${place.tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>`)
+  if (place.note) parts.push(`    <div class="note panel-note">${renderInlineNote(place.note)}</div>`)
+  parts.push(`  </div>`)
+  parts.push(`</div>`)
+
+  parts.push(`<ul class="panel-toc">`)
+  parts.push(renderPlaceActivities(place))
   parts.push(`</ul>`)
   return parts.join("\n")
 }
@@ -482,6 +546,38 @@ export interface ModalRef {
 }
 
 /** Content HTML for the mobile full-screen modal (close button injected by JS). */
+function findActivityByFlatIndex(
+  place: Place,
+  flatIdx: number,
+): { act: Activity; actGroupLetterIdx: number; groupLabel?: string; groupNum?: number } | null {
+  let count = 0, dayIdx = 0, weekIdx = 0, planIdx = 0, ungroupedIdx = 0
+  for (const actItem of place.activities) {
+    if (actItem.type === "group") {
+      const isPlan = actItem.kind === "plan"
+      if (isPlan)                       planIdx++
+      else if (actItem.kind === "day")  dayIdx++
+      else if (actItem.kind === "week") weekIdx++
+      const gIdx = isPlan ? planIdx : actItem.kind === "day" ? dayIdx : weekIdx
+      let localIdx = 0
+      for (const act of actItem.items) {
+        if (count === flatIdx) return {
+          act,
+          actGroupLetterIdx: localIdx,
+          groupNum: gIdx,
+          groupLabel: isPlan ? (actItem.title ?? "Plan") : formatOrdinal(gIdx, actItem.kind as "day" | "week"),
+        }
+        count++; localIdx++
+      }
+    } else {
+      for (const act of actItem.items) {
+        if (count === flatIdx) return { act, actGroupLetterIdx: ungroupedIdx }
+        count++; ungroupedIdx++
+      }
+    }
+  }
+  return null
+}
+
 export function renderModalContent(doc: CrumbDocument, modal: ModalRef): string {
   if (modal.type === "trip") {
     return renderTripPanel(doc)
@@ -504,45 +600,8 @@ export function renderModalContent(doc: CrumbDocument, modal: ModalRef): string 
     const places = doc.itinerary.filter(i => i.type === "place") as Place[]
     const place  = modal.placeIdx !== null ? places[modal.placeIdx - 1] : null
     if (!place) return ""
-    let groupLabel: string | undefined
-    let groupNum: number | undefined
-    let actGroupLetterIdx = 0
-    let count = 0, dayIdx = 0, weekIdx = 0, planIdx = 0, ungroupedIdx = 0
-    let foundAct: Activity | undefined
-    for (const actItem of place.activities) {
-      if (actItem.type === "group") {
-        const isPlan = actItem.kind === "plan"
-        if (isPlan)                       planIdx++
-        else if (actItem.kind === "day")  dayIdx++
-        else if (actItem.kind === "week") weekIdx++
-        const gIdx = isPlan ? planIdx : actItem.kind === "day" ? dayIdx : weekIdx
-        let localIdx = 0
-        for (const act of actItem.items) {
-          if (count === modal.itemIdx) {
-            foundAct = act
-            groupNum = gIdx
-            if (isPlan) {
-              groupLabel = actItem.title ?? "Plan"
-            } else {
-              groupLabel = formatOrdinal(gIdx, actItem.kind as "day" | "week")
-            }
-            actGroupLetterIdx = localIdx
-          }
-          count++
-          localIdx++
-        }
-      } else {
-        for (const act of actItem.items) {
-          if (count === modal.itemIdx) {
-            foundAct = act
-            actGroupLetterIdx = ungroupedIdx
-          }
-          count++
-          ungroupedIdx++
-        }
-      }
-    }
-    return foundAct ? renderActivityPanel(foundAct, actGroupLetterIdx, groupLabel, groupNum) : ""
+    const found = findActivityByFlatIndex(place, modal.itemIdx)
+    return found ? renderActivityPanel(found.act, found.actGroupLetterIdx, found.groupLabel, found.groupNum) : ""
   }
 
   return ""
@@ -557,34 +616,13 @@ export function renderModalContent(doc: CrumbDocument, modal: ModalRef): string 
  *   — MapLibre GL map with Nominatim geocoding
  */
 export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
+  const includeEditor  = options.includeEditor !== false
   const title          = "Crumb" + (doc.trip?.name ? " — " + escape(doc.trip.name) : "")
-  const panelBody      = renderTripPanel(doc)
-  const docJson        = JSON.stringify(doc)
-  const popupMetaJson  = JSON.stringify(buildPopupMeta(doc))
-  const sourceJson     = JSON.stringify(options.source)
-  const specJson       = JSON.stringify(options.specContent ?? "")
-  const examplesJson   = JSON.stringify(options.examples)
-  const exampleItemsHtml = Object.keys(options.examples)
-    .map(name => `<div class="menu-sub-item" data-example="${escape(name)}">${escape(name.replace(/\.crumb$/, ""))}</div>`)
-    .join("\n        ")
+  const panelBody      = includeEditor ? "" : renderTripPanel(doc)
+  const docJson        = includeEditor ? "null" : JSON.stringify(doc)
+  const popupMetaJson  = includeEditor ? "{}"   : JSON.stringify(buildPopupMeta(doc))
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" />
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
-  <style>${CSS}</style>
-</head>
-<body>
-
-  <!-- Main split view -->
-  <div id="main">
-
+  const editorDom = includeEditor ? `
     <!-- Editor panel (left split, hidden by default) -->
     <div id="editor-panel" style="display:none">
       <div class="editor-header">
@@ -605,52 +643,53 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
         autocomplete="off"
         placeholder="Paste or type a .crumb document…"
       ></textarea>
-    </div>
+    </div>` : ""
 
-    <!-- Map (full area; sidebar floats inside it) -->
-    <div id="map">
-      <!-- Floating sidebar panel (desktop) / bottom sheet (mobile) -->
-      <div id="sidebar">
-        <div id="sheet-handle"><div class="sheet-handle-bar"></div></div>
-        <div id="panel-nav"></div>
-        <div id="panel-content">${panelBody}</div>
-        <div id="panel-footer"></div>
+  const exampleItemsHtml = Object.keys(options.examples ?? {})
+    .map(name => `<div class="menu-sub-item" data-example="${escape(name)}">${escape(name.replace(/\.crumb$/, ""))}</div>`)
+    .join("\n        ")
+
+  const chevronSvg = `<svg class="app-bar-chevron" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="6 9 12 15 18 9"/></svg>`
+
+  const appBarDom = includeEditor ? `
+  <!-- App bar (editor mode only) -->
+  <div id="app-bar">
+    <span class="app-bar-brand">crumb</span>
+    <div class="app-bar-sep"></div>
+
+    <!-- File menu -->
+    <div class="app-bar-item" id="menu-file">File ${chevronSvg}
+      <div class="app-bar-submenu" id="file-sub">
+        <div class="menu-sub-item" id="menu-edit">Edit</div>
+        <div class="menu-sub-item" id="menu-new">New</div>
+        <div class="menu-sub-sep"></div>
+        <div class="menu-sub-item" id="menu-save">Save</div>
+        <div class="menu-sub-item" id="menu-save-as">Save as…</div>
+        <div class="menu-sub-sep"></div>
+        <div class="menu-section-label">Open recent</div>
+        <div id="recent-list"></div>
+        <div class="menu-sub-sep"></div>
+        <div class="menu-sub-item" id="menu-delete">Delete</div>
       </div>
     </div>
 
-  </div>
-
-  <!-- Pill menu: lives outside #main so CSS transforms on #sidebar (mobile sheet)
-       never break its position:fixed viewport anchoring -->
-  <div class="sidebar-header">
-    <div class="pill-wrap">
-      <button class="pill-trigger" id="menu-trigger">
-        <span class="pill-brand">crumb</span>
-        <svg class="pill-chevron" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <polyline points="6 9 12 15 18 9"/>
-        </svg>
-      </button>
-      <div class="dropdown-menu" id="main-menu">
-        <div class="menu-section-label">Editor</div>
-        <div class="menu-item" id="menu-new">New</div>
-        <div class="menu-item" id="menu-edit">Edit</div>
-        <div class="menu-separator"></div>
-        <div class="menu-item" id="menu-examples">
-          Examples
-          <svg class="menu-chevron-r" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </div>
-        <div class="menu-sub" id="examples-sub">
-          ${exampleItemsHtml}
-        </div>
-        <div class="menu-separator"></div>
-        <div class="menu-item" id="menu-generate">How to generate</div>
-        <div class="menu-item" id="menu-about">About</div>
+    <!-- Examples menu -->
+    <div class="app-bar-item" id="menu-examples">Examples ${chevronSvg}
+      <div class="app-bar-submenu" id="examples-sub">
+        ${exampleItemsHtml}
       </div>
     </div>
-  </div>
 
+    <!-- About menu -->
+    <div class="app-bar-item" id="menu-about">About ${chevronSvg}
+      <div class="app-bar-submenu" id="about-sub">
+        <div class="menu-sub-item" id="about-what">What is a Crumb</div>
+        <div class="menu-sub-item" id="about-generate">How to generate</div>
+      </div>
+    </div>
+  </div>` : ""
+
+  const modalsDom = includeEditor ? `
   <!-- New itinerary modal -->
   <div class="modal-overlay" id="new-modal">
     <div class="modal-box">
@@ -714,19 +753,67 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
     </div>
   </div>
 
+  <!-- Delete confirmation modal -->
+  <div class="modal-overlay" id="delete-confirm-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">Delete itinerary?</div>
+        <div class="modal-description" id="delete-confirm-desc"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="action-btn" id="delete-cancel">Cancel</button>
+        <button class="action-btn action-btn--danger" id="delete-confirm-btn">Delete</button>
+      </div>
+    </div>
+  </div>` : ""
+
+  const editorGlobals = includeEditor ? `
+    window.__CRUMB_SOURCE   = "";
+    window.__CRUMB_SPEC     = ${JSON.stringify(options.specContent ?? "")};
+    window.__CRUMB_EXAMPLES = ${JSON.stringify(options.examples ?? {})};` : ""
+
+  const editorScript = includeEditor ? `\n  <script>${options.editorBundle}</script>` : ""
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" />
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+  <style>${CSS}</style>
+</head>
+<body>
+${appBarDom}
+  <!-- Main split view -->
+  <div id="main">
+${editorDom}
+    <!-- Map (full area; sidebar floats inside it) -->
+    <div id="map">
+      <!-- Floating sidebar panel (desktop) / bottom sheet (mobile) -->
+      <div id="sidebar">
+        <div id="sheet-handle"><div class="sheet-handle-bar"></div></div>
+        <div id="panel-nav"></div>
+        <div id="panel-content">${panelBody}</div>
+        <div id="panel-footer"></div>
+      </div>
+    </div>
+
+  </div>
+${modalsDom}
   <!-- Geocoding status chip -->
   <div id="map-status" class="map-status-chip"></div>
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <script>${options.parserBundle}</script>
   <script>
-    window.__CRUMB_SOURCE   = ${sourceJson};
-    window.__CRUMB_SPEC     = ${specJson};
-    window.__CRUMB_EXAMPLES = ${examplesJson};
-    window.__CRUMB_DATA     = ${docJson};
-    window.__CRUMB_POPUPS   = ${popupMetaJson};
+    window.__CRUMB_DATA   = ${docJson};
+    window.__CRUMB_POPUPS = ${popupMetaJson};${editorGlobals}
   </script>
-  <script>${options.appBundle}</script>
+  <script>${options.viewerBundle}</script>${editorScript}
 </body>
 </html>`
 }

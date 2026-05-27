@@ -2,12 +2,12 @@
 /**
  * Crumb CLI
  *
- * Usage: npx ts-node src/cli.ts <file.crumb> [output.html]
+ * Usage: npx ts-node src/cli.ts <file.crumb> [output.html] [--editor]
  *
  * Produces a self-contained HTML file with:
  *   — interactive map (MapLibre GL + Nominatim geocoding)
- *   — itinerary panel with app bar (Open / Share / Reference)
- *   — live YAML editor (activated via the Open button)
+ *   — itinerary panel with place/transport navigation
+ *   — live YAML editor (opt-in with --editor; omitted by default for clean embeddable output)
  *
  * Writes to stdout if no output path is given, or to the specified file.
  */
@@ -19,12 +19,14 @@ import { parse }    from "./parser"
 import { renderHtml, AppOptions } from "./renderer/html"
 
 async function main() {
-  const args     = process.argv.slice(2)
-  const filePath = args[0]
-  const outPath  = args[1]
+  const args      = process.argv.slice(2)
+  const withEditor = args.includes("--editor")
+  const positional = args.filter(a => !a.startsWith("--"))
+  const filePath  = positional[0]
+  const outPath   = positional[1]
 
   if (!filePath) {
-    console.error("Usage: npx ts-node src/cli.ts <file.crumb> [output.html]")
+    console.error("Usage: npx ts-node src/cli.ts <file.crumb> [output.html] [--editor]")
     process.exit(1)
   }
 
@@ -50,18 +52,29 @@ async function main() {
   })
   const parserBundle = parserResult.outputFiles[0].text
 
-  // 2b — Bundle browser app (map, geocoding, editor, UI interactions)
-  const appResult = await esbuild.build({
-    entryPoints: [path.resolve(__dirname, "renderer/browser-app.ts")],
+  // 3 — Bundle viewer (map, geocoding, panel navigation, mobile sheet)
+  const viewerResult = await esbuild.build({
+    entryPoints: [path.resolve(__dirname, "viewer-entry.ts")],
     bundle:      true,
     format:      "iife",
     platform:    "browser",
     write:       false,
     logLevel:    "silent",
   })
-  const appBundle = appResult.outputFiles[0].text
+  const viewerBundle = viewerResult.outputFiles[0].text
 
-  // 3 — Collect examples
+  // 4 — Bundle editor (YAML editor, menus, dialogs) — only needed in editor mode
+  const editorResult = await esbuild.build({
+    entryPoints: [path.resolve(__dirname, "editor-entry.ts")],
+    bundle:      true,
+    format:      "iife",
+    platform:    "browser",
+    write:       false,
+    logLevel:    "silent",
+  })
+  const editorBundle = editorResult.outputFiles[0].text
+
+  // 5 — Collect examples (only embedded in editor mode, but always read for simplicity)
   const examplesDir = path.resolve(__dirname, "../examples")
   const examples: Record<string, string> = {}
   if (fs.existsSync(examplesDir)) {
@@ -70,7 +83,7 @@ async function main() {
     }
   }
 
-  // 4 — Load spec for the Reference → "Download spec for AI" button
+  // 6 — Load spec for the "Download spec for AI" button
   const specCandidates = [
     path.resolve(__dirname, "../spec/CRUMB_SPEC.md"),
     path.resolve(__dirname, "../CRUMB_SPEC.md"),
@@ -78,8 +91,16 @@ async function main() {
   const specPath    = specCandidates.find(p => fs.existsSync(p))
   const specContent = specPath ? fs.readFileSync(specPath, "utf8") : undefined
 
-  // 5 — Render
-  const options: AppOptions = { source, examples, parserBundle, appBundle, specContent }
+  // 7 — Render
+  const options: AppOptions = {
+    parserBundle,
+    viewerBundle,
+    editorBundle,
+    includeEditor: withEditor,
+    source,
+    examples,
+    specContent,
+  }
   const html = renderHtml(doc, options)
 
   if (outPath) {

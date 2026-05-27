@@ -358,8 +358,9 @@ async function geocodeStays(
 
 // ─── updateMap ────────────────────────────────────────────────────────────────
 
-export async function updateMap(doc: CrumbDocument): Promise<void> {
+export async function updateMap(doc: CrumbDocument | null): Promise<void> {
   if (!state.mapReady) { state.pendingDoc = doc; return }
+  if (!doc) return
   const epoch = ++state.geocodeEpoch
   document.querySelectorAll(".--loading").forEach(el => el.classList.remove("--loading"))
 

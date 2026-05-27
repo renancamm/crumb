@@ -27,6 +27,9 @@ const tokensCSS = `
   --primary:       #18181b;
   --primary-fg:    #fafafa;
   --primary-hover: #27272a;
+  --danger:        #dc2626;
+  --danger-bg:     #fef2f2;
+  --danger-bd:     #fca5a5;
   --overlay:       rgba(0,0,0,.8);
 
   /* ── Editor theme (Catppuccin Mocha) ────────────────────────────── */
@@ -77,9 +80,12 @@ const tokensCSS = `
 
   /* ── Content ─────────────────────────────────────────────────────── */
   --note-text: #52525b;     /* zinc-700 — slightly darker than --muted for prose readability */
+
+  /* ── App bar ─────────────────────────────────────────────────────── */
+  --appbar-h: 36px;
 }
 
-body { font-family: var(--font); font-size: var(--text-base); color: var(--text); background: var(--bg); }
+body { font-family: var(--font); font-size: var(--text-base); color: var(--text); background: var(--bg); display: flex; flex-direction: column; }
 `
 
 /* .crumb-icon: size, stroke, and color for all Lucide SVG icons used in the UI */
@@ -99,7 +105,7 @@ const iconsCSS = `
 /* #main split layout: editor-panel | map (sidebar floats inside map) */
 const layoutCSS = `
 /* ── Layout ─────────────────────────────────────────────────────────── */
-#main { display: flex; height: 100vh; overflow: hidden; }
+#main { display: flex; flex: 1; min-height: 0; overflow: hidden; }
 
 #editor-panel {
   width: var(--sidebar-w);
@@ -128,53 +134,64 @@ const layoutCSS = `
 }
 `
 
-/* .pill-wrap, .dropdown-menu, .menu-item, .menu-sub — header pill and its dropdown menus */
+/* #app-bar: top app bar (editor mode only) and its Examples submenu */
 const menuCSS = `
-/* ── Crumb pill: top-right ───────────────────────────────────────────── */
-.sidebar-header {
-  position: fixed;
-  top: 12px; right: 12px;
-  z-index: 150;
-}
-
-.pill-wrap { position: relative; display: inline-block; }
-
-.pill-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px 5px 12px;
+/* ── App bar ─────────────────────────────────────────────────────────── */
+#app-bar {
+  flex-shrink: 0;
+  height: var(--appbar-h);
+  display: flex;
+  align-items: stretch;
+  padding: 0 8px;
   background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  font-family: var(--font);
-  font-size: var(--text-sm);
+  border-bottom: 1px solid var(--border);
+  user-select: none;
+}
+
+.app-bar-brand {
+  font-family: var(--mono);
+  font-size: 13px;
   font-weight: 600;
-  color: var(--text);
   letter-spacing: -0.02em;
-  appearance: none;
-  box-shadow: var(--shadow-sm);
-  transition: background var(--duration);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  padding: 0 10px 0 4px;
 }
-.pill-trigger:hover, .pill-trigger.open { background: var(--surface); }
 
-.pill-brand { font-family: var(--mono); font-size: 15px; }
+.app-bar-sep {
+  width: 1px;
+  background: var(--border);
+  margin: 7px 4px;
+  flex-shrink: 0;
+}
 
-.pill-chevron {
-  width: 13px; height: 13px;
-  stroke: currentColor; stroke-width: 2;
+.app-bar-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 8px;
+  font-size: var(--text-sm);
+  color: var(--text);
+  cursor: pointer;
+  border-radius: var(--radius-xs);
+}
+.app-bar-item:hover { background: var(--muted-bg); }
+.app-bar-item.open  { background: var(--muted-bg); }
+
+.app-bar-chevron {
+  width: 11px; height: 11px;
+  stroke: var(--muted); stroke-width: 2.5;
   fill: none; stroke-linecap: round; stroke-linejoin: round;
-  transition: transform 200ms;
 }
-.pill-trigger.open .pill-chevron { transform: rotate(180deg); }
 
-/* ── Dropdown menu ───────────────────────────────────────────────────── */
-.dropdown-menu {
+/* ── Examples dropdown ───────────────────────────────────────────────── */
+.app-bar-submenu {
   position: absolute;
-  top: calc(100% + 6px); right: 0;
+  top: calc(100% + 2px); left: 0;
   z-index: 500;
-  min-width: 200px;
+  min-width: 180px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -182,50 +199,31 @@ const menuCSS = `
   padding: 4px;
   display: none;
 }
-.dropdown-menu.open { display: block; animation: menu-in 120ms ease; }
+.app-bar-submenu.open { display: block; animation: menu-in 120ms ease; }
+
 @keyframes menu-in {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.menu-item {
+.menu-sub-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 6px 8px;
+  padding: 5px 8px;
   border-radius: var(--radius-xs);
   font-size: var(--text-sm);
   color: var(--text);
   cursor: pointer;
   user-select: none;
 }
-.menu-item:hover { background: var(--muted-bg); }
+.menu-sub-item:hover { background: var(--muted-bg); }
 
-.menu-separator { height: 1px; background: var(--border); margin: 4px 0; }
+.menu-sub-item--muted { color: var(--muted); cursor: default; }
+.menu-sub-item--muted:hover { background: transparent; color: var(--muted); }
 
-.menu-chevron-r {
-  width: 13px; height: 13px;
-  stroke: var(--muted); stroke-width: 2;
-  fill: none; stroke-linecap: round; stroke-linejoin: round;
-  flex-shrink: 0;
-  transition: transform 200ms;
-}
-.menu-item.open .menu-chevron-r { transform: rotate(90deg); }
+.menu-sub-item--disabled { color: var(--muted); cursor: default; pointer-events: none; }
 
-.menu-sub { display: none; }
-.menu-sub.open { display: block; }
-
-.menu-sub-item {
-  display: flex;
-  align-items: center;
-  padding: 5px 8px 5px 20px;
-  border-radius: var(--radius-xs);
-  font-size: var(--text-sm);
-  color: var(--muted);
-  cursor: pointer;
-  user-select: none;
-}
-.menu-sub-item:hover { background: var(--muted-bg); color: var(--text); }
+.menu-sub-sep { height: 1px; background: var(--border); margin: 4px 0; }
 `
 
 /* #editor-panel, .editor-textarea, .editor-error-bar — dark Catppuccin Mocha editor panel */
@@ -445,6 +443,8 @@ const modalCSS = `
   transition: background var(--duration);
 }
 .action-btn:hover { background: var(--muted-bg); }
+.action-btn--danger { color: var(--danger); border-color: var(--danger-bd); }
+.action-btn--danger:hover { background: var(--danger-bg); }
 .action-btn.primary { background: var(--primary); border-color: var(--primary); color: var(--primary-fg); }
 .action-btn.primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
 
@@ -537,7 +537,7 @@ body.map-zoom-close .place-marker { display: none; }
   display: none;
   align-items: center; justify-content: center;
 }
-.detail-marker--must     { background: var(--activity); border-radius: var(--radius-md); }
+.detail-marker--must,
 .detail-marker--activity { background: var(--activity); border-radius: var(--radius-md); }
 .detail-marker--maybe    { background: var(--activity); border-radius: var(--radius-md); opacity: 0.5; }
 .detail-marker--stay     { background: #18181b; }
@@ -838,6 +838,8 @@ const itineraryCSS = `
 
 /* ── Empty state ─────────────────────────────────────────────────────── */
 .list-empty { padding: 40px 0; text-align: center; color: var(--muted); font-size: var(--text-sm); }
+.panel-empty { display: flex; align-items: center; justify-content: center; height: 100%; }
+.panel-empty-title { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: var(--muted); }
 
 /* ── Panel back link ─────────────────────────────────────────────────── */
 .panel-back {
@@ -1257,6 +1259,10 @@ const mobileCSS = `
     transition: bottom var(--sheet-anim, 0ms);
   }
   .map-status-chip { right: 12px; }
+
+  /* App bar: pin to top and push map down so it doesn't slide under the bar */
+  body:has(#app-bar) #app-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 300; }
+  body:has(#app-bar) #map { top: var(--appbar-h); }
 }
 `
 

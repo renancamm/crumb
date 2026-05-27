@@ -11,17 +11,20 @@ export interface ModalRef {
 
 declare global {
   interface Window {
-    __CRUMB_SOURCE:   string
-    __CRUMB_SPEC:     string
-    __CRUMB_EXAMPLES: Record<string, string>
-    __CRUMB_DATA:     CrumbDocument
+    // Editor-mode only (undefined in viewer-only output):
+    __CRUMB_SOURCE?:   string
+    __CRUMB_SPEC?:     string
+    __CRUMB_EXAMPLES?: Record<string, string>
+    // Always present:
+    __CRUMB_DATA:     CrumbDocument | null
     __CRUMB_POPUPS:   Record<string, string>
     Crumb: {
       parse:               (src: string) => CrumbDocument
       renderItineraryBody: (doc: CrumbDocument) => string
-      renderTripPanel:     (doc: CrumbDocument) => string
-      renderPlacePanel:    (doc: CrumbDocument, placeIdx: number) => string
-      renderTransportPanel:(doc: CrumbDocument, transportIdx: number) => string
+      renderTripPanel:        (doc: CrumbDocument) => string
+      renderPlacePanel:       (doc: CrumbDocument, placeIdx: number) => string
+      renderSinglePlacePanel: (doc: CrumbDocument) => string
+      renderTransportPanel:   (doc: CrumbDocument, transportIdx: number) => string
       renderModalContent:  (doc: CrumbDocument, modal: ModalRef) => string
       buildPopupMeta:      (doc: CrumbDocument) => Record<string, string>
     }
@@ -38,10 +41,6 @@ export const ZOOM_PLACE_FLY = 10
 export const ZOOM_DETAIL_FLY = 14
 export const MOBILE_MAX_W   = 768
 export const ROUTE_COLOR    = "#18181b"
-
-export const SOURCE   = window.__CRUMB_SOURCE
-export const SPEC     = window.__CRUMB_SPEC
-export const EXAMPLES = window.__CRUMB_EXAMPLES
 
 // ─── Focus type ───────────────────────────────────────────────────────────────
 
@@ -67,7 +66,7 @@ export const state = {
   activeModal:      null as ModalRef | null,
   activeDetail:     null as ModalRef | null, // desktop sidebar detail view
 
-  DATA:       window.__CRUMB_DATA,
+  DATA:       window.__CRUMB_DATA as CrumbDocument,
   POPUP_META: window.__CRUMB_POPUPS,
 
   geoIndex: {

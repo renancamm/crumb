@@ -12,7 +12,8 @@ Crumb is a **spec-first** open format for travel itineraries. The format is the 
 | Public types | `src/types/resolved.ts` | The only output contract. Renderer, browser, and tests import from here |
 | Parser | `src/parser/` | Three sequential passes: classify → resolve → infer |
 | Renderer (CLI) | `src/renderer/html.ts` | `renderHtml()` (full app shell) + `renderItineraryBody()` (content-only, used for live re-render) |
-| Renderer (browser) | `src/renderer/browser-app.ts` | Browser IIFE bundle. Reads `window.__CRUMB_*` globals injected by `html.ts` |
+| Viewer bundle | `src/viewer-entry.ts` → `src/renderer/browser-app.ts` + `app-map.ts` + `app-focus.ts` + `app-sheet.ts` | Standalone map + panel UI. No editor dependency. Listens for `crumb:doc-updated` event. |
+| Editor bundle | `src/editor-entry.ts` → `src/renderer/app-editor.ts` + `app-menus.ts` | YAML editor overlay, menus, dialogs. Fires `crumb:doc-updated` after re-parse. |
 | Format helpers | `src/renderer/format.ts` | Pure functions, no HTML — reusable by any renderer |
 | Geocoding | `src/renderer/geocoder.ts` | Nominatim integration, localStorage cache, sequential request queue |
 
@@ -49,12 +50,16 @@ src/parser/
 
 4. **Inferred moments carry `anchor.precedence === "inferred"`.** This is how Phase 4 distinguishes authored dates from computed ones. Overwriting this precedence breaks time distribution.
 
-5. **The browser app reads initial state via globals** set by `html.ts` before the bundle runs:
+5. **The browser bundles read initial state via globals** set by `html.ts` before the bundles run. The viewer bundle always gets:
    - `window.__CRUMB_DATA` — parsed `CrumbDocument`
-   - `window.__CRUMB_SOURCE` — original YAML string (for the editor)
    - `window.__CRUMB_POPUPS` — pre-computed popup metadata
+
+   The editor bundle additionally gets (only injected in editor mode):
+   - `window.__CRUMB_SOURCE` — original YAML string (pre-fills the editor textarea)
    - `window.__CRUMB_EXAMPLES` — example file contents
    - `window.__CRUMB_SPEC` — `CRUMB_SPEC.md` text (embedded for AI use)
+
+   The two bundles communicate via a `crumb:doc-updated` CustomEvent: the editor writes new values to `window.__CRUMB_DATA` and `window.__CRUMB_POPUPS`, then fires the event; the viewer re-renders in response.
 
 6. **Geocoding requests are strictly sequential with a 1100ms gap** (Nominatim ToS: ≤1 req/sec). The `geoQueue` promise chain in `geocoder.ts` enforces this. Never parallelize these fetches.
 
@@ -91,16 +96,19 @@ src/parser/
 
 **HTML renderer helper** → private function in `src/renderer/html.ts`
 
-**Browser interaction (DOM, map, modals, editor)** → `src/renderer/browser-app.ts`
+**Viewer-side browser interaction** (map, panel navigation, focus, mobile sheet) → `src/renderer/browser-app.ts` (and the other `app-*.ts` modules imported by `src/viewer-entry.ts`)
+
+**Editor-side browser interaction** (YAML textarea, menus, dialogs) → `src/renderer/app-editor.ts` or `src/renderer/app-menus.ts` (imported by `src/editor-entry.ts`)
 
 ## Dev commands
 
 ```bash
-npm run build          # render europe-backpacking.crumb → dist/index.html
+npm run build          # render japan-2026.crumb → dist/index.html (with editor shell)
 npm run typecheck      # tsc --noEmit (zero errors required)
 npm run test           # vitest run (single pass, used in CI)
 npm run test:watch     # vitest (watch mode for development)
-npm run render -- examples/japan-2026.crumb /tmp/out.html
+npm run render -- examples/japan-2026.crumb /tmp/out.html            # viewer-only (default)
+npm run render -- examples/japan-2026.crumb /tmp/out.html --editor   # with editor shell
 ```
 
 ## Test targets

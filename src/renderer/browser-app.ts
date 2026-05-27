@@ -15,13 +15,20 @@
  * <script> tag before this one and handles live re-parsing on editor edits.
  */
 
-import "./app-menus"
-import { setupListClickHandler, focusMarker, clearFocus } from "./app-focus"
+import { setupListClickHandler, clearFocus } from "./app-focus"
 import { updateMap, fitAllPlaces, applyDetailMarkerFilter, fitTransportHubs, mapPadding, applyGeoState } from "./app-map"
 import { state, ZOOM_PLACE_FLY, ZOOM_DETAIL_FLY, MOBILE_MAX_W } from "./app-state"
 import { initSheet, exitSheet, goMedium } from "./app-sheet"
 import { ICON_GLOBE_OFF } from "./icons"
 import type { ModalRef } from "./app-state"
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function isSinglePlace(doc: typeof state.DATA): boolean {
+  return doc?.itinerary?.length === 1 && doc.itinerary[0]?.type === "place"
+}
+
+const EMPTY_STATE_HTML = `<div class="panel-empty"><span class="panel-empty-title">No itinerary loaded</span></div>`
 
 // ─── DOM references ───────────────────────────────────────────────────────────
 
@@ -123,6 +130,7 @@ function updatePanelFooter(): void {
     panelFooter.innerHTML = renderFooterNav(cur + 1, items.length)
     return
   }
+  if (isSinglePlace(state.DATA) && state.activeDetail === null) { panelFooter.innerHTML = ""; return }
   const itinIdx = currentItinIdx()
   if (itinIdx < 0) { panelFooter.innerHTML = ""; return }
   panelFooter.innerHTML = renderFooterNav(itinIdx + 1, state.DATA.itinerary.length)
@@ -300,7 +308,9 @@ document.addEventListener("click", e => {
           state.map.flyTo({ center: [geo.lng, geo.lat], zoom: ZOOM_PLACE_FLY, duration: 800 })
         }
         panelNav.innerHTML     = ""
-        panelContent.innerHTML = window.Crumb.renderPlacePanel(doc, placeIdx)
+        panelContent.innerHTML = isSinglePlace(doc)
+          ? window.Crumb.renderSinglePlacePanel(doc)
+          : window.Crumb.renderPlacePanel(doc, placeIdx)
         panelContent.scrollTop = 0
         setupStickyTitle()
         applyGeoState(doc)
@@ -442,6 +452,40 @@ document.addEventListener("crumb:map-click", () => {
   goMedium()
 })
 
+// ─── Editor doc-updated ───────────────────────────────────────────────────────
+// Fired by the editor bundle after a successful re-parse (or on clear).
+
+window.addEventListener("crumb:doc-updated", () => {
+  const doc = window.__CRUMB_DATA
+  if (!doc) {
+    state.DATA       = null as any
+    state.POPUP_META = {}
+    panelNav.innerHTML     = ""
+    panelContent.innerHTML = EMPTY_STATE_HTML
+    panelFooter.innerHTML  = ""
+    ;(document.getElementById("map-status") as HTMLElement).textContent = ""
+    if (state.mapReady) {
+      state.map.getSource("route").setData({ type: "FeatureCollection", features: [] })
+      state.placeMarkers.forEach(m  => m.remove());  state.placeMarkers  = []
+      state.detailMarkers.forEach(m => m.remove()); state.detailMarkers = []
+    }
+    return
+  }
+  state.DATA         = doc
+  state.POPUP_META   = window.__CRUMB_POPUPS
+  state.activeDetail = null
+  panelNav.innerHTML = ""
+  if (isSinglePlace(doc)) {
+    state.activePlaceIndex = 1
+    panelContent.innerHTML = window.Crumb.renderSinglePlacePanel(doc)
+  } else {
+    state.activePlaceIndex = null
+    panelContent.innerHTML = window.Crumb.renderTripPanel(doc)
+  }
+  setupStickyTitle()
+  updateMap(doc)
+})
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 const mobileQuery = window.matchMedia(`(max-width: ${MOBILE_MAX_W - 1}px)`)
@@ -454,5 +498,11 @@ mobileQuery.addEventListener("change", e => {
 })
 
 setupListClickHandler()
+if (!state.DATA) {
+  panelContent.innerHTML = EMPTY_STATE_HTML
+} else if (isSinglePlace(state.DATA)) {
+  state.activePlaceIndex = 1
+  panelContent.innerHTML = window.Crumb.renderSinglePlacePanel(state.DATA)
+}
 setupStickyTitle()
 updateMap(state.DATA)

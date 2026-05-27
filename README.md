@@ -58,7 +58,7 @@ itinerary:
 
 ## Render a crumb
 
-This repository includes a reference renderer. It takes any crumb file and produces a self-contained HTML file with an interactive map, a visual itinerary, and an in-browser editor with live re-rendering.
+This repository includes a reference renderer. It takes any crumb file and produces a self-contained HTML file with an interactive map and a visual itinerary.
 
 ```sh
 npm install
@@ -70,6 +70,12 @@ To write to a file directly:
 
 ```sh
 npx ts-node src/cli.ts examples/europe-backpacking.crumb dist/europe.html
+```
+
+To include the live YAML editor shell (for authoring and showcase use):
+
+```sh
+npx ts-node src/cli.ts examples/europe-backpacking.crumb dist/europe.html --editor
 ```
 
 ---
@@ -88,7 +94,9 @@ npx ts-node src/cli.ts examples/europe-backpacking.crumb > /dev/null
 ```
 src/
   cli.ts                   entry point — parses a .crumb file, renders to HTML
-  browser-entry.ts         browser bundle entry (esbuild, for live re-rendering)
+  browser-entry.ts         parser bundle entry (esbuild → window.Crumb, for live re-parsing)
+  viewer-entry.ts          viewer bundle entry (map, panel, geocoding — no editor)
+  editor-entry.ts          editor bundle entry (YAML editor, menus, dialogs)
   parser/
     index.ts               parse(source) → CrumbDocument
     pass1-classify.ts      raw YAML → typed raw tree

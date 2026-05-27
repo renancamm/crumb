@@ -1,10 +1,4 @@
-import { state } from "./app-state"
-import { updateMap } from "./app-map"
-import { setupStickyTitle } from "./browser-app"
-
 const editorEl     = document.getElementById("editor")           as HTMLTextAreaElement
-const panelNav     = document.getElementById("panel-nav")        as HTMLElement
-const panelContent = document.getElementById("panel-content")    as HTMLElement
 const errorBar     = document.getElementById("editor-error-bar") as HTMLElement
 
 export { editorEl }
@@ -16,28 +10,19 @@ export function setEditorError(msg: string): void {
 
 export function render(): void {
   const src = editorEl.value.trim()
+  setEditorError("")
   if (!src) {
-    panelContent.innerHTML = '<div class="list-empty">Start typing a .crumb document…</div>'
-    setEditorError("")
-    if (state.mapReady) {
-      state.map.getSource("route").setData({ type: "FeatureCollection", features: [] })
-      state.placeMarkers.forEach(m => m.remove());  state.placeMarkers = []
-      state.detailMarkers.forEach(m => m.remove()); state.detailMarkers = []
-    }
-    setMapStatus(""); return
+    window.__CRUMB_DATA   = null
+    window.__CRUMB_POPUPS = {}
+    window.dispatchEvent(new CustomEvent("crumb:doc-updated"))
+    return
   }
   try {
     const doc = window.Crumb.parse(src)
-    state.DATA             = doc
-    state.activePlaceIndex = null
-    state.activeModal      = null
-    state.POPUP_META       = window.Crumb.buildPopupMeta(doc)
-    document.title         = "Crumb" + (doc.trip?.name ? " — " + doc.trip.name : "")
-    panelNav.innerHTML     = ""
-    panelContent.innerHTML = window.Crumb.renderTripPanel(doc)
-    setEditorError("")
-    setupStickyTitle()
-    updateMap(doc)
+    window.__CRUMB_DATA   = doc
+    window.__CRUMB_POPUPS = window.Crumb.buildPopupMeta(doc)
+    document.title        = "Crumb" + (doc.trip?.name ? " — " + doc.trip.name : "")
+    window.dispatchEvent(new CustomEvent("crumb:doc-updated"))
   } catch (e) {
     const msg = (e instanceof Error ? e.message : String(e)).split("\n")[0]
     setEditorError("⚠ " + msg)
@@ -54,7 +39,3 @@ editorEl.addEventListener("keydown", e => {
   editorEl.value = v.slice(0, s) + "  " + v.slice(editorEl.selectionEnd)
   editorEl.selectionStart = editorEl.selectionEnd = s + 2
 })
-
-function setMapStatus(text: string): void {
-  (document.getElementById("map-status") as HTMLElement).textContent = text
-}

@@ -1,34 +1,116 @@
-import { state, SOURCE, SPEC, EXAMPLES } from "./app-state"
 import { editorEl, render } from "./app-editor"
 
-const editorPanel   = document.getElementById("editor-panel")    as HTMLElement
-const newModal      = document.getElementById("new-modal")       as HTMLElement
-const newTextarea   = document.getElementById("new-textarea")    as HTMLTextAreaElement
-const generateModal = document.getElementById("generate-modal")  as HTMLElement
-const aboutModal    = document.getElementById("about-modal")     as HTMLElement
+// ─── DOM refs ─────────────────────────────────────────────────────────────────
 
-const menuTrigger = document.getElementById("menu-trigger") as HTMLElement
-const mainMenu    = document.getElementById("main-menu")    as HTMLElement
+const editorPanel       = document.getElementById("editor-panel")         as HTMLElement
+const newModal          = document.getElementById("new-modal")             as HTMLElement
+const newTextarea       = document.getElementById("new-textarea")          as HTMLTextAreaElement
+const generateModal     = document.getElementById("generate-modal")        as HTMLElement
+const aboutModal        = document.getElementById("about-modal")           as HTMLElement
+const deleteConfirmModal= document.getElementById("delete-confirm-modal")  as HTMLElement
+const deleteConfirmDesc = document.getElementById("delete-confirm-desc")   as HTMLElement
+const recentList        = document.getElementById("recent-list")           as HTMLElement
 
-// ─── Pill menu ────────────────────────────────────────────────────────────────
+// ─── Multi-menu open/close ────────────────────────────────────────────────────
 
-function closeMenu(): void {
-  mainMenu.classList.remove("open")
-  menuTrigger.classList.remove("open")
+type MenuId = "file" | "examples" | "about"
+
+const menus: Record<MenuId, { trigger: HTMLElement; sub: HTMLElement }> = {
+  file:     { trigger: document.getElementById("menu-file")!,     sub: document.getElementById("file-sub")! },
+  examples: { trigger: document.getElementById("menu-examples")!, sub: document.getElementById("examples-sub")! },
+  about:    { trigger: document.getElementById("menu-about")!,    sub: document.getElementById("about-sub")! },
 }
 
-menuTrigger.addEventListener("click", e => {
+function closeAll(): void {
+  for (const { trigger, sub } of Object.values(menus)) {
+    trigger.classList.remove("open")
+    sub.classList.remove("open")
+  }
+}
+
+function toggleMenu(id: MenuId, e: Event): void {
   e.stopPropagation()
-  mainMenu.classList.toggle("open")
-  menuTrigger.classList.toggle("open")
-})
-document.addEventListener("click", closeMenu)
-mainMenu.addEventListener("click", e => e.stopPropagation())
+  const { trigger, sub } = menus[id]
+  const wasOpen = sub.classList.contains("open")
+  closeAll()
+  if (!wasOpen) {
+    trigger.classList.add("open")
+    sub.classList.add("open")
+  }
+}
+
+for (const [id, { trigger }] of Object.entries(menus) as [MenuId, { trigger: HTMLElement; sub: HTMLElement }][]) {
+  trigger.addEventListener("click", e => toggleMenu(id, e))
+}
+
+document.addEventListener("click", closeAll)
+
+// ─── localStorage itinerary persistence ──────────────────────────────────────
+
+const STORAGE_KEY = "crumb-saved-v1"
+
+interface SavedEntry { name: string; source: string; savedAt: number }
+
+function getSaved(): SavedEntry[] {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]") } catch { return [] }
+}
+
+function saveEntry(name: string, source: string): void {
+  const entries = getSaved().filter(e => e.name !== name)
+  entries.unshift({ name, source, savedAt: Date.now() })
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
+}
+
+function deleteEntry(name: string): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(getSaved().filter(e => e.name !== name)))
+}
+
+// The name under which the current doc is saved (null if not saved yet).
+let currentSavedName: string | null = null
+
+const deleteMenuItem = document.getElementById("menu-delete")!
+
+function setCurrentSavedName(name: string | null): void {
+  currentSavedName = name
+  if (name) {
+    deleteMenuItem.classList.remove("menu-sub-item--disabled")
+  } else {
+    deleteMenuItem.classList.add("menu-sub-item--disabled")
+  }
+}
+
+function refreshRecentList(): void {
+  const entries = getSaved()
+  recentList.innerHTML = ""
+  if (entries.length === 0) {
+    const el = document.createElement("div")
+    el.className = "menu-sub-item menu-sub-item--muted"
+    el.textContent = "No saved itineraries"
+    recentList.appendChild(el)
+    return
+  }
+  for (const entry of entries) {
+    const el = document.createElement("div")
+    el.className = "menu-sub-item"
+    el.textContent = entry.name
+    el.addEventListener("click", () => {
+      editorEl.value    = entry.source
+      setCurrentSavedName(entry.name)
+      render()
+      closeEditor()
+      closeAll()
+    })
+    recentList.appendChild(el)
+  }
+}
+
+refreshRecentList()
+setCurrentSavedName(null)
 
 // ─── Editor open/close ────────────────────────────────────────────────────────
 
 export function openEditor(): void {
-  if (editorEl.value === "") editorEl.value = SOURCE
+  if (editorEl.value === "") editorEl.value = window.__CRUMB_SOURCE ?? ""
   editorPanel.style.display = "flex"
   editorEl.focus()
 }
@@ -39,10 +121,17 @@ export function closeEditor(): void {
 
 document.getElementById("editor-close-btn")!.addEventListener("click", closeEditor)
 
-// ─── Menu → New ───────────────────────────────────────────────────────────────
+// ─── File → Edit ──────────────────────────────────────────────────────────────
+
+document.getElementById("menu-edit")!.addEventListener("click", () => {
+  closeAll()
+  openEditor()
+})
+
+// ─── File → New ───────────────────────────────────────────────────────────────
 
 document.getElementById("menu-new")!.addEventListener("click", () => {
-  closeMenu()
+  closeAll()
   newModal.classList.add("open")
   setTimeout(() => newTextarea.focus(), 50)
 })
@@ -52,66 +141,127 @@ function closeNewModal(): void {
   newTextarea.value = ""
 }
 document.getElementById("new-close-x")!.addEventListener("click", closeNewModal)
-document.getElementById("new-cancel")!.addEventListener("click",   closeNewModal)
+document.getElementById("new-cancel")!.addEventListener("click", closeNewModal)
 newModal.addEventListener("click", e => { if (e.target === newModal) closeNewModal() })
 document.getElementById("new-load")!.addEventListener("click", () => {
   const src = newTextarea.value.trim()
   if (!src) return
-  editorEl.value = src
+  editorEl.value   = src
+  setCurrentSavedName(null)
   render()
   closeEditor()
   closeNewModal()
 })
 
-// ─── Menu → Edit ──────────────────────────────────────────────────────────────
+// ─── File → Save ──────────────────────────────────────────────────────────────
 
-document.getElementById("menu-edit")!.addEventListener("click", () => { closeMenu(); openEditor() })
-
-// ─── Menu → Examples ──────────────────────────────────────────────────────────
-
-document.getElementById("menu-examples")!.addEventListener("click", e => {
-  e.stopPropagation()
-  document.getElementById("examples-sub")!.classList.toggle("open")
-  ;(e.currentTarget as HTMLElement).classList.toggle("open")
+document.getElementById("menu-save")!.addEventListener("click", () => {
+  closeAll()
+  const source = editorEl.value.trim()
+  if (!source) return
+  const name = window.__CRUMB_DATA?.trip?.name ?? "Untitled"
+  saveEntry(name, source)
+  setCurrentSavedName(name)
+  refreshRecentList()
 })
+
+// ─── File → Save as… ─────────────────────────────────────────────────────────
+
+document.getElementById("menu-save-as")!.addEventListener("click", async () => {
+  closeAll()
+  const source = editorEl.value.trim()
+  if (!source) return
+  const name     = window.__CRUMB_DATA?.trip?.name ?? "itinerary"
+  const filename = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") + ".crumb"
+  if ("showSaveFilePicker" in window) {
+    try {
+      const fh = await (window as any).showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: "Crumb file", accept: { "text/plain": [".crumb"] } }],
+      })
+      const writable = await fh.createWritable()
+      await writable.write(source)
+      await writable.close()
+      return
+    } catch (e) {
+      if ((e as any).name === "AbortError") return
+      console.warn("showSaveFilePicker failed, falling back to download:", e)
+    }
+  }
+  const blob = new Blob([source], { type: "text/plain" })
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement("a")
+  a.href = url; a.download = filename; a.click()
+  URL.revokeObjectURL(url)
+})
+
+// ─── File → Delete ────────────────────────────────────────────────────────────
+
+deleteMenuItem.addEventListener("click", () => {
+  if (!currentSavedName) return
+  closeAll()
+  deleteConfirmDesc.textContent = `"${currentSavedName}" will be removed from your saved itineraries.`
+  deleteConfirmModal.classList.add("open")
+})
+
+function closeDeleteConfirm(): void { deleteConfirmModal.classList.remove("open") }
+
+document.getElementById("delete-cancel")!.addEventListener("click", closeDeleteConfirm)
+deleteConfirmModal.addEventListener("click", e => { if (e.target === deleteConfirmModal) closeDeleteConfirm() })
+
+document.getElementById("delete-confirm-btn")!.addEventListener("click", () => {
+  if (currentSavedName) {
+    deleteEntry(currentSavedName)
+    setCurrentSavedName(null)
+    refreshRecentList()
+  }
+  editorEl.value = ""
+  render()
+  closeDeleteConfirm()
+})
+
+// ─── Examples menu ────────────────────────────────────────────────────────────
+
 document.querySelectorAll<HTMLElement>("[data-example]").forEach(el => {
   el.addEventListener("click", () => {
-    const src = EXAMPLES[el.dataset.example!]
+    const src = (window.__CRUMB_EXAMPLES ?? {})[el.dataset.example!]
     if (!src) return
-    editorEl.value = src
+    editorEl.value   = src
+    setCurrentSavedName(null)
     render()
     closeEditor()
-    closeMenu()
+    closeAll()
   })
 })
 
-// ─── Menu → How to generate ───────────────────────────────────────────────────
+// ─── About → What is a Crumb ──────────────────────────────────────────────────
 
-document.getElementById("menu-generate")!.addEventListener("click", () => {
-  closeMenu()
+document.getElementById("about-what")!.addEventListener("click", () => {
+  closeAll()
+  aboutModal.classList.add("open")
+})
+function closeAbout(): void { aboutModal.classList.remove("open") }
+document.getElementById("about-close-x")!.addEventListener("click", closeAbout)
+document.getElementById("about-close-btn")!.addEventListener("click", closeAbout)
+aboutModal.addEventListener("click", e => { if (e.target === aboutModal) closeAbout() })
+
+// ─── About → How to generate ──────────────────────────────────────────────────
+
+document.getElementById("about-generate")!.addEventListener("click", () => {
+  closeAll()
   generateModal.classList.add("open")
 })
 function closeGenerate(): void { generateModal.classList.remove("open") }
 document.getElementById("generate-close-x")!.addEventListener("click", closeGenerate)
-document.getElementById("generate-close")!.addEventListener("click",   closeGenerate)
+document.getElementById("generate-close")!.addEventListener("click", closeGenerate)
 generateModal.addEventListener("click", e => { if (e.target === generateModal) closeGenerate() })
 
 document.getElementById("dl-spec-btn")!.addEventListener("click", () => {
-  if (!SPEC) return
-  const blob = new Blob([SPEC], { type: "text/markdown" })
+  const spec = window.__CRUMB_SPEC
+  if (!spec) return
+  const blob = new Blob([spec], { type: "text/markdown" })
   const url  = URL.createObjectURL(blob)
   const a    = document.createElement("a")
   a.href = url; a.download = "CRUMB_SPEC.md"; a.click()
   URL.revokeObjectURL(url)
 })
-
-// ─── Menu → About ─────────────────────────────────────────────────────────────
-
-document.getElementById("menu-about")!.addEventListener("click", () => {
-  closeMenu()
-  aboutModal.classList.add("open")
-})
-function closeAbout(): void { aboutModal.classList.remove("open") }
-document.getElementById("about-close-x")!.addEventListener("click",   closeAbout)
-document.getElementById("about-close-btn")!.addEventListener("click", closeAbout)
-aboutModal.addEventListener("click", e => { if (e.target === aboutModal) closeAbout() })
