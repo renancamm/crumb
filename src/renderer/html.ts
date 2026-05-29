@@ -28,7 +28,7 @@ import type {
   UngroupedActivities,
 } from "../types/resolved"
 import { CSS } from "./css"
-import { ICON_STAY, ICON_ARRIVES, ICON_DEPARTS, ICON_CLOCK, ICON_CORNER_DOWN_RIGHT, ICON_CORNER_UP_RIGHT, ICON_PLANE, ICON_TRAIN, ICON_BUS, ICON_CAR, ICON_SHIP, ICON_WALK, ICON_BIKE, ICON_ROUTE, ICON_GLOBE_OFF, ICON_PRIORITY_MUST, ICON_PRIORITY_MAYBE, modeIconSvg } from "./icons"
+import { ICON_STAY, ICON_ARRIVES, ICON_DEPARTS, ICON_CLOCK, ICON_CORNER_DOWN_RIGHT, ICON_CORNER_UP_RIGHT, ICON_PLANE, ICON_TRAIN, ICON_BUS, ICON_CAR, ICON_SHIP, ICON_WALK, ICON_BIKE, ICON_ROUTE, ICON_PIN_OFF, ICON_PRIORITY_MUST, ICON_PRIORITY_MAYBE, modeIconSvg } from "./icons"
 import {
   escape,
   formatDuration,
@@ -255,49 +255,69 @@ export function renderTripPanel(doc: CrumbDocument): string {
   const parts: string[] = []
 
   if (doc.trip) {
-    const { name, duration, author, note, tags } = doc.trip
+    const { name, duration } = doc.trip
     const stickyDur = duration && duration.type !== "unknown" ? `<span class="sticky-bar-meta">${escape(formatDuration(duration))}</span>` : ""
     parts.push(`<div class="panel-sticky-bar"><span class="sticky-bar-name">${escape(name ?? "Itinerary")}</span>${stickyDur}</div>`)
-    parts.push(`<div class="panel-trip-header">`)
+  }
+
+  const dur = doc.trip?.duration
+  const durSuffix = dur && dur.type !== "unknown"
+    ? `<span class="trip-eyebrow-sep">·</span>${escape(formatDuration(dur))}`
+    : dur?.type === "unknown"
+    ? `<span class="trip-eyebrow-sep">·</span><span class="value-unknown">${escape(dur.label)}</span>`
+    : ""
+  parts.push(`<div class="panel-trip-header">`)
+  parts.push(`  <div class="trip-eyebrow"><span class="trip-eyebrow-logo">crumb</span>${durSuffix}</div>`)
+  if (doc.trip) {
+    const { name, author, note, tags } = doc.trip
     parts.push(`  <h1 class="panel-trip-name">${escape(name ?? "Itinerary")}</h1>`)
-    if (duration && duration.type !== "unknown")
-      parts.push(`  <div class="trip-duration">${escape(formatDuration(duration))}</div>`)
-    else if (duration?.type === "unknown")
-      parts.push(`  <div class="trip-duration"><span class="value-unknown">${escape(duration.label)}</span></div>`)
     if (tags?.length) parts.push(`  <div class="tags">${tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>`)
     if (note) parts.push(`  <div class="note">${renderInlineNote(note)}</div>`)
     if (author) parts.push(`  <p class="trip-author">by ${escape(author)}</p>`)
-    parts.push(`</div>`)
   }
+  parts.push(`</div>`)
 
   parts.push(`<ul class="panel-toc">`)
+  const itin = doc.itinerary
   let pIdx = 0, tIdx = 0
-  for (const item of doc.itinerary) {
+  for (let ii = 0; ii < itin.length; ii++) {
+    const item = itin[ii]
     if (item.type === "place") {
       const idx = ++pIdx
       const { icon: geoIcon } = renderGeoAttrs(item.location)
-      const durStr = item.duration && item.duration.type !== "unknown" ? formatDuration(item.duration) : ""
+      const durStr  = item.duration && item.duration.type !== "unknown" ? formatDuration(item.duration) : ""
       const dateStr = item.arrives && item.departs ? formatPlainDateRange(item.arrives, item.departs)
                     : item.arrives ? formatMoment(item.arrives)
                     : item.departs ? formatMoment(item.departs) : ""
-      const metaParts = [durStr, dateStr].filter(Boolean)
-      const metaHtml  = metaParts.length ? `<span class="list-item-meta">${metaParts.map(s => escape(s)).join(" · ")}</span>` : ""
+      const actCount = countActivities(item)
+      const actStr   = actCount > 0 ? `${actCount} activit${actCount === 1 ? "y" : "ies"}` : ""
+      const durDateStr  = [durStr ? escape(durStr) : "", dateStr ? escape(dateStr) : ""].filter(Boolean).join(", ")
+      const metaStr     = durDateStr && actStr ? `${durDateStr} · ${actStr}`
+                        : durDateStr ? durDateStr : actStr
+      const metaHtml    = metaStr ? `<span class="list-item-meta">${metaStr}</span>` : ""
       parts.push(
         `  <li class="list-item list-item--place" data-place-idx="${idx}">` +
         `<span class="place-num place-num--sm">${idx}</span>` +
         `<span class="list-item-body"><span class="list-item-label">${escape(item.name)}${geoIcon}</span>${metaHtml}</span></li>`
       )
     } else {
-      const i    = tIdx++
+      const ti   = tIdx++
       const icon = modeIconSvg(item.mode)
+      const from = item.from?.label ?? null
+      const to   = item.to?.label   ?? null
       const dur  = item.duration && item.duration.type !== "unknown" ? formatDuration(item.duration) : null
-      const metaParts: string[] = []
-      if (item.departs) metaParts.push(escape(formatMomentTime(item.departs)))
-      if (item.arrives) metaParts.push(escape(formatMomentTime(item.arrives)))
-      if (dur) metaParts.push(escape(dur))
+
+      // Omit from→to when both match the adjacent place names — pass 3
+      // inferred them and showing them just repeats the visible list order.
+      const prevPlace = itin.slice(0, ii).reverse().find(x => x.type === "place") as Place | undefined
+      const nextPlace = itin.slice(ii + 1).find(x => x.type === "place") as Place | undefined
+      const routeStr = (from && to && !(from === prevPlace?.name && to === nextPlace?.name))
+        ? `${escape(from)} → ${escape(to)}` : null
+
+      const metaParts = [routeStr, dur ? escape(dur) : null].filter((s): s is string => !!s)
       const metaHtml = metaParts.length ? `<span class="list-item-meta">${metaParts.join(" · ")}</span>` : ""
       parts.push(
-        `  <li class="list-item list-item--transport" data-transport-idx="${i}">` +
+        `  <li class="list-item list-item--transport" data-transport-idx="${ti}">` +
         `<span class="transport-icon-wrap">${icon}</span>` +
         `<span class="list-item-body">` +
         `<span class="list-item-label transport-label">${escape(formatMode(item.mode))}</span>${metaHtml}</span></li>`
@@ -309,6 +329,26 @@ export function renderTripPanel(doc: CrumbDocument): string {
 }
 
 // ─── Place level renders ──────────────────────────────────────────────────────
+
+function renderActivityListItem(act: Activity, flatIdx: number, lbl: string): string {
+  const pri   = act.priority === "must"  ? `<span class="card-indicator">${ICON_PRIORITY_MUST}</span>`
+              : act.priority === "maybe" ? `<span class="card-indicator">${ICON_PRIORITY_MAYBE}</span>` : ""
+  const noMap = act.location?.geocodingDisabled ? `<span class="card-indicator">${ICON_PIN_OFF}</span>` : ""
+  const timeStr  = act.time     ? escape(formatMomentTime(act.time)) : ""
+  const durStr   = act.duration && act.duration.type !== "unknown" ? escape(formatDuration(act.duration)) : ""
+  const metaText = [timeStr, durStr].filter(Boolean).join(" · ")
+  const indicators = pri + noMap
+
+  // When there is no text meta, fold indicators into the label to avoid a lone-icon row
+  const labelHtml = `<span class="list-item-label">${escape(act.name)}${metaText ? "" : indicators}</span>`
+  const metaHtml  = metaText ? `<span class="list-item-meta">${metaText}${indicators}</span>` : ""
+
+  return (
+    `  <li class="list-item list-item--activity" data-act-idx="${flatIdx}" data-act-name="${escape(act.name)}">` +
+    `<span class="act-badge">${lbl}</span>` +
+    `<span class="list-item-body">${labelHtml}${metaHtml}</span></li>`
+  )
+}
 
 function renderPlaceActivities(place: Place): string {
   const parts: string[] = []
@@ -352,42 +392,73 @@ function renderPlaceActivities(place: Place): string {
       }
       let actGroupIdx = 0
       for (const act of actItem.items) {
-        const lbl = activityLabel(actGroupIdx, gIdx)
-        const pri = act.priority === "must"  ? `<span class="act-priority act-priority-must">${ICON_PRIORITY_MUST}</span>`
-                  : act.priority === "maybe" ? `<span class="act-priority act-priority-maybe">${ICON_PRIORITY_MAYBE}</span>` : ""
-        const noMap = act.location?.geocodingDisabled ? `<span class="geo-no-loc">${ICON_GLOBE_OFF}</span>` : ""
-        const timeStr = act.time ? escape(formatMomentTime(act.time)) : ""
-        const durStr  = act.duration && act.duration.type !== "unknown" ? escape(formatDuration(act.duration)) : ""
-        const metaText = [timeStr, durStr].filter(Boolean).join(" · ")
-        parts.push(
-          `  <li class="list-item list-item--activity" data-act-idx="${actFlatIdx}" data-act-name="${escape(act.name)}">` +
-          `<span class="act-badge">${lbl}</span>` +
-          `<span class="list-item-body"><span class="list-item-label">${escape(act.name)}</span><span class="list-item-meta">${metaText}${pri}${noMap}</span></span></li>`
-        )
-        actFlatIdx++
-        actGroupIdx++
+        parts.push(renderActivityListItem(act, actFlatIdx++, activityLabel(actGroupIdx++, gIdx)))
       }
     } else {
       for (const act of actItem.items) {
-        const lbl = activityLabel(ungroupedIdx)
-        const pri = act.priority === "must"  ? `<span class="act-priority act-priority-must">${ICON_PRIORITY_MUST}</span>`
-                  : act.priority === "maybe" ? `<span class="act-priority act-priority-maybe">${ICON_PRIORITY_MAYBE}</span>` : ""
-        const noMap = act.location?.geocodingDisabled ? `<span class="geo-no-loc">${ICON_GLOBE_OFF}</span>` : ""
-        const timeStr = act.time ? escape(formatMomentTime(act.time)) : ""
-        const durStr  = act.duration && act.duration.type !== "unknown" ? escape(formatDuration(act.duration)) : ""
-        const metaText = [timeStr, durStr].filter(Boolean).join(" · ")
-        parts.push(
-          `  <li class="list-item list-item--activity" data-act-idx="${actFlatIdx}" data-act-name="${escape(act.name)}">` +
-          `<span class="act-badge">${lbl}</span>` +
-          `<span class="list-item-body"><span class="list-item-label">${escape(act.name)}</span><span class="list-item-meta">${metaText}${pri}${noMap}</span></span></li>`
-        )
-        actFlatIdx++
-        ungroupedIdx++
+        parts.push(renderActivityListItem(act, actFlatIdx++, activityLabel(ungroupedIdx++)))
       }
     }
   }
   return parts.join("\n")
 }
+
+// ─── Panel header helpers ─────────────────────────────────────────────────────
+
+const PANEL_CLOSE_BTN =
+  `<button class="panel-close" id="nav-back">` +
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16">` +
+  `<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
+
+const STICKY_CLOSE_BTN =
+  `<button class="panel-close sticky-bar-close" id="nav-back">` +
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16">` +
+  `<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
+
+function renderStickyBar(badge: string, name: string, meta?: string): string {
+  const metaHtml = meta ? `<span class="sticky-bar-meta">${meta}</span>` : ""
+  return (
+    `<div class="panel-sticky-bar">` +
+    badge +
+    `<span class="sticky-bar-body"><span class="sticky-bar-name">${name}</span>${metaHtml}</span>` +
+    STICKY_CLOSE_BTN +
+    `</div>`
+  )
+}
+
+interface PanelHeaderOpts {
+  stickyBar: string
+  badge:     string
+  title:     string    // full heading element HTML (h1 with class + content)
+  meta?:     string    // optional subtitle (escaped text or HTML — Place: duration·dates, Activity: time·duration)
+}
+
+function renderPanelHeader({ stickyBar, badge, title, meta }: PanelHeaderOpts): string {
+  const metaHtml = meta ? `\n        <div class="trip-duration">${meta}</div>` : ""
+  return [
+    stickyBar,
+    `<div class="panel-header">`,
+    `  <div class="panel-header-body">`,
+    `    <div class="panel-title-row">`,
+    `      ${badge}`,
+    `      <div class="panel-title-body">`,
+    `        ${title}${metaHtml}`,
+    `      </div>`,
+    `    </div>`,
+    `  </div>`,
+    `  ${PANEL_CLOSE_BTN}`,
+    `</div>`,
+  ].join("\n")
+}
+
+/** Total activity count across all groups in a place (for card metadata). */
+function countActivities(place: Place): number {
+  let n = 0
+  for (const actItem of place.activities) n += actItem.items.length
+  return n
+}
+
+// ─── Desktop panel renderers ──────────────────────────────────────────────────
 
 /** Desktop panel content for a single place (placeIdx is 1-based). */
 export function renderPlacePanel(doc: CrumbDocument, placeIdx: number): string {
@@ -395,35 +466,36 @@ export function renderPlacePanel(doc: CrumbDocument, placeIdx: number): string {
   const place  = places[placeIdx - 1]
   if (!place) return ""
 
-  const parts: string[] = []
-  const { icon: geoIcon, mapLink: placeMapLink } = renderGeoAttrs(place.location)
-  const durHtml   = renderPlaceDuration(resolvePlaceDisplayDuration(place))
-  const datesHtml = renderPlaceDates(place)
-  const sep       = (durHtml && datesHtml) ? `<span class="place-meta-sep">•</span>` : ""
+  const { icon: geoIcon } = renderGeoAttrs(place.location)
+  // Rich HTML for the panel header (carries date-inferred spans, icons, etc.)
+  const metaLine = [renderPlaceDuration(resolvePlaceDisplayDuration(place)), renderPlaceDates(place)]
+    .filter(Boolean).join(`<span class="place-meta-sep"> · </span>`)
+  // Plain text for the sticky bar — avoids inheriting .place-duration / .place-dates font sizes
+  const dur = resolvePlaceDisplayDuration(place)
+  const durPlain  = dur && dur.type !== "unknown" ? escape(formatDuration(dur))
+                  : dur?.type === "unknown"       ? escape(dur.label) : ""
+  const datePlain = place.arrives && place.departs ? escape(formatPlainDateRange(place.arrives, place.departs))
+                  : place.arrives                  ? escape(formatMoment(place.arrives))
+                  : place.departs                  ? escape(formatMoment(place.departs)) : ""
+  const stickyMeta = [durPlain, datePlain].filter(Boolean).join(" · ")
 
-  const metaLine = [durHtml, datesHtml].filter(Boolean).join(`<span class="place-meta-sep"> · </span>`)
-  const stickyMeta = metaLine ? `<span class="sticky-bar-meta">${metaLine}</span>` : ""
-  parts.push(
-    `<div class="panel-sticky-bar">` +
-    `<span class="place-num place-num--sm sticky-bar-badge">${placeIdx}</span>` +
-    `<span class="sticky-bar-body"><span class="sticky-bar-name">${escape(place.name)}</span>${stickyMeta}</span>` +
-    `<button class="panel-close sticky-bar-close" id="nav-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>` +
-    `</div>`
-  )
-  parts.push(`<div class="panel-header">`)
-  parts.push(`  <div class="panel-header-body">`)
-  parts.push(`    <div class="panel-title-row">`)
-  parts.push(`      <span class="place-num place-num--sm">${placeIdx}</span>`)
-  parts.push(`      <div class="panel-title-body">`)
-  parts.push(`        <h1 class="panel-place-name">${escape(place.name)}${geoIcon}</h1>`)
-  if (metaLine) parts.push(`        <div class="trip-duration">${metaLine}</div>`)
-  parts.push(`      </div>`)
-  parts.push(`    </div>`)
-  if (place.tags?.length) parts.push(`    <div class="tags">${place.tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>`)
-  if (place.note) parts.push(`    <div class="note panel-note">${renderInlineNote(place.note)}</div>`)
-  parts.push(`  </div>`)
-  parts.push(`  <button class="panel-close" id="nav-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`)
-  parts.push(`</div>`)
+  const parts: string[] = []
+  parts.push(renderPanelHeader({
+    stickyBar: renderStickyBar(
+      `<span class="place-num place-num--sm sticky-bar-badge">${placeIdx}</span>`,
+      escape(place.name),
+      stickyMeta || undefined,
+    ),
+    badge: `<span class="place-num place-num--sm">${placeIdx}</span>`,
+    title: `<h1 class="panel-place-name">${escape(place.name)}${geoIcon}</h1>`,
+    meta:  metaLine || undefined,
+  }))
+
+  const bodyParts = [
+    place.tags?.length ? `<div class="tags">${place.tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>` : "",
+    place.note         ? `<div class="note">${renderInlineNote(place.note)}</div>` : "",
+  ].filter(Boolean)
+  if (bodyParts.length) parts.push(`<div class="panel-place-body">${bodyParts.join("")}</div>`)
 
   parts.push(`<ul class="panel-toc">`)
   parts.push(renderPlaceActivities(place))
@@ -446,38 +518,43 @@ export function renderSinglePlacePanel(doc: CrumbDocument): string {
     parts.push(`<div class="panel-sticky-bar"><span class="sticky-bar-name">${escape(name ?? "Itinerary")}</span>${stickyDur}</div>`)
   }
 
+  const dur2 = doc.trip?.duration
+  const durSuffix2 = dur2 && dur2.type !== "unknown"
+    ? `<span class="trip-eyebrow-sep">·</span>${escape(formatDuration(dur2))}`
+    : dur2?.type === "unknown"
+    ? `<span class="trip-eyebrow-sep">·</span><span class="value-unknown">${escape(dur2.label)}</span>`
+    : ""
+  parts.push(`<div class="panel-trip-header">`)
+  parts.push(`  <div class="trip-eyebrow"><span class="trip-eyebrow-logo">crumb</span>${durSuffix2}</div>`)
   if (doc.trip) {
-    const { name, duration, author, note, tags } = doc.trip
-    parts.push(`<div class="panel-trip-header">`)
+    const { name, author, note, tags } = doc.trip
     parts.push(`  <h1 class="panel-trip-name">${escape(name ?? "Itinerary")}</h1>`)
-    if (duration && duration.type !== "unknown")
-      parts.push(`  <div class="trip-duration">${escape(formatDuration(duration))}</div>`)
-    else if (duration?.type === "unknown")
-      parts.push(`  <div class="trip-duration"><span class="value-unknown">${escape(duration.label)}</span></div>`)
     if (tags?.length) parts.push(`  <div class="tags">${tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>`)
     if (note) parts.push(`  <div class="note">${renderInlineNote(note)}</div>`)
     if (author) parts.push(`  <p class="trip-author">by ${escape(author)}</p>`)
-    parts.push(`</div>`)
   }
+  parts.push(`</div>`)
 
   const { icon: geoIcon } = renderGeoAttrs(place.location)
-  const durHtml   = renderPlaceDuration(resolvePlaceDisplayDuration(place))
-  const datesHtml = renderPlaceDates(place)
-  const metaLine  = [durHtml, datesHtml].filter(Boolean).join(`<span class="place-meta-sep"> · </span>`)
-  const metaHtml  = metaLine ? `<span class="list-item-meta">${metaLine}</span>` : ""
+  const metaLine = [renderPlaceDuration(resolvePlaceDisplayDuration(place)), renderPlaceDates(place)]
+    .filter(Boolean).join(`<span class="place-meta-sep"> · </span>`)
   parts.push(`<div class="panel-header">`)
   parts.push(`  <div class="panel-header-body">`)
   parts.push(`    <div class="panel-title-row">`)
   parts.push(`      <span class="place-num place-num--sm">1</span>`)
   parts.push(`      <div class="panel-title-body">`)
-  parts.push(`        <span class="panel-activity-name">${escape(place.name)}${geoIcon}</span>`)
-  if (metaHtml) parts.push(`        <div class="trip-duration">${metaHtml}</div>`)
+  parts.push(`        <h1 class="panel-place-name">${escape(place.name)}${geoIcon}</h1>`)
+  if (metaLine) parts.push(`        <div class="trip-duration">${metaLine}</div>`)
   parts.push(`      </div>`)
   parts.push(`    </div>`)
-  if (place.tags?.length) parts.push(`    <div class="tags">${place.tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>`)
-  if (place.note) parts.push(`    <div class="note panel-note">${renderInlineNote(place.note)}</div>`)
   parts.push(`  </div>`)
   parts.push(`</div>`)
+
+  const bodyParts = [
+    place.tags?.length ? `<div class="tags">${place.tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>` : "",
+    place.note         ? `<div class="note">${renderInlineNote(place.note)}</div>` : "",
+  ].filter(Boolean)
+  if (bodyParts.length) parts.push(`<div class="panel-place-body">${bodyParts.join("")}</div>`)
 
   parts.push(`<ul class="panel-toc">`)
   parts.push(renderPlaceActivities(place))
@@ -508,27 +585,16 @@ export function renderTransportPanel(doc: CrumbDocument, transportIdx: number): 
   const leg  = legs[transportIdx]
   if (!leg) return ""
 
-  const parts: string[] = []
   const icon     = modeIconSvg(leg.mode)
   const modeName = escape(formatMode(leg.mode))
 
-  parts.push(
-    `<div class="panel-sticky-bar">` +
-    `<span class="transport-icon-wrap sticky-bar-badge">${icon}</span>` +
-    `<span class="sticky-bar-body"><span class="sticky-bar-name">${modeName}</span></span>` +
-    `<button class="panel-close sticky-bar-close" id="nav-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>` +
-    `</div>`
-  )
-
-  parts.push(`<div class="panel-header">`)
-  parts.push(`  <div class="panel-header-body">`)
-  parts.push(`    <div class="panel-title-row">`)
-  parts.push(`      <span class="transport-icon-wrap panel-transport-icon">${icon}</span>`)
-  parts.push(`      <h1 class="panel-transport-name">${modeName}</h1>`)
-  parts.push(`    </div>`)
-  parts.push(`  </div>`)
-  parts.push(`  <button class="panel-close" id="nav-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`)
-  parts.push(`</div>`)
+  const parts: string[] = []
+  parts.push(renderPanelHeader({
+    stickyBar: renderStickyBar(`<span class="transport-icon-wrap sticky-bar-badge">${icon}</span>`, modeName),
+    badge: `<span class="transport-icon-wrap panel-transport-icon">${icon}</span>`,
+    title: `<h1 class="panel-transport-name">${modeName}</h1>`,
+    // No meta in transport header — route/time details live in the body
+  }))
 
   parts.push(`<div class="panel-transport-body">`)
   parts.push(renderTransportPanelContent(leg))
@@ -888,7 +954,7 @@ function renderTripHeader(meta: ResolvedTripMeta): string {
 function renderGeoAttrs(location?: { geocodingDisabled?: boolean }): { icon: string; mapLink: string } {
   const disabled = location?.geocodingDisabled ?? false
   return {
-    icon:    disabled ? `<span class="geo-no-loc">${ICON_GLOBE_OFF}</span>` : "",
+    icon:    disabled ? `<span class="geo-no-loc">${ICON_PIN_OFF}</span>` : "",
     mapLink: disabled ? "" : ` data-map-link=""`,
   }
 }
@@ -1014,7 +1080,7 @@ function formatDateRange(a: ResolvedMoment, d: ResolvedMoment): string {
 
     const aFrag = aInferred ? `<span class="date-inferred">${formatShortDate(aIso)}</span>` : formatShortDate(aIso)
     const dFrag = dInferred ? `<span class="date-inferred">${formatShortDate(dIso)}</span>` : formatShortDate(dIso)
-    return `${aFrag} • ${dFrag}`
+    return `${aFrag}–${dFrag}`
   }
 
   // Fallback: label-aware fragments with direction icons
@@ -1038,7 +1104,7 @@ function formatDateRange(a: ResolvedMoment, d: ResolvedMoment): string {
 
   const af = dateFrag(a)
   const df = dateFrag(d)
-  if (af && df) return `${af} • ${df}`
+  if (af && df) return `${af}–${df}`
   if (af) return `${ICON_ARRIVES}${af}`
   if (df) return `${ICON_DEPARTS}${df}`
   return ""
@@ -1123,38 +1189,25 @@ function renderStayPanel(stay: Stay): string {
                 : stay.arrives ? formatMoment(stay.arrives)
                 : stay.departs ? formatMoment(stay.departs) : ""
 
-  const stickyMeta = dateStr ? `<span class="sticky-bar-meta">${escape(dateStr)}</span>` : ""
-
   const stayTags: string[] = []
-  if (stay.location?.geocodingDisabled) stayTags.push(`<span class="tag tag--icon">${ICON_GLOBE_OFF} No map</span>`)
+  if (stay.location?.geocodingDisabled) stayTags.push(`<span class="tag tag--icon">${ICON_PIN_OFF} No map</span>`)
   ;(stay.tags ?? []).forEach(t => stayTags.push(`<span class="tag">${escape(t)}</span>`))
   const allStayTagsHtml = stayTags.join("")
 
   const parts: string[] = []
-
-  parts.push(
-    `<div class="panel-sticky-bar">` +
-    `<span class="stay-icon-wrap sticky-bar-badge">${ICON_STAY}</span>` +
-    `<span class="sticky-bar-body"><span class="sticky-bar-name">${escape(stay.name)}</span>${stickyMeta}</span>` +
-    `<button class="panel-close sticky-bar-close" id="nav-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>` +
-    `</div>`
-  )
-
-  parts.push(`<div class="panel-header">`)
-  parts.push(`  <div class="panel-header-body">`)
-  parts.push(`    <div class="panel-title-row">`)
-  parts.push(`      <span class="stay-icon-wrap panel-stay-icon">${ICON_STAY}</span>`)
-  parts.push(`      <div class="panel-title-body">`)
-  parts.push(`        <h1 class="panel-stay-name"${stayMapLink}>${escape(stay.name)}</h1>`)
-  if (dateStr) parts.push(`        <div class="trip-duration">${escape(dateStr)}</div>`)
-  parts.push(`      </div>`)
-  parts.push(`    </div>`)
-  if (allStayTagsHtml) parts.push(`    <div class="tags">${allStayTagsHtml}</div>`)
-  parts.push(`  </div>`)
-  parts.push(`  <button class="panel-close" id="nav-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`)
-  parts.push(`</div>`)
+  parts.push(renderPanelHeader({
+    stickyBar: renderStickyBar(
+      `<span class="stay-icon-wrap sticky-bar-badge">${ICON_STAY}</span>`,
+      escape(stay.name),
+      dateStr ? escape(dateStr) : undefined,
+    ),
+    badge: `<span class="stay-icon-wrap panel-stay-icon">${ICON_STAY}</span>`,
+    title: `<h1 class="panel-stay-name"${stayMapLink}>${escape(stay.name)}</h1>`,
+    // No meta in stay header — arrive/depart details are in the body
+  }))
 
   parts.push(`<div class="panel-stay-body">`)
+  if (allStayTagsHtml) parts.push(`  <div class="tags">${allStayTagsHtml}</div>`)
   if (stay.arrives) { const a = momentOrUnknown(stay.arrives); if (a) parts.push(`  <span class="stay-date">${ICON_CORNER_DOWN_RIGHT}${wrapInferred(a, stay.arrives)}</span>`) }
   if (stay.departs) { const d = momentOrUnknown(stay.departs); if (d) parts.push(`  <span class="stay-date">${ICON_CORNER_UP_RIGHT}${wrapInferred(d, stay.departs)}</span>`) }
   if (stay.note)       parts.push(`  <div class="note stay-note panel-note">${renderMarkdown(stay.note)}</div>`)
@@ -1229,42 +1282,28 @@ function renderActivityPanel(act: Activity, actIndex: number, groupLabel?: strin
 
   const timeStr = act.time ? formatMomentTime(act.time) : ""
   const durStr  = act.duration ? durOrUnknown(act.duration) : ""
-  const metaParts = [groupLabel, timeStr, durStr].filter(Boolean)
-  const metaLine  = metaParts.length ? metaParts.join(" · ") : ""
-
-  const stickyMeta = metaLine ? `<span class="sticky-bar-meta">${escape(metaLine)}</span>` : ""
+  const metaLine = [groupLabel, timeStr, durStr].filter(Boolean).join(" · ")
 
   const iconTags: string[] = []
   if (act.priority === "must")         iconTags.push(`<span class="tag tag--icon">${ICON_PRIORITY_MUST} Must</span>`)
   if (act.priority === "maybe")        iconTags.push(`<span class="tag tag--icon">${ICON_PRIORITY_MAYBE} Maybe</span>`)
-  if (act.location?.geocodingDisabled) iconTags.push(`<span class="tag tag--icon">${ICON_GLOBE_OFF} No map</span>`)
+  if (act.location?.geocodingDisabled) iconTags.push(`<span class="tag tag--icon">${ICON_PIN_OFF} No map</span>`)
   const allTagsHtml = [...iconTags, ...(act.tags ?? []).map(t => `<span class="tag">${escape(t)}</span>`)].join("")
 
   const parts: string[] = []
-
-  parts.push(
-    `<div class="panel-sticky-bar">` +
-    `<span class="act-badge sticky-bar-badge">${letter}</span>` +
-    `<span class="sticky-bar-body"><span class="sticky-bar-name">${escape(act.name)}</span>${stickyMeta}</span>` +
-    `<button class="panel-close sticky-bar-close" id="nav-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>` +
-    `</div>`
-  )
-
-  parts.push(`<div class="panel-header">`)
-  parts.push(`  <div class="panel-header-body">`)
-  parts.push(`    <div class="panel-title-row">`)
-  parts.push(`      <span class="act-badge panel-act-badge">${letter}</span>`)
-  parts.push(`      <div class="panel-title-body">`)
-  parts.push(`        <h1 class="panel-activity-name">${escape(act.name)}</h1>`)
-  if (metaLine) parts.push(`        <div class="trip-duration">${escape(metaLine)}</div>`)
-  parts.push(`      </div>`)
-  parts.push(`    </div>`)
-  if (allTagsHtml) parts.push(`    <div class="tags">${allTagsHtml}</div>`)
-  parts.push(`  </div>`)
-  parts.push(`  <button class="panel-close" id="nav-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`)
-  parts.push(`</div>`)
+  parts.push(renderPanelHeader({
+    stickyBar: renderStickyBar(
+      `<span class="act-badge sticky-bar-badge">${letter}</span>`,
+      escape(act.name),
+      metaLine ? escape(metaLine) : undefined,
+    ),
+    badge: `<span class="act-badge panel-act-badge">${letter}</span>`,
+    title: `<h1 class="panel-activity-name">${escape(act.name)}</h1>`,
+    meta:  metaLine ? escape(metaLine) : undefined,
+  }))
 
   parts.push(`<div class="panel-activity-body">`)
+  if (allTagsHtml) parts.push(`  <div class="tags">${allTagsHtml}</div>`)
   if (act.note) parts.push(`  <div class="note act-note panel-note">${renderMarkdown(act.note)}</div>`)
   if (act.info?.length) parts.push(`  <div class="act-info">${act.info.map(renderInfoItem).join("")}</div>`)
   parts.push(`</div>`)
