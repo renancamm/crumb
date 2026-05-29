@@ -12,7 +12,7 @@ import {
 } from "./geocoder"
 import {
   ICON_STAY, ICON_PLANE, ICON_TRAIN, ICON_BUS, ICON_CAR, ICON_SHIP,
-  ICON_WALK, ICON_BIKE, ICON_ROUTE, ICON_GLOBE_OFF, ICON_ARRIVES, ICON_DEPARTS, ICON_CLOCK,
+  ICON_WALK, ICON_BIKE, ICON_ROUTE, ICON_PIN_OFF, ICON_ARRIVES, ICON_DEPARTS, ICON_CLOCK,
 } from "./icons"
 import { escape, activityLabel } from "./format"
 import { state, ZOOM_OVERVIEW, ZOOM_DETAIL, ZOOM_PLACE_FLY, ROUTE_COLOR, MOBILE_MAX_W } from "./app-state"
@@ -30,12 +30,12 @@ const ICONS: Record<string, string> = {
   walk:      ICON_WALK,
   bike:      ICON_BIKE,
   transport: ICON_ROUTE,
-  globe_off: ICON_GLOBE_OFF,
+  globe_off: ICON_PIN_OFF,
   arrives:   ICON_ARRIVES,
   departs:   ICON_DEPARTS,
   clock:     ICON_CLOCK,
 }
-const GEO_FAIL_ICON = `<span class="geo-no-loc">${ICON_GLOBE_OFF}</span>`
+const GEO_FAIL_ICON = `<span class="geo-no-loc">${ICON_PIN_OFF}</span>`
 
 const mapStatusEl = document.getElementById("map-status") as HTMLElement
 

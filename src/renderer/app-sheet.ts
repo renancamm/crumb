@@ -19,6 +19,7 @@
  * so controls animate with the sheet on snap but follow instantly on drag.
  */
 
+// cubic-bezier(0.32, 0.72, 0, 1) = iOS-style decelerate spring for bottom sheet snap
 const TRANSITION = "height 300ms cubic-bezier(0.32, 0.72, 0, 1)"
 const CTRL_ANIM  = "300ms cubic-bezier(0.32, 0.72, 0, 1)"
 const PEEK_H     = 160  // px — handle bar + one title line + footer nav row

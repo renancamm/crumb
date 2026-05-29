@@ -11,6 +11,20 @@ const deleteConfirmModal= document.getElementById("delete-confirm-modal")  as HT
 const deleteConfirmDesc = document.getElementById("delete-confirm-desc")   as HTMLElement
 const recentList        = document.getElementById("recent-list")           as HTMLElement
 
+// ─── Modal utility ────────────────────────────────────────────────────────────
+
+function bindModal(
+  overlay: HTMLElement,
+  closeIds: string[],
+  onClose?: () => void
+): { open(): void; close(): void } {
+  const close = () => { overlay.classList.remove("open"); onClose?.() }
+  const open  = () => overlay.classList.add("open")
+  overlay.addEventListener("click", e => { if (e.target === overlay) close() })
+  for (const id of closeIds) document.getElementById(id)!.addEventListener("click", close)
+  return { open, close }
+}
+
 // ─── Multi-menu open/close ────────────────────────────────────────────────────
 
 type MenuId = "file" | "examples" | "about"
@@ -130,19 +144,14 @@ document.getElementById("menu-edit")!.addEventListener("click", () => {
 
 // ─── File → New ───────────────────────────────────────────────────────────────
 
+const newModalCtrl = bindModal(newModal, ["new-close-x", "new-cancel"], () => { newTextarea.value = "" })
+
 document.getElementById("menu-new")!.addEventListener("click", () => {
   closeAll()
-  newModal.classList.add("open")
+  newModalCtrl.open()
   setTimeout(() => newTextarea.focus(), 50)
 })
 
-function closeNewModal(): void {
-  newModal.classList.remove("open")
-  newTextarea.value = ""
-}
-document.getElementById("new-close-x")!.addEventListener("click", closeNewModal)
-document.getElementById("new-cancel")!.addEventListener("click", closeNewModal)
-newModal.addEventListener("click", e => { if (e.target === newModal) closeNewModal() })
 document.getElementById("new-load")!.addEventListener("click", () => {
   const src = newTextarea.value.trim()
   if (!src) return
@@ -150,7 +159,7 @@ document.getElementById("new-load")!.addEventListener("click", () => {
   setCurrentSavedName(null)
   render()
   closeEditor()
-  closeNewModal()
+  newModalCtrl.close()
 })
 
 // ─── File → Save ──────────────────────────────────────────────────────────────
@@ -197,17 +206,14 @@ document.getElementById("menu-save-as")!.addEventListener("click", async () => {
 
 // ─── File → Delete ────────────────────────────────────────────────────────────
 
+const deleteCtrl = bindModal(deleteConfirmModal, ["delete-cancel"])
+
 deleteMenuItem.addEventListener("click", () => {
   if (!currentSavedName) return
   closeAll()
   deleteConfirmDesc.textContent = `"${currentSavedName}" will be removed from your saved itineraries.`
-  deleteConfirmModal.classList.add("open")
+  deleteCtrl.open()
 })
-
-function closeDeleteConfirm(): void { deleteConfirmModal.classList.remove("open") }
-
-document.getElementById("delete-cancel")!.addEventListener("click", closeDeleteConfirm)
-deleteConfirmModal.addEventListener("click", e => { if (e.target === deleteConfirmModal) closeDeleteConfirm() })
 
 document.getElementById("delete-confirm-btn")!.addEventListener("click", () => {
   if (currentSavedName) {
@@ -217,7 +223,7 @@ document.getElementById("delete-confirm-btn")!.addEventListener("click", () => {
   }
   editorEl.value = ""
   render()
-  closeDeleteConfirm()
+  deleteCtrl.close()
 })
 
 // ─── Examples menu ────────────────────────────────────────────────────────────
@@ -236,25 +242,21 @@ document.querySelectorAll<HTMLElement>("[data-example]").forEach(el => {
 
 // ─── About → What is a Crumb ──────────────────────────────────────────────────
 
+const aboutCtrl = bindModal(aboutModal, ["about-close-x", "about-close-btn"])
+
 document.getElementById("about-what")!.addEventListener("click", () => {
   closeAll()
-  aboutModal.classList.add("open")
+  aboutCtrl.open()
 })
-function closeAbout(): void { aboutModal.classList.remove("open") }
-document.getElementById("about-close-x")!.addEventListener("click", closeAbout)
-document.getElementById("about-close-btn")!.addEventListener("click", closeAbout)
-aboutModal.addEventListener("click", e => { if (e.target === aboutModal) closeAbout() })
 
 // ─── About → How to generate ──────────────────────────────────────────────────
 
+const generateCtrl = bindModal(generateModal, ["generate-close-x", "generate-close"])
+
 document.getElementById("about-generate")!.addEventListener("click", () => {
   closeAll()
-  generateModal.classList.add("open")
+  generateCtrl.open()
 })
-function closeGenerate(): void { generateModal.classList.remove("open") }
-document.getElementById("generate-close-x")!.addEventListener("click", closeGenerate)
-document.getElementById("generate-close")!.addEventListener("click", closeGenerate)
-generateModal.addEventListener("click", e => { if (e.target === generateModal) closeGenerate() })
 
 document.getElementById("dl-spec-btn")!.addEventListener("click", () => {
   const spec = window.__CRUMB_SPEC

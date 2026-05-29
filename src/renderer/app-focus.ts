@@ -1,4 +1,4 @@
-import { state, ZOOM_PLACE_FLY, ZOOM_DETAIL_FLY, type FocusType } from "./app-state"
+import { state, ZOOM_PLACE_FLY, ZOOM_DETAIL_FLY, FLY_DURATION, type FocusType } from "./app-state"
 
 export function clearFocus(): void {
   state.focusedPlaceIdx  = -1
@@ -23,7 +23,7 @@ export function focusMarker(type: FocusType, id: string | number, coords?: { lat
     el?.classList.add("--focused")
     el?.scrollIntoView({ block: "nearest", behavior: "smooth" })
     state.placeMarkers[idx - 1]?.getElement().classList.add("--focused")
-    if (coords) state.map.flyTo({ center: [coords.lng, coords.lat], zoom: Math.max(state.map.getZoom(), ZOOM_PLACE_FLY), duration: 800 })
+    if (coords) state.map.flyTo({ center: [coords.lng, coords.lat], zoom: Math.max(state.map.getZoom(), ZOOM_PLACE_FLY), duration: FLY_DURATION })
   } else {
     const name = id as string
     if (type === "activity") state.focusedActName  = name
@@ -44,7 +44,7 @@ export function focusMarker(type: FocusType, id: string | number, coords?: { lat
     }
 
     const zoom = type === "hub" ? ZOOM_DETAIL_FLY : ZOOM_DETAIL_FLY
-    if (coords) state.map.flyTo({ center: [coords.lng, coords.lat], zoom: Math.max(state.map.getZoom(), zoom), duration: 800 })
+    if (coords) state.map.flyTo({ center: [coords.lng, coords.lat], zoom: Math.max(state.map.getZoom(), zoom), duration: FLY_DURATION })
   }
 }
 

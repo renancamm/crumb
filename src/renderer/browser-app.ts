@@ -17,9 +17,9 @@
 
 import { setupListClickHandler, clearFocus } from "./app-focus"
 import { updateMap, fitAllPlaces, applyDetailMarkerFilter, fitTransportHubs, mapPadding, applyGeoState } from "./app-map"
-import { state, ZOOM_PLACE_FLY, ZOOM_DETAIL_FLY, MOBILE_MAX_W } from "./app-state"
+import { state, ZOOM_PLACE_FLY, ZOOM_DETAIL_FLY, MOBILE_MAX_W, FLY_DURATION } from "./app-state"
 import { initSheet, exitSheet, goMedium } from "./app-sheet"
-import { ICON_GLOBE_OFF } from "./icons"
+import { ICON_PIN_OFF } from "./icons"
 import type { ModalRef } from "./app-state"
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -161,7 +161,7 @@ export function setActivePlace(placeIdx: number | null): void {
     const geo = state.geoIndex.places[placeIdx]
     if (geo && state.mapReady) {
       state.map.setPadding(mapPadding())
-      state.map.flyTo({ center: [geo.lng, geo.lat], zoom: Math.max(state.map.getZoom(), ZOOM_PLACE_FLY), duration: 800 })
+      state.map.flyTo({ center: [geo.lng, geo.lat], zoom: Math.max(state.map.getZoom(), ZOOM_PLACE_FLY), duration: FLY_DURATION })
     }
   }
   updatePanelFooter()
@@ -194,13 +194,13 @@ function openDetail(modal: ModalRef): void {
       }
     }
     if (actName && state.geoIndex.actsFailed.has(actName)) {
-      const noMapTag = `<span class="tag tag--icon">${ICON_GLOBE_OFF} No map</span>`
-      const tagsEl = panelContent.querySelector<HTMLElement>(".panel-header-body .tags")
+      const noMapTag = `<span class="tag tag--icon">${ICON_PIN_OFF} No map</span>`
+      const tagsEl = panelContent.querySelector<HTMLElement>(".panel-activity-body .tags")
       if (tagsEl) {
         tagsEl.insertAdjacentHTML("afterbegin", noMapTag)
       } else {
-        const titleRow = panelContent.querySelector<HTMLElement>(".panel-title-row")
-        titleRow?.insertAdjacentHTML("afterend", `<div class="tags">${noMapTag}</div>`)
+        const activityBody = panelContent.querySelector<HTMLElement>(".panel-activity-body")
+        activityBody?.insertAdjacentHTML("afterbegin", `<div class="tags">${noMapTag}</div>`)
       }
     }
   }
@@ -230,7 +230,7 @@ function focusDetailMarker(modal: ModalRef): void {
 
   if (geo) {
     state.map.setPadding(mapPadding())
-    state.map.flyTo({ center: [geo.lng, geo.lat], zoom: Math.max(state.map.getZoom(), ZOOM_DETAIL_FLY), duration: 800 })
+    state.map.flyTo({ center: [geo.lng, geo.lat], zoom: Math.max(state.map.getZoom(), ZOOM_DETAIL_FLY), duration: FLY_DURATION })
   }
 }
 
@@ -305,7 +305,7 @@ document.addEventListener("click", e => {
         const geo = state.geoIndex.places[placeIdx]
         if (geo && state.mapReady) {
           state.map.setPadding(mapPadding())
-          state.map.flyTo({ center: [geo.lng, geo.lat], zoom: ZOOM_PLACE_FLY, duration: 800 })
+          state.map.flyTo({ center: [geo.lng, geo.lat], zoom: ZOOM_PLACE_FLY, duration: FLY_DURATION })
         }
         panelNav.innerHTML     = ""
         panelContent.innerHTML = isSinglePlace(doc)

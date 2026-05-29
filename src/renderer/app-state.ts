@@ -35,12 +35,13 @@ declare const maplibregl: any
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-export const ZOOM_OVERVIEW  = 8
-export const ZOOM_DETAIL    = 12
-export const ZOOM_PLACE_FLY = 10
+export const ZOOM_OVERVIEW   = 8
+export const ZOOM_DETAIL     = 12
+export const ZOOM_PLACE_FLY  = 10
 export const ZOOM_DETAIL_FLY = 14
-export const MOBILE_MAX_W   = 768
-export const ROUTE_COLOR    = "#18181b"
+export const MOBILE_MAX_W    = 768
+export const ROUTE_COLOR     = "#18181b"   // intentionally matches --primary in css.ts
+export const FLY_DURATION    = 800         // ms — map camera animation on focus/navigation
 
 // ─── Focus type ───────────────────────────────────────────────────────────────
 

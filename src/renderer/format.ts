@@ -122,20 +122,6 @@ export function formatMode(mode: string): string {
   return mode.charAt(0).toUpperCase() + mode.slice(1)
 }
 
-export function modeIcon(mode: string): string {
-  const icons: Record<string, string> = {
-    train:     "🚄",
-    flight:    "✈️",
-    bus:       "🚌",
-    car:       "🚗",
-    ferry:     "⛴️",
-    walk:      "🚶",
-    bike:      "🚴",
-    transport: "🚌",
-  }
-  return icons[mode] ?? "🚌"
-}
-
 // ─── HTML escape ─────────────────────────────────────────────────────────────
 
 export function escape(s: string): string {
