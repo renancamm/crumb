@@ -4,6 +4,7 @@ import {
   cacheGeo,
   fetchGeo,
   resolveGeo,
+  isKnownMiss,
   writeBackGeo,
   geocodeTransportHubs,
   type GeoResult,
@@ -35,7 +36,8 @@ const ICONS: Record<string, string> = {
   departs:   ICON_DEPARTS,
   clock:     ICON_CLOCK,
 }
-const GEO_FAIL_ICON = `<span class="geo-no-loc">${ICON_PIN_OFF}</span>`
+const GEO_FAIL_ICON  = `<span class="geo-no-loc">${ICON_PIN_OFF}</span>`
+const GEO_NO_MAP_TAG = `<span class="tag tag--icon">${ICON_PIN_OFF} No map</span>`
 
 const mapStatusEl = document.getElementById("map-status") as HTMLElement
 
@@ -109,27 +111,50 @@ function setActLoading(actName: string, loading: boolean): void {
 function markAllPendingLoading(doc: CrumbDocument): void {
   const places = doc.itinerary.filter(item => item.type === "place") as Place[]
   for (const [i, place] of places.entries()) {
-    if (!place.location?.geocodingDisabled && place.location?.lat == null)
-      if (!cachedGeo(place.location?.label || place.name)) setPlaceLoading(i + 1, true)
+    if (!place.location?.geocodingDisabled && place.location?.lat == null) {
+      const key = place.location?.label || place.name
+      if (!cachedGeo(key) && !isKnownMiss(key)) setPlaceLoading(i + 1, true)
+    }
   }
   for (const t of collectActivityGeoTargets(doc)) {
     if (t.location?.lat != null) continue
     if (state.geoIndex.activities.has(t.name)) continue
     if (state.geoIndex.actsFailed.has(t.name)) continue
-    if (!cachedGeo(t.query ?? t.name)) setActLoading(t.name, true)
+    const key = t.query ?? t.name
+    if (!cachedGeo(key) && !isKnownMiss(key)) setActLoading(t.name, true)
   }
   for (const t of collectStayGeoTargets(doc)) {
     if (t.hasCoords) continue
     if (state.geoIndex.stays.has(t.stayName)) continue
     if (state.geoIndex.staysFailed.has(t.stayName)) continue
-    const cacheKey = t.location?.label && t.location.label !== "none" ? t.location.label : t.name
-    if (!cachedGeo(cacheKey)) setStayLoading(t.stayName, true)
+    const key = t.name
+    if (!cachedGeo(key) && !isKnownMiss(key)) setStayLoading(t.stayName, true)
   }
 }
 
 /** Apply pending-load spinners and fail icons to whatever is currently in the panel. */
 export function applyGeoState(doc: CrumbDocument): void {
   markAllPendingLoading(doc)
+  for (const placeIdx of state.geoIndex.placesFailed) {
+    // Trip overview list item — small icon in the name
+    const nameEl = document.querySelector(`.list-item--place[data-place-idx="${placeIdx}"] .list-item-label`)
+    if (nameEl && !nameEl.querySelector(".geo-no-loc")) nameEl.insertAdjacentHTML("beforeend", GEO_FAIL_ICON)
+    // Place detail panel — "No map" tag in the tags area, below the header
+    if (state.activePlaceIndex === placeIdx) {
+      const tagsEl = document.querySelector<HTMLElement>(".panel-place-body .tags")
+      if (tagsEl) {
+        if (!tagsEl.querySelector(".tag--icon")) tagsEl.insertAdjacentHTML("afterbegin", GEO_NO_MAP_TAG)
+      } else {
+        const placeBody = document.querySelector<HTMLElement>(".panel-place-body")
+        if (placeBody) {
+          placeBody.insertAdjacentHTML("afterbegin", `<div class="tags">${GEO_NO_MAP_TAG}</div>`)
+        } else {
+          const panelHeader = document.querySelector<HTMLElement>(".panel-header")
+          panelHeader?.insertAdjacentHTML("afterend", `<div class="panel-place-body"><div class="tags">${GEO_NO_MAP_TAG}</div></div>`)
+        }
+      }
+    }
+  }
   for (const t of collectActivityGeoTargets(doc)) {
     if (!state.geoIndex.actsFailed.has(t.name)) continue
     const card = document.getElementById("panel-content")?.querySelector(`.list-item--activity[data-act-name="${escape(t.name)}"]`)
@@ -174,29 +199,35 @@ function collectActivityGeoTargets(doc: CrumbDocument): ActivityGeoTarget[] {
         const groupNum = isPlan ? planIdx : actItem.kind === "day" ? dayIdx : actItem.kind === "week" ? weekIdx : undefined
         let actGroupIdx = 0
         for (const act of (actItem.items ?? [])) {
-          if (!act.location?.geocodingDisabled)
+          if (!act.location?.geocodingDisabled) {
+            const hasCoords  = act.location?.lat != null && act.location?.lng != null
+            const queryLabel = act.location?.label && act.location.label !== "none" ? act.location.label : act.name
             targets.push({
               name:     act.name,
-              location: act.location ?? null,
-              query:    act.location ? null : `${act.name}, ${item.name}`,
+              location: hasCoords ? (act.location ?? null) : null,
+              query:    hasCoords ? null : `${queryLabel}, ${item.name}`,
               priority: act.priority ?? null,
               placeIdx,
               actLabel: activityLabel(actGroupIdx, groupNum),
             })
+          }
           actGroupIdx++
         }
       } else {
         let localIdx = ungroupedIdx
         for (const act of (actItem.items ?? [])) {
-          if (!act.location?.geocodingDisabled)
+          if (!act.location?.geocodingDisabled) {
+            const hasCoords  = act.location?.lat != null && act.location?.lng != null
+            const queryLabel = act.location?.label && act.location.label !== "none" ? act.location.label : act.name
             targets.push({
               name:     act.name,
-              location: act.location ?? null,
-              query:    act.location ? null : `${act.name}, ${item.name}`,
+              location: hasCoords ? (act.location ?? null) : null,
+              query:    hasCoords ? null : `${queryLabel}, ${item.name}`,
               priority: act.priority ?? null,
               placeIdx,
               actLabel: activityLabel(localIdx),
             })
+          }
           localIdx++
           ungroupedIdx++
         }
@@ -214,11 +245,14 @@ function collectStayGeoTargets(doc: CrumbDocument): StayGeoTarget[] {
     placeIdx++
     for (const stay of (item.stay ?? [])) {
       if (stay.location?.geocodingDisabled) continue
-      const hasCoords = stay.location?.lat != null
+      const hasCoords  = stay.location?.lat != null && stay.location?.lng != null
+      const queryLabel = !hasCoords && stay.location?.label && stay.location.label !== "none"
+        ? stay.location.label
+        : stay.name
       targets.push({
-        name:      hasCoords ? stay.name : `${stay.name}, ${item.name}`,
+        name:      hasCoords ? stay.name : `${queryLabel}, ${item.name}`,
         stayName:  stay.name,
-        location:  stay.location ?? null,
+        location:  hasCoords ? (stay.location ?? null) : null,
         hasCoords,
         placeIdx,
       })
@@ -286,6 +320,7 @@ async function geocodePlaces(
       resolved.push({ name: place.name, lat: geo.lat, lng: geo.lng })
       resolvedCoords.set(place.name, geo)
     } else {
+      state.geoIndex.placesFailed.add(i + 1)
       const nameEl = document.querySelector(`.list-item--place[data-place-idx="${i + 1}"] .list-item-label`)
       if (nameEl && !nameEl.querySelector(".geo-no-loc")) nameEl.insertAdjacentHTML("beforeend", GEO_FAIL_ICON)
     }
@@ -295,10 +330,19 @@ async function geocodePlaces(
   return { resolved, resolvedCoords }
 }
 
+const MAX_RADIUS_LAT = 3.0   // ~330 km
+const MAX_RADIUS_LNG = 5.0   // ~350 km at mid-latitudes
+
+function tooFarFromParent(geo: GeoResult, parentCoords: GeoResult): boolean {
+  return Math.abs(geo.lat - parentCoords.lat) > MAX_RADIUS_LAT ||
+         Math.abs(geo.lng - parentCoords.lng) > MAX_RADIUS_LNG
+}
+
 async function geocodeActivities(
   actTargets: ActivityGeoTarget[],
   epoch: number,
   currentPoints: DetailPoint[],
+  parentCoords?: GeoResult,
 ): Promise<DetailPoint[]> {
   let points = [...currentPoints]
 
@@ -315,9 +359,11 @@ async function geocodeActivities(
   for (const t of actTargets) {
     if (t.location?.lat != null) continue
     if (epoch !== state.geocodeEpoch) return points
-    const geo = await resolveGeo(t)
+    const target = parentCoords ? { ...t, parentCoords } : t
+    let geo = await resolveGeo(target)
     setActLoading(t.name, false)
     if (epoch !== state.geocodeEpoch) return points
+    if (geo && parentCoords && tooFarFromParent(geo, parentCoords)) geo = null
     if (geo) {
       state.geoIndex.activities.set(t.name, geo)
       points = [...points, actPoint(t, geo)]
@@ -336,14 +382,17 @@ async function geocodeStays(
   stayTargets: StayGeoTarget[],
   epoch: number,
   currentPoints: DetailPoint[],
+  parentCoords?: GeoResult,
 ): Promise<DetailPoint[]> {
   let points = [...currentPoints]
 
   for (const t of stayTargets) {
     if (epoch !== state.geocodeEpoch) return points
-    const geo = await resolveGeo(t)
+    const target = parentCoords ? { ...t, parentCoords } : t
+    let geo = await resolveGeo(target)
     setStayLoading(t.stayName, false)
     if (epoch !== state.geocodeEpoch) return points
+    if (geo && parentCoords && tooFarFromParent(geo, parentCoords)) geo = null
     if (geo) {
       state.geoIndex.stays.set(t.stayName, geo)
       points = [...points, { name: t.stayName, lat: geo.lat, lng: geo.lng, pinType: "stay" as const, placeIdx: t.placeIdx }]
@@ -366,12 +415,13 @@ export async function updateMap(doc: CrumbDocument | null): Promise<void> {
   const epoch = ++state.geocodeEpoch
   document.querySelectorAll(".--loading").forEach(el => el.classList.remove("--loading"))
 
-  state.geoIndex.places      = [null]
-  state.geoIndex.activities  = new Map()
-  state.geoIndex.stays       = new Map()
-  state.geoIndex.hubs        = new Map()
-  state.geoIndex.actsFailed  = new Set()
-  state.geoIndex.staysFailed = new Set()
+  state.geoIndex.places       = [null]
+  state.geoIndex.activities   = new Map()
+  state.geoIndex.stays        = new Map()
+  state.geoIndex.hubs         = new Map()
+  state.geoIndex.placesFailed = new Set()
+  state.geoIndex.actsFailed   = new Set()
+  state.geoIndex.staysFailed  = new Set()
 
   const places = doc.itinerary.filter(item => item.type === "place")
   if (!places.length) {
@@ -405,11 +455,15 @@ export async function updateMap(doc: CrumbDocument | null): Promise<void> {
   for (const item of doc.itinerary) {
     if (item.type !== "place") continue
     placeIdx++
+    const parentCoords: GeoResult | undefined =
+      item.location?.lat != null && item.location?.lng != null
+        ? { lat: item.location.lat, lng: item.location.lng }
+        : resolvedCoords.get(item.name)
     const placeActs  = actTargets.filter(t => t.placeIdx === placeIdx)
     const placeStays = stayTargets.filter(t => t.placeIdx === placeIdx)
-    detailPoints = await geocodeActivities(placeActs, epoch, detailPoints)
+    detailPoints = await geocodeActivities(placeActs, epoch, detailPoints, parentCoords)
     if (epoch !== state.geocodeEpoch) return
-    detailPoints = await geocodeStays(placeStays, epoch, detailPoints)
+    detailPoints = await geocodeStays(placeStays, epoch, detailPoints, parentCoords)
     if (epoch !== state.geocodeEpoch) return
   }
 }

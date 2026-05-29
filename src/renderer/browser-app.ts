@@ -166,6 +166,7 @@ export function setActivePlace(placeIdx: number | null): void {
     panelContent.innerHTML = window.Crumb.renderTripPanel(doc)
     panelContent.scrollTop = scrollMemory.get("trip") ?? 0
     setupStickyTitle()
+    applyGeoState(doc)
     goMedium()
     fitAllPlaces()
   } else {
@@ -200,6 +201,22 @@ function openDetail(modal: ModalRef): void {
   focusDetailMarker(modal)
 
   // Inject "No map" tag when geocoding failed at runtime (pure renderer can't know this)
+  if (modal.type === "stay" && modal.placeIdx !== null) {
+    const places = doc.itinerary.filter((i: any) => i.type === "place") as any[]
+    const place  = places[modal.placeIdx - 1]
+    const stay   = place?.stay?.[modal.itemIdx]
+    if (stay && state.geoIndex.staysFailed.has(stay.name)) {
+      const noMapTag = `<span class="tag tag--icon">${ICON_PIN_OFF} No map</span>`
+      const tagsEl = panelContent.querySelector<HTMLElement>(".panel-stay-body .tags")
+      if (tagsEl) {
+        tagsEl.insertAdjacentHTML("afterbegin", noMapTag)
+      } else {
+        const stayBody = panelContent.querySelector<HTMLElement>(".panel-stay-body")
+        stayBody?.insertAdjacentHTML("afterbegin", `<div class="tags">${noMapTag}</div>`)
+      }
+    }
+  }
+
   if (modal.type === "activity" && modal.placeIdx !== null) {
     const places = doc.itinerary.filter((i: any) => i.type === "place") as any[]
     const place  = places[modal.placeIdx - 1]

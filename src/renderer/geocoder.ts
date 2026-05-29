@@ -24,9 +24,10 @@ export interface GeoResult {
 }
 
 export interface GeoTarget {
-  name: string
-  location?: ResolvedGeolocation | null
-  query?: string | null
+  name:          string
+  location?:     ResolvedGeolocation | null
+  query?:        string | null
+  parentCoords?: GeoResult
 }
 
 export interface DetailPoint {
@@ -45,27 +46,57 @@ export interface DetailPoint {
 
 const GEO_CACHE_VERSION = "v2"
 const GEO_CACHE_PREFIX  = `crumb-geo-${GEO_CACHE_VERSION}:`
+const GEO_TIMEOUT_MS    = 8000
+const NEGATIVE_TTL_MS   = 7 * 24 * 60 * 60 * 1000
+const VIEWBOX_PAD_LAT   = 2.0
+const VIEWBOX_PAD_LNG   = 3.0
+
 let geoQueue: Promise<void> = Promise.resolve()
 
 function migrateGeoCache(): void {
   const OLD_PREFIX = "crumb-geo:"
+  const now = Date.now()
   for (let i = localStorage.length - 1; i >= 0; i--) {
     const key = localStorage.key(i)
-    if (key?.startsWith(OLD_PREFIX) && !key.startsWith(GEO_CACHE_PREFIX)) {
+    if (!key) continue
+    if (key.startsWith(OLD_PREFIX) && !key.startsWith(GEO_CACHE_PREFIX)) {
       localStorage.removeItem(key)
+      continue
+    }
+    if (key.startsWith(GEO_CACHE_PREFIX)) {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(key) ?? "{}") as { miss?: true; ts?: number }
+        if (parsed.miss && parsed.ts && (now - parsed.ts) >= NEGATIVE_TTL_MS) {
+          localStorage.removeItem(key)
+        }
+      } catch { /* ignore */ }
     }
   }
 }
 
 migrateGeoCache()
 
-export function cachedGeo(name: string): GeoResult | null {
+// Returns GeoResult (cache hit), "miss" (known negative), or null (absent)
+function cachedGeoOrMiss(name: string): GeoResult | "miss" | null {
   try {
     const r = localStorage.getItem(GEO_CACHE_PREFIX + name.toLowerCase())
-    return r ? (JSON.parse(r) as GeoResult) : null
+    if (!r) return null
+    const parsed = JSON.parse(r) as GeoResult | { miss: true; ts?: number }
+    if ("miss" in parsed) {
+      const ts = (parsed as { ts?: number }).ts
+      if (!ts || (Date.now() - ts) < NEGATIVE_TTL_MS) return "miss"
+      localStorage.removeItem(GEO_CACHE_PREFIX + name.toLowerCase())
+      return null
+    }
+    return parsed as GeoResult
   } catch {
     return null
   }
+}
+
+export function cachedGeo(name: string): GeoResult | null {
+  const r = cachedGeoOrMiss(name)
+  return r === "miss" ? null : r
 }
 
 export function cacheGeo(name: string, result: GeoResult): void {
@@ -74,22 +105,64 @@ export function cacheGeo(name: string, result: GeoResult): void {
   } catch { /* storage quota exceeded */ }
 }
 
-export function fetchGeo(name: string): Promise<GeoResult | null> {
+function cacheNegative(name: string): void {
+  try {
+    localStorage.setItem(
+      GEO_CACHE_PREFIX + name.toLowerCase(),
+      JSON.stringify({ miss: true, ts: Date.now() })
+    )
+  } catch { /* storage quota exceeded */ }
+}
+
+export function isKnownMiss(name: string): boolean {
+  return cachedGeoOrMiss(name) === "miss"
+}
+
+function fetchWithTimeout(url: string): Promise<Response> {
+  const controller = new AbortController()
+  const id = setTimeout(() => controller.abort(), GEO_TIMEOUT_MS)
+  return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(id))
+}
+
+type NominatimOutcome = { result: GeoResult } | { empty: true } | { error: true }
+
+function fetchNominatim(name: string, parentCoords?: GeoResult): Promise<NominatimOutcome> {
+  const params: Record<string, string> = {
+    q: name, format: "json", limit: "1", "accept-language": "en", email: "crumb-geocoder",
+  }
+  if (parentCoords) {
+    const { lat, lng } = parentCoords
+    params.viewbox = `${lng - VIEWBOX_PAD_LNG},${lat + VIEWBOX_PAD_LAT},${lng + VIEWBOX_PAD_LNG},${lat - VIEWBOX_PAD_LAT}`
+  }
+  const url = "https://nominatim.openstreetmap.org/search?" + new URLSearchParams(params)
+  return fetchWithTimeout(url)
+    .then(r => r.json())
+    .then((data: Array<{ lat: string; lon: string }>) => {
+      if (data?.length > 0)
+        return { result: { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) } }
+      return { empty: true } as NominatimOutcome
+    })
+    .catch(() => ({ error: true }) as NominatimOutcome)
+}
+
+export function fetchGeo(name: string, parentCoords?: GeoResult): Promise<GeoResult | null> {
   const promise = geoQueue.then(
     () => new Promise<GeoResult | null>(resolve => {
-      fetch(
-        "https://nominatim.openstreetmap.org/search?" +
-        new URLSearchParams({ q: name, format: "json", limit: "1", "accept-language": "en" })
-      )
-        .then(r => r.json())
-        .then((data: Array<{ lat: string; lon: string }>) => {
-          const result = data?.length > 0
-            ? { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
-            : null
-          if (result) cacheGeo(name, result)
-          setTimeout(() => resolve(result), 1100)  // Nominatim ToS: ≤1 req/sec
-        })
-        .catch(() => setTimeout(() => resolve(null), 1100))
+      fetchNominatim(name, parentCoords).then(outcome => {
+        if ("result" in outcome) {
+          cacheGeo(name, outcome.result)
+          setTimeout(() => resolve(outcome.result), 1100)  // Nominatim ToS: ≤1 req/sec
+          return
+        }
+        if ("empty" in outcome) {
+          // Confirmed empty response — negative-cache so we don't retry next load
+          cacheNegative(name)
+          setTimeout(() => resolve(null), 1100)
+          return
+        }
+        // Timeout or network error — do not negative-cache, allow retry next load
+        setTimeout(() => resolve(null), 1100)
+      })
     })
   )
   geoQueue = promise.then(() => {})
@@ -104,12 +177,15 @@ export async function resolveGeo(target: GeoTarget): Promise<GeoResult | null> {
     }
     const label = target.location.label
     if (label && label !== "none") {
-      const c = cachedGeo(label)
-      return c ?? await fetchGeo(label)
+      const c = cachedGeoOrMiss(label)
+      if (c !== null) return c === "miss" ? null : c
+      return fetchGeo(label, target.parentCoords)
     }
   }
   const q = target.query ?? target.name
-  return cachedGeo(q) ?? fetchGeo(q)
+  const c = cachedGeoOrMiss(q)
+  if (c !== null) return c === "miss" ? null : c
+  return fetchGeo(q, target.parentCoords)
 }
 
 // ─── Location write-back ──────────────────────────────────────────────────────

@@ -71,11 +71,12 @@ export const state = {
   POPUP_META: window.__CRUMB_POPUPS,
 
   geoIndex: {
-    places:      [null] as Array<GeoResult | null>,
-    activities:  new Map<string, GeoResult>(),
-    stays:       new Map<string, GeoResult>(),
-    hubs:        new Map<string, GeoResult>(),
-    actsFailed:  new Set<string>(),
-    staysFailed: new Set<string>(),
+    places:       [null] as Array<GeoResult | null>,
+    activities:   new Map<string, GeoResult>(),
+    stays:        new Map<string, GeoResult>(),
+    hubs:         new Map<string, GeoResult>(),
+    placesFailed: new Set<number>(),
+    actsFailed:   new Set<string>(),
+    staysFailed:  new Set<string>(),
   },
 }
