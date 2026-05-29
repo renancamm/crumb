@@ -277,7 +277,7 @@ export function renderTripPanel(doc: CrumbDocument): string {
   }
   parts.push(`</div>`)
 
-  parts.push(`<ul class="panel-toc">`)
+  parts.push(`<ul class="panel-list">`)
   const itin = doc.itinerary
   let pIdx = 0, tIdx = 0
   for (let ii = 0; ii < itin.length; ii++) {
@@ -497,7 +497,7 @@ export function renderPlacePanel(doc: CrumbDocument, placeIdx: number): string {
   ].filter(Boolean)
   if (bodyParts.length) parts.push(`<div class="panel-place-body">${bodyParts.join("")}</div>`)
 
-  parts.push(`<ul class="panel-toc">`)
+  parts.push(`<ul class="panel-list">`)
   parts.push(renderPlaceActivities(place))
   parts.push(`</ul>`)
   return parts.join("\n")
@@ -556,7 +556,7 @@ export function renderSinglePlacePanel(doc: CrumbDocument): string {
   ].filter(Boolean)
   if (bodyParts.length) parts.push(`<div class="panel-place-body">${bodyParts.join("")}</div>`)
 
-  parts.push(`<ul class="panel-toc">`)
+  parts.push(`<ul class="panel-list">`)
   parts.push(renderPlaceActivities(place))
   parts.push(`</ul>`)
   return parts.join("\n")

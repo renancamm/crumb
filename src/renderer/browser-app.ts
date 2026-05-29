@@ -136,25 +136,43 @@ function updatePanelFooter(): void {
   panelFooter.innerHTML = renderFooterNav(itinIdx + 1, state.DATA.itinerary.length)
 }
 
+// ─── Scroll memory ────────────────────────────────────────────────────────────
+
+const scrollMemory = new Map<string, number>()
+
+function scrollKey(): string | null {
+  if (state.activeDetail !== null) return null
+  return state.activePlaceIndex === null ? "trip" : `place-${state.activePlaceIndex}`
+}
+
+function saveScroll(): void {
+  const key = scrollKey()
+  if (key) scrollMemory.set(key, panelContent.scrollTop)
+}
+
 // ─── Place navigation ─────────────────────────────────────────────────────────
 
 export function setActivePlace(placeIdx: number | null): void {
+  saveScroll()
+  const wasAtTrip = state.activePlaceIndex === null && state.activeDetail === null
   state.activePlaceIndex = placeIdx
   state.activeDetail = null
   const doc = state.DATA
 
-  panelContent.scrollTop = 0
   applyDetailMarkerFilter()
 
   if (placeIdx === null) {
     panelNav.innerHTML     = ""
     panelContent.innerHTML = window.Crumb.renderTripPanel(doc)
+    panelContent.scrollTop = scrollMemory.get("trip") ?? 0
     setupStickyTitle()
     goMedium()
     fitAllPlaces()
   } else {
+    if (wasAtTrip) goMedium()
     panelNav.innerHTML     = ""
     panelContent.innerHTML = window.Crumb.renderPlacePanel(doc, placeIdx)
+    panelContent.scrollTop = scrollMemory.get(`place-${placeIdx}`) ?? 0
     setupStickyTitle()
     applyGeoState(doc)
 
@@ -170,6 +188,8 @@ export function setActivePlace(placeIdx: number | null): void {
 // ─── Sidebar detail ───────────────────────────────────────────────────────────
 
 function openDetail(modal: ModalRef): void {
+  saveScroll()
+  if (state.activeDetail === null) goMedium()
   state.activeDetail = modal
   const doc = state.DATA
   panelNav.innerHTML     = ""
@@ -237,6 +257,8 @@ function focusDetailMarker(modal: ModalRef): void {
 // ─── Transport panel ──────────────────────────────────────────────────────────
 
 function openTransportPanel(transportIdx: number): void {
+  saveScroll()
+  if (state.activePlaceIndex === null && state.activeDetail === null) goMedium()
   state.activeDetail = { type: "transport", placeIdx: null, itemIdx: transportIdx }
   applyDetailMarkerFilter()
   panelNav.innerHTML     = ""
@@ -298,6 +320,7 @@ document.addEventListener("click", e => {
       const wasInsidePlace = state.activeDetail.type !== "transport" && state.activePlaceIndex !== null
       state.activeDetail = null
       if (wasInsidePlace) {
+        goMedium()
         const placeIdx = state.activePlaceIndex!
         const doc = state.DATA
         clearFocus()
@@ -311,7 +334,7 @@ document.addEventListener("click", e => {
         panelContent.innerHTML = isSinglePlace(doc)
           ? window.Crumb.renderSinglePlacePanel(doc)
           : window.Crumb.renderPlacePanel(doc, placeIdx)
-        panelContent.scrollTop = 0
+        panelContent.scrollTop = scrollMemory.get(`place-${placeIdx}`) ?? 0
         setupStickyTitle()
         applyGeoState(doc)
         updatePanelFooter()
@@ -456,6 +479,7 @@ document.addEventListener("crumb:map-click", () => {
 // Fired by the editor bundle after a successful re-parse (or on clear).
 
 window.addEventListener("crumb:doc-updated", () => {
+  scrollMemory.clear()
   const doc = window.__CRUMB_DATA
   if (!doc) {
     state.DATA       = null as any

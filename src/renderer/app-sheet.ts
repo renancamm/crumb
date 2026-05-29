@@ -9,14 +9,18 @@
  * The sheet sits at bottom: 0 and its height animates between states.
  * Footer stays anchored at the viewport bottom in all states.
  *
- * Drag is captured on #sheet-handle with pointer events (mouse + touch).
+ * Height changes are triggered two ways:
+ *   1. Drag on #sheet-handle (pointer events, always intercepts).
+ *   2. Touch on #panel-content: expands when not at full height; collapses
+ *      when at full height and the scroll is already at the top.
+ *
  * On release the sheet snaps to the nearest of the three heights.
- * Navigation never changes the snap state; only returning to the trip
- * level and map-background taps call goMedium().
+ * goMedium() is called by navigation on depth changes (trip ↔ place ↔ detail)
+ * and on map-background taps.
  *
  * Sets --sheet-h on :root so map controls can track the sheet height.
- * Sets --sheet-anim to 0ms during drag (instant) and restores it on snap,
- * so controls animate with the sheet on snap but follow instantly on drag.
+ * Sets --sheet-anim to 0ms during a height gesture (instant tracking) and
+ * restores it on snap, so controls animate with the sheet on snap.
  */
 
 // cubic-bezier(0.32, 0.72, 0, 1) = iOS-style decelerate spring for bottom sheet snap
@@ -34,6 +38,10 @@ let startH    = 0
 let curH      = 0
 let touching  = false
 let snapState: SnapState = "medium"
+
+let contentGesture: "undecided" | "height" | "scroll" = "undecided"
+let contentStartY = 0
+let contentStartH = 0
 
 const root = document.documentElement
 
@@ -90,6 +98,9 @@ export function initSheet(): void {
   handle.addEventListener("pointerup",     onEnd)
   handle.addEventListener("pointercancel", onEnd)
 
+  const content = document.getElementById("panel-content")!
+  initScrollExpansion(content)
+
   window.addEventListener("resize", () => {
     if (!sheet) return
     const target = snapState === "full" ? fullH() : snapState === "medium" ? mediumH() : peekH()
@@ -133,12 +144,51 @@ function onMove(e: PointerEvent): void {
   setSheetH(h)
 }
 
-function onEnd(): void {
-  if (!touching) return
-  touching = false
+function snapToCurrent(): void {
   const states = [peekH(), mediumH(), fullH()] as const
   const target = states.reduce((a, b) => Math.abs(a - curH) <= Math.abs(b - curH) ? a : b)
   if (target === peekH())      goPeek()
   else if (target === fullH()) expandFull()
   else                         goMedium()
+}
+
+function onEnd(): void {
+  if (!touching) return
+  touching = false
+  snapToCurrent()
+}
+
+function initScrollExpansion(content: HTMLElement): void {
+  content.addEventListener("touchstart", (e: TouchEvent) => {
+    contentStartY  = e.touches[0].clientY
+    contentStartH  = curH
+    contentGesture = "undecided"
+  }, { passive: true })
+
+  content.addEventListener("touchmove", (e: TouchEvent) => {
+    const dy = e.touches[0].clientY - contentStartY // positive = finger down
+
+    if (contentGesture === "undecided") {
+      if (curH < fullH()) {
+        contentGesture = "height"
+      } else if (Math.abs(dy) > 4) {
+        contentGesture = (dy > 0 && content.scrollTop === 0) ? "height" : "scroll"
+      }
+      if (contentGesture === "height") {
+        if (sheet) sheet.style.transition = "none"
+        root.style.setProperty("--sheet-anim", "0ms")
+      }
+    }
+
+    if (contentGesture === "height") {
+      e.preventDefault()
+      curH = Math.max(peekH(), Math.min(contentStartH - dy, fullH()))
+      setSheetH(curH)
+    }
+  }, { passive: false })
+
+  content.addEventListener("touchend", () => {
+    if (contentGesture === "height") snapToCurrent()
+    contentGesture = "undecided"
+  })
 }

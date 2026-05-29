@@ -132,14 +132,14 @@ export function applyGeoState(doc: CrumbDocument): void {
   markAllPendingLoading(doc)
   for (const t of collectActivityGeoTargets(doc)) {
     if (!state.geoIndex.actsFailed.has(t.name)) continue
-    const nameEl = document.getElementById("panel-content")
-      ?.querySelector(`.list-item--activity[data-act-name="${escape(t.name)}"] .list-item-meta`)
+    const card = document.getElementById("panel-content")?.querySelector(`.list-item--activity[data-act-name="${escape(t.name)}"]`)
+    const nameEl = card?.querySelector(".list-item-meta") ?? card?.querySelector(".list-item-label")
     if (nameEl && !nameEl.querySelector(".geo-no-loc")) nameEl.insertAdjacentHTML("beforeend", GEO_FAIL_ICON)
   }
   for (const t of collectStayGeoTargets(doc)) {
     if (!state.geoIndex.staysFailed.has(t.stayName)) continue
-    const nameEl = document.getElementById("panel-content")
-      ?.querySelector(`.list-item--stay[data-stay-name="${escape(t.stayName)}"] .list-item-meta`)
+    const card = document.getElementById("panel-content")?.querySelector(`.list-item--stay[data-stay-name="${escape(t.stayName)}"]`)
+    const nameEl = card?.querySelector(".list-item-meta") ?? card?.querySelector(".list-item-label")
     if (nameEl && !nameEl.querySelector(".geo-no-loc")) nameEl.insertAdjacentHTML("beforeend", GEO_FAIL_ICON)
   }
 }
@@ -324,7 +324,8 @@ async function geocodeActivities(
       setDetailSource(points)
     } else {
       state.geoIndex.actsFailed.add(t.name)
-      const nameEl = document.getElementById("panel-content")?.querySelector(`.list-item--activity[data-act-name="${escape(t.name)}"] .list-item-meta`)
+      const card = document.getElementById("panel-content")?.querySelector(`.list-item--activity[data-act-name="${escape(t.name)}"]`)
+      const nameEl = card?.querySelector(".list-item-meta") ?? card?.querySelector(".list-item-label")
       if (nameEl && !nameEl.querySelector(".geo-no-loc")) nameEl.insertAdjacentHTML("beforeend", GEO_FAIL_ICON)
     }
   }
@@ -349,8 +350,9 @@ async function geocodeStays(
       setDetailSource(points)
     } else if (!t.hasCoords) {
       state.geoIndex.staysFailed.add(t.stayName)
-      const nameEl = document.getElementById("panel-content")?.querySelector(`.list-item--stay[data-stay-name="${escape(t.stayName)}"] .list-item-meta`)
-      if (nameEl && !nameEl.querySelector(".geo-no-loc")) nameEl.insertAdjacentHTML("beforeend", GEO_FAIL_ICON)
+      const stayCard = document.getElementById("panel-content")?.querySelector(`.list-item--stay[data-stay-name="${escape(t.stayName)}"]`)
+      const stayNameEl = stayCard?.querySelector(".list-item-meta") ?? stayCard?.querySelector(".list-item-label")
+      if (stayNameEl && !stayNameEl.querySelector(".geo-no-loc")) stayNameEl.insertAdjacentHTML("beforeend", GEO_FAIL_ICON)
     }
   }
   return points

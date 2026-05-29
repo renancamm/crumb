@@ -48,6 +48,7 @@ const tokensCSS = `
   --radius-sm:   6px;      /* buttons, inputs, dropdowns */
   --radius-md:   8px;      /* modals */
   --radius-lg:   16px;     /* transport cards, map popups */
+  --radius-xl:   24px;     /* sidebar panel */
   --radius-full: 9999px;   /* pill */
 
   /* ── Shadows ─────────────────────────────────────────────────────── */
@@ -71,6 +72,8 @@ const tokensCSS = `
   --text-base: 14px;   /* primary content */
   --text-sm:   13px;   /* supporting info: dates, times, notes */
   --text-xs:   12px;   /* labels, tags, badges */
+  --text-2xs:  11px;   /* small badges, marker numbers, editor error */
+  --text-3xs:  10px;   /* dense component labels */
 
   /* ── Activity palette ────────────────────────────────────────────── */
   --activity:    #f97316;   /* orange-500 */
@@ -97,13 +100,6 @@ const tokensCSS = `
   /* ── Extended type scale ──────────────────────────────────────────── */
   --text-2xl:   22px;   /* panel place/transport name */
   --text-panel: 18px;   /* panel activity/stay name, modal title */
-
-  /* ── Spacing scale ────────────────────────────────────────────────── */
-  --space-1:  4px;
-  --space-2:  8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-6: 24px;
 
   /* ── Z-index scale ────────────────────────────────────────────────── */
   --z-marker:  2;
@@ -133,7 +129,7 @@ const iconsCSS = `
   stroke-linecap: round; stroke-linejoin: round;
   fill: none;
 }
-.geo-no-loc { display: inline-flex; align-items: center; margin-left: 5px; color: var(--text); vertical-align: middle; opacity: 0.4; }
+.geo-no-loc { display: inline-flex; align-items: center; margin-left: 5px; color: var(--muted); vertical-align: middle; }
 .geo-no-loc .crumb-icon { width: 12px; height: 12px; }
 `
 
@@ -159,7 +155,7 @@ const layoutCSS = `
   position: absolute;
   top: 12px; left: 12px; bottom: 12px;
   width: 320px;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-sidebar);
   background: var(--bg);
   display: flex;
@@ -301,7 +297,7 @@ const editorCSS = `
   background: var(--ed-error-bg);
   border-bottom: 1px solid var(--ed-error-bd);
   color: var(--ed-error-text);
-  font-size: 11px;
+  font-size: var(--text-2xs);
   font-family: var(--mono);
   line-height: 1.4;
   white-space: nowrap;
@@ -318,7 +314,7 @@ const editorCSS = `
   background: var(--ed-bg);
   color: var(--ed-text);
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--text-xs);
   line-height: 1.7;
   padding: 14px 16px;
   tab-size: 2;
@@ -440,11 +436,11 @@ const modalCSS = `
   width: 100%;
   max-width: 512px;
   max-height: calc(100vh - 64px);
-  margin: 0 var(--space-4);
-  padding: var(--space-6);
+  margin: 0 16px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: 16px;
   overflow: hidden;
   animation: dialog-in var(--duration) ease;
 }
@@ -493,7 +489,7 @@ const modalCSS = `
 
 .ref-intro { font-size: var(--text-sm); color: var(--text); line-height: 1.6; margin-bottom: 14px; }
 .ref-prompt-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; }
-.ref-prompt-label { font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: .5px; text-transform: uppercase; margin-bottom: 6px; }
+.ref-prompt-label { font-size: var(--text-3xs); font-weight: 600; color: var(--muted); letter-spacing: .5px; text-transform: uppercase; margin-bottom: 6px; }
 .ref-prompt-text { font-size: var(--text-xs); color: var(--muted); line-height: 1.6; font-style: italic; }
 
 .new-textarea {
@@ -529,7 +525,7 @@ const mapCSS = `
   padding: 4px 10px;
   border-radius: var(--radius-full);
   pointer-events: none;
-  transition: opacity .3s;
+  transition: opacity 300ms;
 }
 .map-status-chip:empty { opacity: 0; }
 
@@ -566,7 +562,7 @@ const mapCSS = `
   box-shadow: var(--shadow-marker-active);
 }
 .place-marker-num {
-  color: #fff; font-size: 11px; font-weight: 600;
+  color: #fff; font-size: var(--text-2xs); font-weight: 600;
   font-family: var(--font); line-height: 1; user-select: none;
 }
 body.map-zoom-close .place-marker { display: none; }
@@ -803,7 +799,7 @@ const itineraryCSS = `
   background: var(--activity-bg);
   color: var(--activity);
   border: 1px solid var(--activity-bd);
-  font-size: 10px; font-weight: 700;
+  font-size: var(--text-3xs); font-weight: 700;
   flex-shrink: 0;
   line-height: 1;
   margin-top: -1px;
@@ -956,7 +952,7 @@ const itineraryCSS = `
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.1;
-  margin-bottom: var(--space-6);
+  margin-bottom: 24px;
 }
 .trip-author {
   font-size: var(--text-xs);
@@ -1074,8 +1070,17 @@ const itineraryCSS = `
 }
 .panel-stay-body .stay-info { margin-top: 4px; }
 
-/* ── Panel ToC ───────────────────────────────────────────────────────── */
-.panel-toc { list-style: none; padding: 6px 0; }
+/* ── Panel list ──────────────────────────────────────────────────────── */
+.panel-list { list-style: none; padding: 6px 0; position: relative; }
+.panel-trip-header + .panel-list::before {
+  content: '';
+  position: absolute;
+  left: calc(8px + 10px + 12px);
+  top: 28px; bottom: 28px;
+  border-left: 1.5px dashed var(--border);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
 .panel-list-pad { padding: 6px 16px 0; }
 
 .list-item {
@@ -1092,8 +1097,7 @@ const itineraryCSS = `
 
 .list-item--place {
   align-items: center;
-  background: var(--surface);
-  margin: 4px 8px;
+  margin: 2px 8px;
   padding: 7px 10px;
   border-radius: var(--radius-md);
   width: calc(100% - 16px);
@@ -1117,8 +1121,7 @@ const itineraryCSS = `
 .list-item--transport {
   position: relative;
   align-items: center;
-  background: var(--bg);
-  margin: 4px 8px;
+  margin: 2px 8px;
   padding: 7px 10px;
   border-radius: var(--radius-md);
   width: calc(100% - 16px);
@@ -1144,21 +1147,12 @@ const itineraryCSS = `
   border-radius: 50%;
 }
 
-.list-item--transport::before {
-  content: '';
-  position: absolute;
-  left: calc(10px + 12px);
-  top: 0; bottom: 0;
-  border-left: 1.5px dashed var(--border);
-  transform: translateX(-50%);
-}
 .transport-label { font-size: var(--text-base); font-weight: 500; color: var(--text); }
 
 /* ── Stay cards ──────────────────────────────────────────────────────── */
 .list-item--stay {
   align-items: center;
-  background: var(--surface);
-  margin: 4px 8px;
+  margin: 2px 8px;
   padding: 7px 10px;
   border-radius: var(--radius-md);
   width: calc(100% - 16px);
@@ -1176,7 +1170,7 @@ const itineraryCSS = `
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--surface);
+  background: var(--bg);
   border-radius: 50%;
   position: relative;
 }
@@ -1185,8 +1179,7 @@ const itineraryCSS = `
 /* ── Activity cards ──────────────────────────────────────────────────── */
 .list-item--activity {
   align-items: center;
-  background: var(--surface);
-  margin: 4px 8px;
+  margin: 2px 8px;
   padding: 7px 10px;
   border-radius: var(--radius-md);
   width: calc(100% - 16px);
@@ -1209,9 +1202,9 @@ const itineraryCSS = `
   border-radius: var(--radius-md);
   background: var(--activity-bg);
   color: var(--activity);
-  font-size: 10px;
+  font-size: var(--text-3xs);
   font-weight: 700;
-  border: 1px solid var(--activity-bd);
+  border: 1px solid color-mix(in srgb, var(--activity-bd) 50%, transparent);
   position: relative;
 }
 
@@ -1221,7 +1214,7 @@ const itineraryCSS = `
 .card-indicator { display: inline-flex; align-items: center; margin-left: 6px; color: var(--muted); vertical-align: middle; }
 .card-indicator .crumb-icon { width: 11px; height: 11px; }
 .transport-detail { color: var(--muted); font-size: var(--text-xs); }
-.act-label { font-size: 10px; font-weight: 700; color: var(--activity); flex-shrink: 0; min-width: 14px; }
+.act-label { font-size: var(--text-3xs); font-weight: 700; color: var(--activity); flex-shrink: 0; min-width: 14px; }
 
 .list-divider {
   display: flex;
@@ -1239,7 +1232,7 @@ const itineraryCSS = `
 }
 
 /* Small place-num variant used in ToC list items */
-.place-num--sm { width: 24px; height: 24px; font-size: 11px; flex-shrink: 0; }
+.place-num--sm { width: 24px; height: 24px; font-size: var(--text-2xs); flex-shrink: 0; box-shadow: 0 0 0 4px var(--bg); }
 
 
 /* ── Inline note truncation ──────────────────────────────────────────── */
@@ -1262,7 +1255,7 @@ const itineraryCSS = `
 /* ── Menu section label ──────────────────────────────────────────────── */
 .menu-section-label {
   padding: 4px 8px 2px;
-  font-size: 10px;
+  font-size: var(--text-3xs);
   font-weight: 600;
   color: var(--muted);
   letter-spacing: 0.04em;
@@ -1292,7 +1285,7 @@ const mobileCSS = `
     top: auto;
     width: 100%;
     height: 50vh;
-    border-radius: 16px 16px 0 0;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     box-shadow: var(--shadow-sheet);
     overflow: hidden;
     z-index: 200;
