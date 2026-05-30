@@ -2,46 +2,50 @@
  * Bottom-sheet snap behaviour for the mobile sidebar.
  *
  * Three snap states:
- *   peek   — 160 px: handle + title + footer nav visible
+ *   peek   — 104 px: handle + title visible (footer pager lives in its own fixed bar)
  *   medium — 50 % of the viewport
  *   full   — 90 % of the viewport
  *
- * The sheet sits at bottom: 0 and its height animates between states.
- * Footer stays anchored at the viewport bottom in all states.
+ * The sheet is a fixed-height element (full height) anchored at bottom: 0 and
+ * moved between states with `transform: translateY` — GPU-composited, so snaps
+ * stay smooth and the sheet's own height never changes (no per-frame reflow, no
+ * sticky-header flicker during expansion).
  *
- * Height changes are triggered two ways:
- *   1. Drag on #sheet-handle (pointer events, always intercepts).
- *   2. Touch on #panel-content: expands when not at full height; collapses
- *      when at full height and the scroll is already at the top.
- *
+ * There is no draggable handle. Expansion/collapse is driven entirely by scroll
+ * gestures on #panel-content, which remains its own native scroll container:
+ *   - When not at full height, a vertical drag moves the sheet (content scroll is
+ *     intercepted from the first move, so native scroll never competes).
+ *   - At full height, content scrolls natively; a downward drag while already at
+ *     the scroll top collapses the sheet instead.
  * On release the sheet snaps to the nearest of the three heights.
+ *
  * goMedium() is called by navigation on depth changes (trip ↔ place ↔ detail)
  * and on map-background taps.
  *
- * Sets --sheet-h on :root so map controls can track the sheet height.
- * Sets --sheet-anim to 0ms during a height gesture (instant tracking) and
- * restores it on snap, so controls animate with the sheet on snap.
+ * Sets --sheet-h on :root (the live visible sheet height) so map controls and
+ * mapPadding() can track the sheet. Sets --sheet-anim to 0ms during a gesture
+ * (instant control tracking) and restores it on snap, so controls animate with
+ * the sheet on snap.
  */
 
 // cubic-bezier(0.32, 0.72, 0, 1) = iOS-style decelerate spring for bottom sheet snap
-const TRANSITION = "height 300ms cubic-bezier(0.32, 0.72, 0, 1)"
+const TRANSITION = "transform 300ms cubic-bezier(0.32, 0.72, 0, 1)"
 const CTRL_ANIM  = "300ms cubic-bezier(0.32, 0.72, 0, 1)"
-const PEEK_H     = 160  // px — handle bar + one title line + footer nav row
+const PEEK_H     = 104  // px — handle bar + one title line (footer is a separate fixed bar)
 
 type SnapState = "peek" | "medium" | "full"
 
-let sheet:  HTMLElement | null = null
-let handle: HTMLElement | null = null
+let sheet:   HTMLElement | null = null
+let content: HTMLElement | null = null
+let footer:  HTMLElement | null = null
 
-let startY    = 0
-let startH    = 0
 let curH      = 0
-let touching  = false
 let snapState: SnapState = "medium"
 
-let contentGesture: "undecided" | "height" | "scroll" = "undecided"
-let contentStartY = 0
-let contentStartH = 0
+let gesture: "undecided" | "sheet" | "scroll" = "undecided"
+let startY  = 0
+let startX  = 0
+let startH  = 0
 
 const root = document.documentElement
 
@@ -49,8 +53,10 @@ function peekH():   number { return PEEK_H }
 function mediumH(): number { return window.innerHeight * 0.5 }
 function fullH():   number { return window.innerHeight * 0.9 }
 
+/** Move the sheet so that `h` px are visible above the viewport bottom. */
 function setSheetH(h: number): void {
-  if (sheet) sheet.style.height = `${h}px`
+  curH = h
+  if (sheet) sheet.style.transform = `translateY(${fullH() - h}px)`
   root.style.setProperty("--sheet-h", `${h}px`)
 }
 
@@ -58,31 +64,24 @@ function animate(h: number): void {
   root.style.setProperty("--sheet-anim", CTRL_ANIM)
   if (sheet) sheet.style.transition = TRANSITION
   setSheetH(h)
-  setTimeout(() => {
-    if (sheet) sheet.style.transition = ""
-    document.dispatchEvent(new CustomEvent("crumb:sheet-snap"))
-  }, 310)
 }
 
 export function goPeek(): void {
   if (!sheet) return
   snapState = "peek"
-  curH      = peekH()
-  animate(curH)
+  animate(peekH())
 }
 
 export function goMedium(): void {
   if (!sheet) return
   snapState = "medium"
-  curH      = mediumH()
-  animate(curH)
+  animate(mediumH())
 }
 
 export function expandFull(): void {
   if (!sheet) return
   snapState = "full"
-  curH      = fullH()
-  animate(curH)
+  animate(fullH())
 }
 
 export function isExpanded(): boolean {
@@ -90,58 +89,55 @@ export function isExpanded(): boolean {
 }
 
 export function initSheet(): void {
-  sheet  = document.getElementById("sidebar")!
-  handle = document.getElementById("sheet-handle")!
+  sheet   = document.getElementById("sidebar")!
+  content = document.getElementById("panel-content")!
+  footer  = document.getElementById("panel-footer")
 
-  handle.addEventListener("pointerdown",   onStart)
-  handle.addEventListener("pointermove",   onMove)
-  handle.addEventListener("pointerup",     onEnd)
-  handle.addEventListener("pointercancel", onEnd)
+  // The pager becomes a persistent bar fixed to the viewport bottom. It must live
+  // outside #sidebar, whose `transform` would otherwise make `position: fixed`
+  // resolve against the sheet instead of the viewport.
+  if (footer) document.body.appendChild(footer)
 
-  const content = document.getElementById("panel-content")!
-  initScrollExpansion(content)
+  content.addEventListener("touchstart", onTouchStart, { passive: true })
+  content.addEventListener("touchmove",  onTouchMove,  { passive: false })
+  content.addEventListener("touchend",   onTouchEnd)
+  content.addEventListener("touchcancel", onTouchEnd)
 
-  window.addEventListener("resize", () => {
-    if (!sheet) return
-    const target = snapState === "full" ? fullH() : snapState === "medium" ? mediumH() : peekH()
-    curH = target
-    setSheetH(curH)
-  })
+  window.addEventListener("resize", onResize)
 
+  // Full height is the sheet's fixed CSS height; start at medium.
+  sheet.style.height = `${fullH()}px`
   goMedium()
 }
 
 /** Called when viewport leaves mobile breakpoint — clears inline styles so desktop CSS takes over. */
 export function exitSheet(): void {
-  if (sheet) sheet.style.height = ""
+  if (sheet) {
+    sheet.style.transform  = ""
+    sheet.style.transition = ""
+    sheet.style.height     = ""
+  }
   root.style.removeProperty("--sheet-h")
   root.style.removeProperty("--sheet-anim")
-  if (handle) {
-    handle.removeEventListener("pointerdown",   onStart)
-    handle.removeEventListener("pointermove",   onMove)
-    handle.removeEventListener("pointerup",     onEnd)
-    handle.removeEventListener("pointercancel", onEnd)
+  if (content) {
+    content.removeEventListener("touchstart", onTouchStart)
+    content.removeEventListener("touchmove",  onTouchMove)
+    content.removeEventListener("touchend",   onTouchEnd)
+    content.removeEventListener("touchcancel", onTouchEnd)
   }
-  sheet  = null
-  handle = null
+  window.removeEventListener("resize", onResize)
+  // Restore the pager into the sheet (last child) for desktop's in-flow layout.
+  if (footer && sheet) sheet.appendChild(footer)
+  sheet   = null
+  content = null
+  footer  = null
 }
 
-function onStart(e: PointerEvent): void {
-  if (!sheet || !handle) return
-  touching = true
-  startY   = e.clientY
-  startH   = sheet.offsetHeight
-  handle.setPointerCapture(e.pointerId)
-  sheet.style.transition = "none"
-  root.style.setProperty("--sheet-anim", "0ms")  // controls track instantly during drag
-}
-
-function onMove(e: PointerEvent): void {
-  if (!touching || !sheet) return
-  const dy = e.clientY - startY
-  const h  = Math.max(peekH(), Math.min(startH - dy, fullH()))
-  curH     = h
-  setSheetH(h)
+function onResize(): void {
+  if (!sheet) return
+  sheet.style.height = `${fullH()}px`
+  const target = snapState === "full" ? fullH() : snapState === "medium" ? mediumH() : peekH()
+  setSheetH(target)
 }
 
 function snapToCurrent(): void {
@@ -152,43 +148,48 @@ function snapToCurrent(): void {
   else                         goMedium()
 }
 
-function onEnd(): void {
-  if (!touching) return
-  touching = false
-  snapToCurrent()
+// ── Scroll-driven gesture on #panel-content ──────────────────────────────────
+// Decide on the first move whether the gesture moves the sheet or scrolls the
+// content, then lock that decision for the whole touch (avoids the native-scroll
+// vs JS-drag race that made the old handoff stutter).
+
+function onTouchStart(e: TouchEvent): void {
+  gesture = "undecided"
+  startY  = e.touches[0].clientY
+  startX  = e.touches[0].clientX
+  startH  = curH
 }
 
-function initScrollExpansion(content: HTMLElement): void {
-  content.addEventListener("touchstart", (e: TouchEvent) => {
-    contentStartY  = e.touches[0].clientY
-    contentStartH  = curH
-    contentGesture = "undecided"
-  }, { passive: true })
+function onTouchMove(e: TouchEvent): void {
+  if (!sheet || !content) return
+  const dy = e.touches[0].clientY - startY // positive = finger moving down
+  const dx = e.touches[0].clientX - startX
 
-  content.addEventListener("touchmove", (e: TouchEvent) => {
-    const dy = e.touches[0].clientY - contentStartY // positive = finger down
+  if (gesture === "undecided") {
+    if (Math.abs(dy) < 4 && Math.abs(dx) < 4) return // not enough movement yet
+    if (Math.abs(dx) > Math.abs(dy)) { gesture = "scroll"; return } // horizontal → leave it
 
-    if (contentGesture === "undecided") {
-      if (curH < fullH()) {
-        contentGesture = "height"
-      } else if (Math.abs(dy) > 4) {
-        contentGesture = (dy > 0 && content.scrollTop === 0) ? "height" : "scroll"
-      }
-      if (contentGesture === "height") {
-        if (sheet) sheet.style.transition = "none"
-        root.style.setProperty("--sheet-anim", "0ms")
-      }
+    if (snapState !== "full") {
+      gesture = "sheet"
+    } else if (content.scrollTop <= 0 && dy > 0) {
+      gesture = "sheet"          // at top, pulling down → collapse the sheet
+    } else {
+      gesture = "scroll"         // expanded: scroll content natively
     }
 
-    if (contentGesture === "height") {
-      e.preventDefault()
-      curH = Math.max(peekH(), Math.min(contentStartH - dy, fullH()))
-      setSheetH(curH)
+    if (gesture === "sheet") {
+      sheet.style.transition = "none"
+      root.style.setProperty("--sheet-anim", "0ms") // controls track instantly during drag
     }
-  }, { passive: false })
+  }
 
-  content.addEventListener("touchend", () => {
-    if (contentGesture === "height") snapToCurrent()
-    contentGesture = "undecided"
-  })
+  if (gesture === "sheet") {
+    e.preventDefault()
+    setSheetH(Math.max(peekH(), Math.min(startH - dy, fullH())))
+  }
+}
+
+function onTouchEnd(): void {
+  if (gesture === "sheet") snapToCurrent()
+  gesture = "undecided"
 }

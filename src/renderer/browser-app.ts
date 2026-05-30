@@ -402,7 +402,7 @@ document.addEventListener("click", e => {
     const trunc = noteMore.previousElementSibling
     if (trunc?.classList.contains("note-trunc")) {
       const expanded = trunc.classList.toggle("--expanded")
-      noteMore.textContent = expanded ? " less" : " … more"
+      noteMore.textContent = expanded ? " less" : " more"
     }
     return
   }

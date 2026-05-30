@@ -362,12 +362,16 @@ const listCSS = `
   border-bottom: 1px solid transparent;
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--duration), max-height var(--duration-sticky) ease, padding var(--duration-sticky) ease, border-color var(--duration);
+  /* Reveal is compositor-only (opacity + transform); max-height snaps instantly so
+     the sheet's scroll container never animates layout (avoids sticky flicker). */
+  transform: translateY(-6px);
+  transition: opacity var(--duration), transform var(--duration), border-color var(--duration);
 }
 .panel-sticky-bar.--visible {
   max-height: 56px;
   padding: 10px 16px;
   opacity: 1;
+  transform: translateY(0);
   border-bottom-color: var(--border);
   pointer-events: auto;
 }
@@ -971,7 +975,7 @@ const itineraryCSS = `
 .panel-close {
   flex-shrink: 0;
   width: 40px; height: 40px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--muted-bg);
   cursor: pointer;
@@ -996,7 +1000,7 @@ const itineraryCSS = `
   width: 32px; height: 32px;
   display: flex; align-items: center; justify-content: center;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: 11px;
   background: var(--muted-bg);
   cursor: pointer;
   color: var(--text);
@@ -1237,13 +1241,13 @@ const itineraryCSS = `
 
 /* ── Inline note truncation ──────────────────────────────────────────── */
 .note-trunc {
-  display: block;
-  max-height: 6em;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
-  mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
 }
-.note-trunc.--expanded { max-height: none; -webkit-mask-image: none; mask-image: none; }
+.note-trunc.--expanded { display: block; -webkit-line-clamp: unset; line-clamp: unset; }
 .note-more {
   cursor: pointer;
   color: var(--text);
@@ -1278,34 +1282,56 @@ const mobileCSS = `
   /* Editor: full-screen overlay */
   #editor-panel { position: fixed; inset: 0; width: 100%; z-index: 400; }
 
-  /* Sidebar becomes a bottom sheet; JS controls height (72px–90vh) */
+  /* Sidebar becomes a bottom sheet. Fixed full height; JS slides it between
+     snap states with transform: translateY (GPU-composited — no per-frame reflow).
+     The pre-JS transform shows roughly the medium state until initSheet() runs. */
   #sidebar {
     position: fixed;
     left: 0; right: 0; bottom: 0;
     top: auto;
     width: 100%;
-    height: 50vh;
+    height: 90vh;
+    transform: translateY(40vh);
+    will-change: transform;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     box-shadow: var(--shadow-sheet);
     overflow: hidden;
     z-index: 200;
   }
 
-  /* Sheet handle */
+  /* Sheet handle: a visual grabber only — expansion is scroll-driven, not draggable */
   #sheet-handle {
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 8px 0 4px;
     flex-shrink: 0;
-    cursor: grab;
-    touch-action: none;
+    cursor: default;
+    pointer-events: none;
   }
   .sheet-handle-bar {
     width: 36px;
     height: 4px;
     border-radius: 2px;
     background: var(--border);
+  }
+
+  /* Content scrolls natively; drives sheet expansion via the touch handler in
+     app-sheet.ts. Reserve space for the fixed pager bar so the last item clears it. */
+  #panel-content {
+    touch-action: pan-y;
+    overscroll-behavior: contain;
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Pager: persistent bar fixed to the viewport bottom (reparented out of #sidebar
+     by initSheet so it isn't dragged by the sheet's transform). */
+  #panel-footer {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 250;
+    background: var(--bg);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   /* MapLibre controls + status chip: track the live sheet height via --sheet-h.

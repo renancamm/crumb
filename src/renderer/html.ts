@@ -245,7 +245,7 @@ function renderPlaceFullDetail(place: Place, index: number, totalPlaces: number,
 function renderInlineNote(text: string): string {
   const html = renderMarkdown(text)
   if (text.length <= 140) return html
-  return `<span class="note-trunc">${html}</span><span class="note-more"> … more</span>`
+  return `<span class="note-trunc">${html}</span><span class="note-more"> more</span>`
 }
 
 // ─── Trip level renders ───────────────────────────────────────────────────────
@@ -844,7 +844,7 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>${title}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
