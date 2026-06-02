@@ -16,28 +16,18 @@
 
 import {
   ActivityGroup,
-  ActivityItem,
   CrumbDocument,
   ItineraryItem,
   Place,
   ResolvedDuration,
   ResolvedMoment,
   TransportLeg,
-  UngroupedActivities,
 } from "../types/resolved"
 
 // ─── Entry point ─────────────────────────────────────────────────────────────
 
 export function infer(doc: CrumbDocument): CrumbDocument {
   const itinerary = doc.itinerary
-
-  // 3.1 — Wrap ungrouped activities (already done partially in Pass 2,
-  //        now we merge consecutive single-item ungrouped containers)
-  for (const item of itinerary) {
-    if (item.type === "place") {
-      item.activities = mergeUngrouped(item.activities)
-    }
-  }
 
   // 3.2 — Infer transport endpoints and duration
   for (let i = 0; i < itinerary.length; i++) {
@@ -65,10 +55,10 @@ export function infer(doc: CrumbDocument): CrumbDocument {
   // 3.3 — Inject default time on day/week groups
   for (const item of itinerary) {
     if (item.type !== "place") continue
-    for (const actItem of item.activities) {
-      if (actItem.type !== "group") continue
-      const group = actItem as ActivityGroup
-      if (group.kind === "plan") continue
+    for (const planItem of item.plan) {
+      if (planItem.type !== "group") continue
+      const group = planItem as ActivityGroup
+      if (group.kind === "group") continue
       if (!group.time) {
         const relValue = group.kind === "day" ? "next day" : "next week"
         group.time = {
@@ -97,20 +87,21 @@ export function infer(doc: CrumbDocument): CrumbDocument {
     const arrivalDate = momentToISO(place.arrives)
 
     let dayGroupIndex = 0
-    for (const actItem of place.activities) {
-      if (actItem.type === "ungrouped") {
-        if (arrivalDate) {
-          for (const act of actItem.items) {
-            if (act.time && !act.time.anchor && !isAbsoluteOrApproxDate(act.time)) {
-              act.time = { ...act.time, anchor: { date: arrivalDate, precedence: "place" } }
-            }
-          }
+    for (const planItem of place.plan) {
+      // Loose activity — anchor its time to the place's arrival date.
+      if (planItem.type === "activity") {
+        const act = planItem
+        if (arrivalDate && act.time && !act.time.anchor && !isAbsoluteOrApproxDate(act.time)) {
+          act.time = { ...act.time, anchor: { date: arrivalDate, precedence: "place" } }
         }
         continue
       }
 
-      const group = actItem as ActivityGroup
-      if (group.kind === "plan") continue
+      // Stays carry their own dates; they do not participate in group sequencing.
+      if (planItem.type === "stay") continue
+
+      const group = planItem
+      if (group.kind === "group") continue   // unscheduled — not part of the sequence
 
       if (group.time && group.time.date?.precision === "relative" && arrivalDate) {
         const resolvedDate = resolveRelativeGroupDate(
@@ -128,7 +119,7 @@ export function infer(doc: CrumbDocument): CrumbDocument {
           }
 
           const groupPrecedence = group.time.anchor?.precedence ?? "explicit"
-          for (const act of group.items) {
+          for (const act of group.plan) {
             if (!act.time) continue
             if (!isAbsoluteOrApproxDate(act.time)) {
               act.time = { ...act.time, anchor: { date: resolvedDate, precedence: groupPrecedence } }
@@ -138,7 +129,7 @@ export function infer(doc: CrumbDocument): CrumbDocument {
       } else if (group.time?.date?.precision === "absolute") {
         const groupDate      = group.time.date.value
         const groupPrecedence = group.time.anchor?.precedence ?? "explicit"
-        for (const act of group.items) {
+        for (const act of group.plan) {
           if (!act.time) continue
           if (!isAbsoluteOrApproxDate(act.time)) {
             act.time = { ...act.time, anchor: { date: groupDate, precedence: groupPrecedence } }
@@ -401,27 +392,6 @@ function distributeRemainingTime(itinerary: ItineraryItem[], tripDuration?: Reso
       }
     }
   }
-}
-
-// ─── 3.1 — Merge consecutive ungrouped wrappers ──────────────────────────────
-
-function mergeUngrouped(items: ActivityItem[]): ActivityItem[] {
-  const result: ActivityItem[] = []
-
-  for (const item of items) {
-    if (item.type === "ungrouped") {
-      const last = result[result.length - 1]
-      if (last && last.type === "ungrouped") {
-        last.items.push(...item.items)
-      } else {
-        result.push({ type: "ungrouped", items: [...item.items] } as UngroupedActivities)
-      }
-    } else {
-      result.push(item)
-    }
-  }
-
-  return result
 }
 
 // ─── 3.2 — Nearest place lookup ──────────────────────────────────────────────

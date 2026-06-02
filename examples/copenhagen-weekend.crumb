@@ -1,0 +1,126 @@
+trip:
+  name: Copenhagen — A Long Weekend
+  author: Theo
+  duration: 3 nights
+  tags: [denmark, design, food, cycling]
+  note: |
+    Three days of design, harbour swims, and hygge. Rent a bike — the city is flat
+    and built for it — and tap a contactless card on the metro for everything else.
+
+    The Danish capital is the spiritual home of *hygge*, that hard-to-translate
+    sense of cosy contentment. A low-slung, bike-borne city ruled by the world's
+    oldest monarchy, it has reinvented itself as a capital of design, clean
+    harbours you can swim in, and New Nordic cooking — compact enough to cross by
+    bike in twenty minutes, and relaxed enough that nobody is in a hurry.
+
+itinerary:
+
+  - place: Copenhagen
+    arrives: 2026-09-18
+    departs: 2026-09-21
+    duration: 3 nights
+    location: Copenhagen, Denmark
+    plan:
+
+      - stay: SP34 Hotel
+        arrives: 2026-09-18
+        departs: 2026-09-21
+        location: Sankt Peders Stræde 34, Copenhagen
+        info:
+          confirmation: SP34-2290
+        note: |
+          A quiet boutique hotel in the Latin Quarter with a free evening wine
+          hour. From the airport, the M2 metro runs straight to Nørreport in
+          about 15 minutes; the hotel is a 5-minute walk south. No need for a
+          taxi — the metro is driverless and runs all night.
+
+      - day: Arrival & the harbour
+        time: 2026-09-18
+        plan:
+          - activity: Nyhavn
+            time: 4pm
+            duration: 1h
+            note: |
+              The postcard canal of painted 17th-century townhouses, dug by Swedish
+              prisoners of war and once a rough sailors' quarter. Hans Christian
+              Andersen lived at numbers 20, 67, and 18. Grab a drink by the water,
+              but eat elsewhere — the canal-side restaurants trade on the view.
+          - activity: Reffen street-food market
+            time: evening
+            priority: must
+            location:
+              lat: 55.6907
+              lng: 12.6095
+            note: |
+              Shipping-container food stalls on the old industrial waterfront in
+              Refshaleøen, reachable by harbour bus or bike. Dozens of cuisines,
+              craft beer, and sunset over the water — the most fun, least formal
+              meal of the trip.
+
+      - day: Design, towers & Christianshavn
+        time: 2026-09-19
+        plan:
+          - activity: Rosenborg Castle & the King's Garden
+            time: 9am
+            duration: 1h30m
+            location:
+              lat: 55.6857
+              lng: 12.5772
+            note: |
+              A fairy-tale Renaissance castle built by Christian IV, Denmark's
+              great builder-king, now guarding the crown jewels in its basement.
+              The surrounding garden is the city's oldest and a favourite picnic spot.
+          - activity: Round Tower (Rundetaarn)
+            time: 11am
+            duration: 45m
+            note: |
+              Europe's oldest functioning observatory, finished in 1642. You climb
+              not by stairs but a 209m spiralling brick ramp — wide enough that a
+              tsar once rode up it on horseback. Fine rooftop view over the old town.
+          - activity: Lunch at Torvehallerne
+            time: midday
+            location:
+              lat: 55.6831
+              lng: 12.5712
+            note: A glass-and-steel food market by Nørreport — try smørrebrød, the open-faced rye sandwich that is Denmark's national lunch.
+          - activity: Christiania & Christianshavn
+            time: afternoon
+            priority: maybe
+            note: |
+              Freetown Christiania is a self-governing community founded by squatters
+              in an abandoned military barracks in 1971 — part commune, part art
+              project. Photography is forbidden on parts of its main lane. The
+              surrounding Christianshavn is a pretty canal district of houseboats.
+          - activity: Tivoli Gardens
+            time: evening
+            priority: must
+            note: |
+              The 1843 pleasure garden that helped inspire Walt Disney, and which
+              Hans Christian Andersen adored. Old wooden roller-coaster, lantern-lit
+              pavilions, and concerts — at its most magical after dark.
+
+      - day: Art & the coast
+        time: 2026-09-20
+        plan:
+          - activity: Louisiana Museum of Modern Art
+            time: 10am
+            duration: 3h
+            location:
+              address: Gl Strandvej 13, Humlebæk
+              lat: 55.9696
+              lng: 12.5429
+            note: |
+              Often called the world's most beautiful modern-art museum: low glass
+              galleries threaded through a sculpture park on a cliff over the
+              Øresund, with Sweden on the horizon. A 35-minute train north along
+              the coast — go even if modern art isn't your thing, for the setting alone.
+          - activity: Harbour swim at Islands Brygge
+            time: afternoon
+            priority: maybe
+            location:
+              lat: 55.6679
+              lng: 12.5779
+            note: |
+              Copenhagen cleaned its harbour so thoroughly that you can swim in the
+              middle of the city. The Islands Brygge harbour bath is the local
+              favourite — bring a towel if the September weather holds.

@@ -1,0 +1,380 @@
+trip:
+  name: Japan — 10 Days in October
+  author: Mara
+  duration: 10 nights
+  tags: [japan, first-time, food, temples, city]
+  info:
+    flights: BA-7841 / JL-0044
+    pocket-wifi: Ninja WiFi, pick up at Haneda arrivals
+  note: |
+    First trip to Japan: Tokyo, Kyoto, Osaka, with day trips to Nikko and Nara.
+    October is one of the best months to visit — warm days, low rain, and the
+    first autumn colour in the mountains.
+
+    A few things that make the trip smoother: get a **Suica** card on arrival
+    (tap it on every train and at convenience stores), withdraw yen at 7-Eleven
+    ATMs (many places are still cash-only), and carry a small towel — public
+    bathrooms rarely have them. Most temples and shrines open at 9am, so go
+    early to beat the tour groups.
+
+itinerary:
+
+  - place: Tokyo
+    arrives: 2026-10-05
+    departs: 2026-10-09
+    duration: 4 nights
+    location: Tokyo, Japan
+    tags: [city, food, nightlife]
+    note: |
+      Japan's capital and the largest metropolis on earth — less a single city
+      than a constellation of neighbourhoods, each with its own character, from
+      the neon canyons of Shinjuku to the old temple lanes of Asakusa. Tokyo only
+      became the capital in 1868, when the emperor moved here from Kyoto, and it
+      has been rebuilt twice since — after the 1923 earthquake and again after
+      WWII — which is why it feels relentlessly modern yet still hides quiet
+      pockets of the old *shitamachi* (downtown) world between the towers.
+    plan:
+      - stay: Shinjuku Granbell Hotel
+        arrives: 2026-10-05
+        departs: 2026-10-09
+        location:
+          address: 2-14-5 Kabukicho, Shinjuku, Tokyo
+          lat: 35.6952
+          lng: 139.7041
+        info:
+          confirmation: SGH-5531-907
+          platform: Booking.com
+        note: |
+          Getting here from the airport: from Narita, take the Keisei Skyliner
+          to Nippori, then the JR Yamanote line to Shinjuku (about 90 min total).
+          From Haneda, the Keikyu line to Shinagawa, then the Yamanote (about 45
+          min). The hotel is a 10-minute walk from Shinjuku Station's east exit,
+          on the quieter edge of the Kabukicho district. Ask for a high floor.
+
+      - day: Arrival evening
+        time: 2026-10-05
+        plan:
+          - activity: teamLab Planets
+            time: 7pm
+            duration: 2h
+            priority: must
+            location:
+              address: teamLab Planets, Toyosu, Koto City, Tokyo
+              lat: 35.6493
+              lng: 139.7896
+            note: |
+              An immersive digital-art museum from teamLab, the Tokyo collective
+              that turned light, water, and projection into walk-through worlds.
+              You wade barefoot through ankle-deep water and rooms of mirrored
+              infinity. Book a timed ticket online well in advance — it sells out
+              — and wear shorts or trousers you can roll up. It stays open late,
+              so it's an easy first evening after checking in.
+
+      - day: Asakusa & the old city
+        time: 2026-10-06
+        plan:
+          - activity: Senso-ji Temple
+            time: 8am
+            duration: 1h30m
+            note: |
+              Tokyo's oldest temple, founded in 645 AD and dedicated to Kannon,
+              the goddess of mercy. Enter under the Kaminarimon ("Thunder Gate")
+              and its giant red lantern, then walk Nakamise — a shopping street
+              that has sold snacks and trinkets to pilgrims for three centuries.
+              Come at opening to have the courtyard almost to yourself.
+          - activity: Tokyo Skytree
+            time: 10:30am
+            duration: 1h
+            note: At 634m, the tallest tower in Japan. On clear autumn mornings you can see Mt. Fuji on the horizon.
+          - activity: Kappabashi Kitchen Street
+            time: midday
+            duration: 1h
+            note: |
+              The wholesale street where Tokyo's restaurants buy their knives,
+              ceramics, and the lifelike plastic food models in shop windows —
+              a great place for souvenirs you'll actually use.
+          - activity: Akihabara
+            time: afternoon
+            note: The electronics-and-anime district — arcades, retro game shops, and multi-floor figure stores.
+
+      - day: Shibuya, Harajuku & Shinjuku
+        time: 2026-10-07
+        plan:
+          - activity: Meiji Shrine
+            time: 9am
+            duration: 1h
+            note: |
+              A Shinto shrine to the deified Emperor Meiji, set in a 70-hectare
+              forest of 100,000 donated trees — a deliberate slice of deep quiet
+              in the middle of the city. Bow once at the gate, and you may catch a
+              traditional wedding procession on a weekend morning.
+          - activity: Takeshita Street, Harajuku
+            time: 10:30am
+            location:
+              address: Takeshita Street, Jingumae, Shibuya City, Tokyo
+              lat: 35.6716
+              lng: 139.7053
+            note: The birthplace of Japan's street-fashion subcultures — loud, young, and packed with crêpe stands.
+          - activity: Shibuya Crossing
+            time: midday
+            note: The famous scramble. For the view, watch from the Starbucks above or the Shibuya Sky deck.
+          - activity: Omoide Yokocho
+            time: evening
+            priority: must
+            note: |
+              "Memory Lane" — a tiny lantern-lit warren of yakitori bars by
+              Shinjuku Station, a surviving fragment of postwar Tokyo. Squeeze
+              onto a stool, point at what looks good, and order a cold beer.
+
+      - day: Day trip to Nikko
+        time: 2026-10-08
+        plan:
+          - activity: Tosho-gu Shrine
+            duration: 2h
+            note: |
+              The lavish mountain mausoleum of Tokugawa Ieyasu, the shogun who
+              unified Japan in 1600. Unlike the usual restrained shrine, it drips
+              with gold leaf and carvings — including the original "see no evil,
+              hear no evil, speak no evil" monkeys. Two hours by train from Tokyo.
+          - activity: Kegon Falls
+            duration: 1h
+            location:
+              address: Kegon Falls, Nikko, Tochigi
+              lat: 36.7396
+              lng: 139.5036
+            note: A 97m waterfall fed by Lake Chuzenji — spectacular when the surrounding maples turn red in late October.
+          - activity: Lake Chuzenji
+            location:
+              address: Lake Chuzenji, Nikko, Tochigi
+              lat: 36.7290
+              lng: 139.4840
+            note: A serene crater lake at 1,270m, formed when Mt. Nantai erupted — the cool highland retreat above Nikko.
+
+      - group: Rainy-day options
+        plan:
+          - activity: Mori Art Museum
+            note: Contemporary art on the 53rd floor of Roppongi Hills, with a city-view deck on the same ticket.
+          - activity: Shibuya Sky
+            note: Open-air rooftop deck over the world's busiest crossing — best an hour before sunset.
+          - activity: Ginza department-store food halls
+            location:
+              address: Ginza, Chuo City, Tokyo
+              lat: 35.6719
+              lng: 139.7649
+            note: |
+              Tokyo's most elegant shopping district. The basement food halls
+              (*depachika*) of Mitsukoshi and Matsuya are a feast of free samples,
+              perfect bento, and jewel-like sweets — a dry, delicious rainy-day plan.
+
+  - transport: train
+    from: Tokyo Station
+    to: Kyoto Station
+    departs: 2026-10-09T09:00
+    arrives: 2026-10-09T11:15
+    info:
+      line: Tokaido Shinkansen (Nozomi)
+      reference: SX-2291
+    note: |
+      The original bullet train line, opened for the 1964 Olympics. Buy an
+      ekiben (station lunch box) on the platform to eat on board, and reserve a
+      seat on the right (D/E) — Mt. Fuji appears about 45 minutes out of Tokyo.
+
+  - place: Kyoto
+    arrives: 2026-10-09
+    departs: 2026-10-12
+    duration: 3 nights
+    location: Kyoto, Japan
+    tags: [temples, history, food]
+    note: |
+      Japan's capital for over a thousand years, from 794 until 1868, and the
+      heart of its traditional culture — home to 1,600 Buddhist temples, 400
+      Shinto shrines, and 17 UNESCO World Heritage sites. Spared the WWII bombing
+      that flattened other cities, Kyoto kept its old wooden machiya houses,
+      geisha districts, and imperial gardens. Slow down here: the city rewards
+      wandering as much as ticking off sights.
+    plan:
+      - stay: Gion Ryokan Q-beh
+        arrives: 2026-10-09
+        departs: 2026-10-12
+        location: Gion, Higashiyama, Kyoto
+        info:
+          confirmation: GRQ-7782
+        note: |
+          A traditional ryokan with tatami-mat rooms, futon bedding, and a shared
+          cypress-wood onsen bath. From Kyoto Station take the Karasuma subway to
+          Shijo, then walk east into Gion (about 15 min) — or a 10-minute taxi
+          with your luggage. Shoes off at the entrance; slippers are provided.
+
+      - day: Arrival evening
+        time: 2026-10-09
+        plan:
+          - activity: Gion in the evening
+            time: evening
+            priority: must
+            location:
+              address: Gion, Higashiyama, Kyoto
+              lat: 35.0037
+              lng: 135.7745
+            note: |
+              Kyoto's historic geisha district. Wander the lantern-lit lane of
+              Hanamikoji at dusk and you may glimpse a *geiko* or *maiko* (Kyoto's
+              word for geisha and their apprentices) hurrying to an appointment —
+              watch quietly and don't block their way or chase them for photos.
+
+      - day: Southern Higashiyama
+        time: 2026-10-10
+        plan:
+          - activity: Fushimi Inari Taisha
+            time: 8am
+            duration: 2h
+            location:
+              address: 68 Fukakusa Yabunouchicho, Fushimi Ward, Kyoto
+              lat: 34.9671
+              lng: 135.7727
+            note: |
+              The shrine of Inari, the Shinto deity of rice and prosperity,
+              famous for thousands of vermilion *torii* gates winding up the
+              mountain — each one donated by a business. Most visitors turn back
+              after the first dense stretch; keep climbing and within 20 minutes
+              you'll have the forest path almost to yourself. Go at opening.
+          - activity: Kiyomizu-dera
+            time: 11am
+            duration: 1h30m
+            note: |
+              A hillside temple whose vast wooden veranda is built out over the
+              slope on 13m pillars, without a single nail. The view over Kyoto is
+              the classic one; the approach up Chawanzaka is lined with pottery
+              and matcha shops.
+          - activity: Sannenzaka & Ninenzaka
+            time: afternoon
+            note: Preserved stone-paved lanes of wooden shops and teahouses — the most photogenic streets in the city.
+
+      - day: Arashiyama & the northwest
+        time: 2026-10-11
+        plan:
+          - activity: Arashiyama Bamboo Grove
+            time: 8am
+            duration: 1h
+            priority: must
+            note: |
+              A short path through towering green bamboo that filters the light
+              and rattles in the wind — the sound is officially recognised as one
+              of Japan's "100 soundscapes to preserve". It's tiny and gets mobbed,
+              so arrive by 8am or skip it.
+          - activity: Tenryu-ji
+            time: 9:30am
+            duration: 1h
+            note: A Zen temple whose 14th-century garden was designed to "borrow" the Arashiyama hills as backdrop.
+          - activity: Kinkaku-ji (Golden Pavilion)
+            time: midday
+            duration: 1h
+            location:
+              address: Kinkaku-ji, Kita Ward, Kyoto
+              lat: 35.0394
+              lng: 135.7292
+            note: |
+              A Zen temple sheathed in gold leaf, mirrored in the pond before it.
+              The current building is a 1955 reconstruction — a young monk burned
+              down the 14th-century original in 1950, the event behind Mishima's
+              famous novel.
+          - activity: Nishiki Market
+            time: late afternoon
+            note: |
+              "Kyoto's kitchen": a narrow, five-block covered market selling
+              pickles, tofu, knives, and street snacks for 400 years. Graze as you
+              go — soy-milk doughnuts, candied fruit, tamagoyaki on a stick.
+
+  - transport: train
+    from: Kyoto Station
+    to: Shin-Osaka Station
+    departs: 2026-10-12T10:30
+    arrives: 2026-10-12T10:45
+    info:
+      line: Tokaido Shinkansen
+    note: Barely 15 minutes by bullet train — or take the slower JR Special Rapid for the same fare and a city-edge view.
+
+  - place: Osaka
+    arrives: 2026-10-12
+    departs: 2026-10-15
+    duration: 3 nights
+    location: Osaka, Japan
+    tags: [food, city, nightlife]
+    note: |
+      Japan's brash, big-hearted kitchen — a merchant city that has always cared
+      more about eating well and laughing loudly than about refinement. Osakans
+      are known across Japan for their humour and directness, and the local
+      creed is *kuidaore*: "eat until you drop". After temple-quiet Kyoto, the
+      neon and noise feel like a release.
+    plan:
+      - stay: Cross Hotel Osaka
+        arrives: 2026-10-12
+        departs: 2026-10-15
+        location: 2-5-15 Shinsaibashisuji, Chuo Ward, Osaka
+        info:
+          confirmation: CHO-3340
+        note: |
+          Right between the Shinsaibashi shopping arcade and Dotonbori. From
+          Shin-Osaka, take the Midosuji subway line (red) six stops to
+          Shinsaibashi — the hotel is a 3-minute walk from exit 6.
+
+      - day: Arrival evening
+        time: 2026-10-12
+        plan:
+          - activity: Dotonbori at night
+            time: evening
+            priority: must
+            location:
+              address: Dotonbori, Chuo Ward, Osaka
+              lat: 34.6687
+              lng: 135.5013
+            note: |
+              Osaka's neon heart along a canal — the giant Glico running man, mechanical
+              crab signs, and stalls of *takoyaki* (octopus dumplings) and
+              *okonomiyaki* (savoury pancakes). This is *kuidaore* in the flesh; come
+              hungry and eat standing up.
+
+      - day: Central Osaka
+        time: 2026-10-13
+        plan:
+          - activity: Osaka Castle
+            time: 9am
+            duration: 1h30m
+            note: |
+              The fortress of Toyotomi Hideyoshi, who came close to unifying Japan
+              in the 1580s. The current keep is a 1931 concrete reconstruction
+              housing a museum, but the scale of the moats and stone walls is the
+              real spectacle — set in a park that blazes with colour in autumn.
+          - activity: Kuromon Ichiba Market
+            time: midday
+            duration: 1h
+            note: |
+              "Osaka's kitchen" — a covered market where you eat your way along
+              the stalls: grilled scallops, wagyu skewers, fresh uni, and sliced
+              fruit. Point, pay, and eat on the spot.
+          - activity: Shinsekai & Tsutenkaku
+            time: late afternoon
+            note: |
+              A retro district built in 1912 to imitate Paris and Coney Island,
+              now gloriously faded, under the Tsutenkaku tower. The local dish is
+              *kushikatsu* (deep-fried skewers) — one rule: never double-dip in
+              the shared sauce.
+
+      - day: Day trip to Nara
+        time: 2026-10-14
+        plan:
+          - activity: Todai-ji & the Great Buddha
+            time: 10am
+            duration: 1h30m
+            note: |
+              Japan's first capital, and home to Todai-ji — for centuries the
+              largest wooden building on earth — sheltering a 15m bronze Buddha
+              cast in 752 AD. Around it, 1,200 sacred deer roam Nara Park and bow
+              for crackers (and will nibble your map). 45 minutes from Osaka.
+          - activity: Kasuga Taisha
+            time: afternoon
+            duration: 1h
+            location:
+              address: Kasuga Taisha, Nara
+              lat: 34.6818
+              lng: 135.8483
+            note: A shrine lined with 3,000 bronze and stone lanterns, lit only twice a year — moss-covered and atmospheric in the woods.

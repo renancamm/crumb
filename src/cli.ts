@@ -91,6 +91,14 @@ async function main() {
   const specPath    = specCandidates.find(p => fs.existsSync(p))
   const specContent = specPath ? fs.readFileSync(specPath, "utf8") : undefined
 
+  // 6b — Load the compact authoring guide for the "Generate with AI" prompt
+  const aiGuideCandidates = [
+    path.resolve(__dirname, "../spec/CRUMB_FOR_AI.md"),
+    path.resolve(__dirname, "../CRUMB_FOR_AI.md"),
+  ]
+  const aiGuidePath    = aiGuideCandidates.find(p => fs.existsSync(p))
+  const aiGuideContent = aiGuidePath ? fs.readFileSync(aiGuidePath, "utf8") : undefined
+
   // 7 — Render
   const options: AppOptions = {
     parserBundle,
@@ -100,6 +108,7 @@ async function main() {
     source,
     examples,
     specContent,
+    aiGuideContent,
   }
   const html = renderHtml(doc, options)
 

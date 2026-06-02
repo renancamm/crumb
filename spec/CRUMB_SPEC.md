@@ -47,129 +47,112 @@ trip:
 
 itinerary:
 
-  - Tokyo:
-      duration: 5 nights
+  - place: Tokyo
+    duration: 5 nights
 
-  - train
+  - transport: train
 
-  - Kyoto:
-      duration: 3 nights
-      activities:
-        - Fushimi Inari
-        - Nishiki Market:
-            priority: must
-        - Arashiyama Bamboo Grove:
-            priority: maybe
+  - place: Kyoto
+    duration: 3 nights
+    plan:
+      - Fushimi Inari
+      - activity: Nishiki Market
+        priority: must
+      - activity: Arashiyama Bamboo Grove
+        priority: maybe
 
-  - train:
-      duration: 15m
+  - transport: train
+    duration: 15m
 
-  - Osaka:
-      duration: 2 nights
-      stay:
-        - Namba Hotel:
-            arrives: 3pm
-            departs: morning
-      activities:
-        - Dotonbori:
-            priority: must
-            tags: [landmark, food, nightlife]
-        - Osaka Castle:
-            priority: must
-            tags: [landmark, history]
-        - Shinsekai:
-            priority: maybe
-            tags: [landmark, food]
+  - place: Osaka
+    duration: 2 nights
+    plan:
+      - stay: Namba Hotel
+        arrives: 3pm
+        departs: morning
+      - activity: Dotonbori
+        priority: must
+        tags: [landmark, food, nightlife]
+      - activity: Osaka Castle
+        priority: must
+        tags: [landmark, history]
+      - activity: Shinsekai
+        priority: maybe
+        tags: [landmark, food]
 
-  - train:
-      to: Hiroshima
-      departs: 2026-09-15T09:00
+  - transport: train
+    to: Hiroshima
+    departs: 2026-09-15T09:00
 
-  - Hiroshima:
-      arrives: 2026-09-15
-      departs: 2026-09-18
-      duration: 3 nights
-      stay:
-        - Hiroshima Garden Hotel:
-            arrives: 2026-09-15
-            departs: 2026-09-18
-            info:
-              - website: https://www.example.com
-              - reference: HGH-220
-            note: Ask for a room facing the garden.
-      activities:
-        - Peace Memorial Park:
-            priority: must
-            tags: [landmark, history]
-            location: Peace Memorial Park, Hiroshima
-            note: Allow a **full morning**. The museum is deeply moving.
-        - Miyajima Island:
-            priority: must
-            tags: [nature, landmark]
-            note: Time your visit around low tide to walk up to the torii gate.
+  - place: Hiroshima
+    arrives: 2026-09-15
+    departs: 2026-09-18
+    duration: 3 nights
+    plan:
+      - stay: Hiroshima Garden Hotel
+        arrives: 2026-09-15
+        departs: 2026-09-18
+        info:
+          website: https://www.example.com
+          reference: HGH-220
+        note: Ask for a room facing the garden.
 
-        - day:
-            - Mitaki-dera Temple
-            - Hiroshima Museum of Art
+      - activity: Peace Memorial Park
+        priority: must
+        tags: [landmark, history]
+        location: Peace Memorial Park, Hiroshima
+        note: Allow a **full morning**. The museum is deeply moving.
 
-        - day:
-            - Itsukushima Shrine
-            - Mt. Misen
+      - day:
+        plan:
+          - Mitaki-dera Temple
+          - Hiroshima Museum of Art
 
-        - day:
-            - Hiroshima Prefectural Art Museum
-            - Mazda Museum
+      - day:
+        plan:
+          - Itsukushima Shrine
+          - Mt. Misen
 
-        - day:
-            title: Peace and history
-            time: 2026-09-18
-            items:
-              - Peace Memorial Museum:
-                  time: 9am
-                  duration: 2h
-                  note: Book tickets in advance.
-              - Atomic Bomb Dome:
-                  time: 11am
-                  duration: 1h
-                  location:
-                    name: Genbaku Dome
-                    lat: 34.3955
-                    lng: 132.4530
-              - Okonomi-mura:
-                  time: midday
-                  duration: 1h
-                  note: Try the **Hiroshima-style** okonomiyaki — layered, not mixed.
-              - Hiroshima Castle:
-                  time: 2pm
-                  duration: 1h30m
-              - Shukkeien Garden:
-                  time: late afternoon
-                  duration: 1h
-                  note: A quiet end to the trip.
+      - day: Peace and history
+        time: 2026-09-18
+        plan:
+          - activity: Peace Memorial Museum
+            time: 9am
+            duration: 2h
+            note: Book tickets in advance.
+          - activity: Atomic Bomb Dome
+            time: 11am
+            duration: 1h
+            location:
+              lat: 34.3955
+              lng: 132.4530
+          - activity: Okonomi-mura
+            time: midday
+            duration: 1h
+            note: Try the **Hiroshima-style** okonomiyaki — layered, not mixed.
 
-  - train:
-      from: Hiroshima
-      to: Tokyo
-      departs: 2026-09-18T17:00+09:00
-      arrives: 2026-09-18T19:30+09:00
+  - transport: train
+    from: Hiroshima
+    to: Tokyo
+    departs: 2026-09-18T17:00+09:00
+    arrives: 2026-09-18T19:30+09:00
 
-  - flight:
-      from:
-        name: Tokyo Haneda Airport
-        address: 2-6-5 Hanedakuko, Ota City, Tokyo
-        lat: 35.5494
-        lng: 139.7798
-      to:
-        name: London Heathrow Airport
-        lat: 51.4700
-        lng: -0.4543
-      departs: 2026-09-18T23:00+09:00
-      arrives: 2026-09-19T06:00+01:00
-      info:
-        - operator: JAL
-        - reference: JL44-8821
-        - gate: 114
-        - terminal: International Terminal
+  - transport: flight
+    from:
+      address: 2-6-5 Hanedakuko, Ota City, Tokyo
+      lat: 35.5494
+      lng: 139.7798
+    to:
+      address: London Heathrow Airport
+      lat: 51.4700
+      lng: -0.4543
+    departs: 2026-09-18T23:00+09:00
+    arrives: 2026-09-19T06:00+01:00
+    info:
+      operator: JAL
+      reference: JL44-8821
+      gate: 114
+      terminal: International Terminal
 ```
 
 ---
@@ -178,18 +161,20 @@ itinerary:
 
 Three rules shape everything in Crumb.
 
-**1. The itinerary is a list of places and transport legs.**
-Each place is a named key. All information about that place — accommodation, activities, and day plans — lives nested inside it. Transport legs connect places and sit between them in the list.
+**1. Each item in a list declares its kind.**
+A crumb is built from lists — the `itinerary`, and the `plan` inside each place. Every list has a **default kind**. An item written as a bare string is one of that default kind, with a name and nothing else. To add fields, write a mapping whose key names the kind: the key's value is the item's name (or, for transport, its mode; for a group, its title), and the item's other fields are sibling keys in the same mapping. The kinds, and their default per list, are given in [Itinerary: Places](#itinerary-places) and [Itinerary: Transport](#itinerary-transport).
 
 **2. Dates, times, and durations are flexible.**
 Write `2026-09-15` or just `September`. Write `9am` or `afternoon`. Write `2h` or `at least half day`. A wide range of formats are valid, from exact timestamps to loose human expressions.
 
 **3. Everything is optional.**
-A bare place name is valid. An activity with just a name is valid. You add fields as your plans take shape.
+A bare place name is valid. An activity with just a name is valid. You add fields as your plans take shape. The only required part of any item is its kind and name.
 
-> **Note:** Place names must be valid YAML strings. If a name could be read as something else by YAML — for example a number like `2026`, or the word `null` — wrap it in quotes: `- "2026"`, `- "null"`.
+> **Note:** Names must be valid YAML strings. If a name could be read as something else by YAML — for example a number like `2026`, or the word `null` — wrap it in quotes: `place: "2026"`, `activity: "null"`.
 
 > A crumb can mix any level of detail freely. One place can have confirmed dates and a booking reference; another in the same itinerary can be just a name. Dates, durations, and locations are all independent — a place can have an exact arrival date and a rough duration, or a specific hotel location and no dates at all. The right level of precision for any field is the level that reflects what's actually known. An approximate value like `early October` signals an estimate; a missing field signals that the information isn't available.
+
+> Every block has a **fixed set of fields**, listed in that block's field table. The single exception is `info`, which holds custom key-value pairs of your choosing. Anything that is not a listed field belongs under `info` — see [MetadataList](#metadatalist).
 
 ---
 
@@ -219,15 +204,17 @@ trip:
 | `info` | MetadataList | Supplementary key-value details (e.g. booking platform, guide website, trip code) |
 | `note` | Text | Free-text description of the trip |
 
+> When a crumb describes a single place — a city guide, a weekend — `trip`-level `note`, `tags`, and `info` are the natural home for the document's metadata; the lone place can stay bare rather than repeating them.
+
 ### `itinerary`
 
-An ordered list of places and transport legs. Order implies chronological sequence.
+An ordered list of items. Order implies chronological sequence. The default kind is `place`; the other kind is `transport`.
 
 ```yaml
 itinerary:
   - Tokyo
-  - train:
-      to: Kyoto
+  - transport: train
+    to: Kyoto
   - Kyoto
 ```
 
@@ -235,41 +222,40 @@ itinerary:
 
 ## Itinerary: Places
 
-A place is the primary building block of an itinerary. The place name is the YAML key — it is not a field. A bare string sets the name and nothing else; adding a colon opens a block of optional fields underneath.
+A place is the default kind in the itinerary. A bare string is a place with a name and nothing else. To add fields, write a mapping keyed `place`, whose value is the name, with the place's fields as sibling keys.
 
 ```yaml
 # Minimal
 - Tokyo
 
 # With fields
-- Tokyo:
-    duration: 5 nights
-    tags: [city, food]
-    note: Base yourself in Shinjuku.
+- place: Tokyo
+  duration: 5 nights
+  tags: [city, food]
+  note: Base yourself in Shinjuku.
 ```
 
-`- name: Tokyo` is not valid. The name must always be the key.
+The place fields are siblings of the `place` key, at the same indentation — they are not nested underneath it.
 
-A place can have accommodation, activities, and notes — or none of these.
+A place's stays, activities, and day-plans all live in its `plan` — a single ordered list, described below.
 
 ```yaml
-- Tokyo:
-    arrives: 2026-09-10
-    departs: 2026-09-15
-    duration: 5 nights
-    location: Tokyo, Japan
-    tags: [city, food, culture]
-    stay:
-      - Shinjuku Granbell Hotel:
-            arrives: 2026-09-10
-            departs: 2026-09-15
-    activities:
-      - Senso-ji Temple:
-          priority: must
-          tags: [temple, landmark]
-    info:
-      - guide: https://www.gotokyo.org
-    note: Get a **Suica card** on arrival.
+- place: Tokyo
+  arrives: 2026-09-10
+  departs: 2026-09-15
+  duration: 5 nights
+  location: Tokyo, Japan
+  tags: [city, food, culture]
+  plan:
+    - stay: Shinjuku Granbell Hotel
+      arrives: 2026-09-10
+      departs: 2026-09-15
+    - activity: Senso-ji Temple
+      priority: must
+      tags: [temple, landmark]
+  info:
+    guide: https://www.gotokyo.org
+  note: Get a **Suica card** on arrival.
 ```
 
 | Field | Type | Description |
@@ -279,36 +265,69 @@ A place can have accommodation, activities, and notes — or none of these.
 | `duration` | Duration | How long you are spending here |
 | `location` | Geolocation | Geographic reference for this place |
 | `tags` | list | Keywords |
-| `stay` | list | Accommodation — see [Stay](#stay) |
-| `activities` | list | Things to do — see [Activities](#activities) |
+| `plan` | list | What happens here — see [Plan](#plan) |
 | `info` | MetadataList | Supplementary key-value details |
 | `note` | Text | Free-text description or tips |
 
 ---
 
+### Plan
+
+A place's `plan` is one ordered list holding everything that happens there. Its default kind is `activity`; a bare string is an activity. The other kinds — accommodation and activity groups — announce themselves with a keyword key:
+
+| Key | Kind | |
+|---|---|---|
+| *(bare string)* / `activity` | an activity | the default |
+| `stay` | accommodation | see [Stay](#stay) |
+| `day` / `week` / `group` | an activity group | see [Activity groups](#activity-groups) |
+
+```yaml
+- place: Kyoto
+  plan:
+    - Fushimi Inari                  # bare string — an activity
+
+    - activity: Nishiki Market       # an activity with fields
+      priority: must
+
+    - stay: Gion Hatanaka Ryokan     # accommodation
+      duration: 3 nights
+
+    - day: Temple hopping            # an activity group
+      time: 2026-09-16
+      plan:
+        - Kinkaku-ji
+        - Ryoan-ji
+```
+
+Because the list is ordered, stays and activities can be interleaved in the sequence they actually happen — useful when you change hotels mid-visit, or want a stay to sit between the activities around it.
+
+An activity placed directly in the plan is loose — a thing to do at the place, not tied to a specific day. Placing an activity inside a `day` or `week` group schedules it to that day or week. An activity is normally listed once: either loose in the plan, or within a single group.
+
+---
+
 ### Stay
 
-The `stay` field holds a list of accommodation items for a place. Each item follows the same pattern — the key is the property name, and fields go underneath. Multiple stays are supported for when you leave and return to the same place, or switch hotels mid-visit.
+A `stay` is accommodation within a place's plan. Its value is the property name; fields are siblings. Multiple stays are supported for when you leave and return, or switch hotels mid-visit.
 
 ```yaml
 # Minimal
-- Kyoto:
-    stay:
-      - Gion Hatanaka Ryokan
+- place: Kyoto
+  plan:
+    - stay: Gion Hatanaka Ryokan
 
 # With fields
-- Kyoto:
-    stay:
-      - Gion Hatanaka Ryokan:
-            arrives: 2026-09-15
-            departs: 2026-09-18
-            duration: 3 nights
-            location: Nijo, Gion, Kyoto
-            tags: [ryokan]
-            info:
-              - website: https://www.hatanaka.jp
-              - reference: ABC123
-            note: Traditional **kaiseki** dinner included.
+- place: Kyoto
+  plan:
+    - stay: Gion Hatanaka Ryokan
+      arrives: 2026-09-15
+      departs: 2026-09-18
+      duration: 3 nights
+      location: Nijo, Gion, Kyoto
+      tags: [ryokan]
+      info:
+        website: https://www.hatanaka.jp
+        reference: ABC123
+      note: Traditional **kaiseki** dinner included.
 ```
 
 | Field | Type | Description |
@@ -325,54 +344,22 @@ The `stay` field holds a list of accommodation items for a place. Each item foll
 
 ### Activities
 
-The `activities` field holds a list of things to do at a place. Three kinds of items can be mixed freely in any order:
-
-- **A bare activity** — just a name, nothing else
-- **A detailed activity** — a name with any combination of fields
-- **An activity group** — `day`, `week`, or `plan`, used to group activities
+An activity is the default kind in a plan. A bare string is an activity with a name and nothing else. To add fields, write a mapping keyed `activity`, whose value is the name, with fields as siblings.
 
 > A bare activity name is enough for anything worth noting but not yet planned in detail. Add `must` for definite priorities, `maybe` for things that depend on time or mood. Fields like `time` and `duration` suit activities where scheduling actually matters — leave them out for anything more loosely planned.
 
 ```yaml
-- Kyoto:
-    activities:
-      - Fushimi Inari                 # bare
-
-      - Nishiki Market:               # detailed
-          priority: must
-          tags: [market, food]
-
-      - day:                          # day group — shorthand list
-          - Kinkaku-ji
-          - Ryoan-ji
-
-      - day:                          # day group — with title and time
-          title: Temple hopping
-          time: 2026-09-16
-          items:
-            - Kinkaku-ji:
-                time: 9am
-            - Ryoan-ji:
-                time: 11am
-
-      - Arashiyama Bamboo Grove:      # back to detailed, outside any group
-          priority: maybe
-```
-
-A bare activity has no fields and no priority. A detailed activity uses the activity name as the key, with all fields optional.
-
-```yaml
-- Senso-ji Temple:
-    priority: must
-    tags: [temple, landmark]
-    time: 8am
-    duration: 1h30m
-    location: Asakusa, Tokyo
-    info:
-      - tripadvisor: https://www.tripadvisor.com/example
-    note: |
-      Arrive before **8am** to avoid crowds.
-      The side streets around the temple are worth exploring too.
+- activity: Senso-ji Temple
+  priority: must
+  tags: [temple, landmark]
+  time: 8am
+  duration: 1h30m
+  location: Asakusa, Tokyo
+  info:
+    tripadvisor: https://www.tripadvisor.com/example
+  note: |
+    Arrive before **8am** to avoid crowds.
+    The side streets around the temple are worth exploring too.
 ```
 
 | Field | Type | Description |
@@ -389,99 +376,89 @@ A bare activity has no fields and no priority. A detailed activity uses the acti
 
 ### Activity groups
 
-Activity groups collect activities into named units — useful for day-by-day planning. Three keywords are available, each implying a different time unit. Activity groups cannot be nested.
+An activity group collects activities into a named unit — useful for day-by-day planning. A group is keyed by its kind, and its value is an optional title. Its activities go in a nested `plan`. Activity groups cannot be nested, and a group's `plan` holds only activities.
 
-`day`, `week`, `plan`
+Valid group kinds:
 
-Activity group keywords are lowercase-only. `day` is an activity group; `Day` is an activity name.
-
-Use `plan` when the group doesn't fit a specific time unit — for themed groups, alternatives, or ideas. A `plan` group is unscheduled: its contents are not part of the itinerary's chronological sequence.
-
-Each keyword accepts two forms. The shorthand form takes a list of activities directly. The detailed form takes a group with optional `title`, `time`, `duration`, and `items`.
+| Kind | Meaning |
+|---|---|
+| `day` | A single day. |
+| `week` | A single week. |
+| `group` | An unscheduled group — a themed collection, alternatives, or ideas. Its contents are not part of the itinerary's chronological sequence. |
 
 ```yaml
-# Shorthand — a list of activities
+# A day — title omitted
 - day:
+  plan:
     - Fushimi Inari
     - Kinkaku-ji
 
-# Detailed — with title and time
-- day:
-    title: Temple hopping
-    time: 2026-09-16
-    items:
-      - Fushimi Inari:
-          time: 8am
-      - Kinkaku-ji:
-          time: 11am
+# A day — with title and time
+- day: Temple hopping
+  time: 2026-09-16
+  plan:
+    - activity: Fushimi Inari
+      time: 8am
+    - activity: Kinkaku-ji
+      time: 11am
 
-# Week group
-- week:
-    title: First week in Tokyo
-    items:
-      - Senso-ji Temple
-      - teamLab Planets
-      - Shibuya Crossing
+# A week
+- week: First week in Tokyo
+  plan:
+    - Senso-ji Temple
+    - teamLab Planets
+    - Shibuya Crossing
 
-# Plan group — for thematic groups or ideas
-- plan:
-    title: Rainy day alternatives
-    items:
-      - teamLab Planets
-      - Mori Art Museum
-      - Shibuya shopping
-
-- plan:
-    title: Weekend in Nikko
-    items:
-      - Tosho-gu Shrine
-      - Kegon Falls
+# An unscheduled group — for themed ideas or alternatives
+- group: Rainy day alternatives
+  plan:
+    - teamLab Planets
+    - Mori Art Museum
+    - Shibuya shopping
 ```
 
-When a `day` or `week` group has no explicit `time`, it begins the day or week immediately following the previous group, starting from the place's arrival date. An explicit `time` on any group resets the sequence from that point. `plan` groups are never part of this sequence.
+When a `day` or `week` group has no explicit `time`, it begins the day or week immediately following the previous group, starting from the place's arrival date. An explicit `time` on any group resets the sequence from that point. `group` groups are never part of this sequence.
 
 | Field | Type | Description |
 |---|---|---|
-| `title` | string | Optional title |
+| *(value)* | string | The group's title. Optional. |
 | `time` | Moment | When this group takes place. Defaults to `next day` for `day` groups and `next week` for `week` groups when omitted. |
-| `duration` | Duration | How long this group spans. Optional on all group types. |
-| `items` | list | Bare or detailed activities. No nested activity groups. |
+| `duration` | Duration | How long this group spans. Optional on all group kinds. |
+| `plan` | list | Bare or detailed activities. No nested groups, no stays. |
 
 ---
 
 ## Itinerary: Transport
 
-A transport leg connects two places. The transport mode is the YAML key — it is not a field. A bare string sets the mode and nothing else; adding a colon opens a block of optional fields underneath. The surrounding places in the list determine the departure and arrival points — you only need to be explicit when the actual point differs from the place name, such as a specific airport.
-
-`- mode: train` is not valid. The mode must always be the key.
+A transport leg connects two places. It is a mapping keyed `transport`, whose value is the mode. The surrounding places in the list determine the departure and arrival points — you only need to be explicit when the actual point differs from the place name, such as a specific airport.
 
 ```yaml
-# Bare string — no fields needed
-- train
+# Mode only — no fields needed
+- transport: train
 
 # With fields
-- train:
-    to: Kyoto
+- transport: train
+  to: Kyoto
 
 # With full detail
-- flight:
-    from: Tokyo Haneda
-    to: Osaka Kansai
-    departs: 2026-09-12T07:30+09:00
-    arrives: 2026-09-12T08:45+09:00
-    info:
-      - operator: ANA
-      - reference: NH425
-    note: Check in at least **2 hours** before departure.
+- transport: flight
+  from: Tokyo Haneda
+  to: Osaka Kansai
+  departs: 2026-09-12T07:30+09:00
+  arrives: 2026-09-12T08:45+09:00
+  info:
+    operator: ANA
+    reference: NH425
+  note: Check in at least **2 hours** before departure.
 ```
 
 The available transport modes are:
 
-`train`, `flight`, `bus`, `car`, `ferry`, `walk`, `bike`, `transport`
+`train`, `flight`, `bus`, `car`, `ferry`, `walk`, `bike`, `other`
 
-Use `transport` when the mode doesn't fit any of the above.
+Use `other` when the mode doesn't fit any of the above.
 
-Transport mode keywords are lowercase-only. `train` is a transport leg; `Train` is a place name.
+> A bare string in the itinerary is always a place. A transport leg always uses the `transport` key — so `- train` is a place named "train", while `- transport: train` is a transport leg.
 
 | Field | Type | Description |
 |---|---|---|
@@ -505,7 +482,7 @@ Crumb uses a small set of named types, referenced consistently in every field ta
 
 | Type | Description | Example |
 |---|---|---|
-| `string` | Plain text | `name: Tokyo` |
+| `string` | Plain text | `place: Tokyo` |
 | `number` | Decimal number | `lat: 34.9671` |
 | `list` | YAML list of strings, flow or block syntax | `tags: [food, city]` |
 | `enum` | String with a fixed set of valid values | `priority: must` |
@@ -517,8 +494,8 @@ These types have their own grammar, defined in the [Field Reference](#field-refe
 | Type | Description |
 |---|---|
 | `Duration` | A duration string — `2h30m`, `3 nights`, `around 2 hours`. |
-| `MetadataList` | A list of custom key-value pairs for supplementary details. |
-| `Geolocation` | A place name, address, or a block with optional `name`, `address`, `lat`, `lng`. |
+| `MetadataList` | A map of custom key-value pairs for supplementary details. |
+| `Geolocation` | A place name, address, or a block with optional `address`, `lat`, `lng`. |
 | `Text` | Free-text string supporting CommonMark markdown. Supports multiline content. |
 | `Moment` | Any temporal expression — exact, relative, or a natural language label. |
 
@@ -647,17 +624,19 @@ duration: half day to all day
 
 ### `MetadataList`
 
-A list of custom key-value pairs for supplementary details. The key is a user-defined string label. The value is a string or number — numbers are common for travel metadata such as flight numbers, confirmation codes, and gate numbers.
+A map of custom key-value pairs for supplementary details. Each key is a user-defined string label. Each value is a string or number — numbers are common for travel metadata such as flight numbers, confirmation codes, and gate numbers.
+
+`info` is the only block that accepts arbitrary keys. Every other block has a fixed set of fields; anything custom belongs here.
 
 ```yaml
 info:
-  - website: https://www.kikunoi.jp
-  - tripadvisor: https://www.tripadvisor.com/example
-  - reservation: KIK-882
-  - dress-code: Smart casual
+  website: https://www.kikunoi.jp
+  tripadvisor: https://www.tripadvisor.com/example
+  reservation: KIK-882
+  dress-code: Smart casual
 ```
 
-**Used on:** places, stays, activities, transport legs.
+**Used on:** `trip`, places, stays, activities, transport legs.
 
 ---
 
@@ -668,12 +647,11 @@ A geographic reference. Write it as a plain string or as a block with any combin
 > A plain string is enough for any named location — a city, a neighbourhood, a landmark. Include coordinates only when a specific map pin matters beyond what a name provides. Use `location: none` when no geographic reference applies. Leave the field out when location isn't relevant.
 
 ```yaml
-# Plain string
-location: Fushimi Inari, Kyoto
+# Plain string — a name or address
+location: Fushimi Inari Taisha, Kyoto
 
 # Block
 location:
-  name: Fushimi Inari Taisha
   address: 68 Fukakusa Yabunouchicho, Fushimi Ward, Kyoto
   lat: 34.9671
   lng: 135.7727
@@ -684,10 +662,11 @@ location: none
 
 | Field | Type | Description |
 |---|---|---|
-| `name` | string | Human-readable place name |
 | `address` | string | Street address |
 | `lat` | number | Latitude in decimal degrees |
 | `lng` | number | Longitude in decimal degrees |
+
+A plain-string Geolocation carries the location's name or address directly; the surrounding item already supplies a name for display. The block form is for a precise address or coordinates.
 
 **`Geolocation` used on:** places, stays, activities.
 **`from` and `to` on transport legs** follow the same grammar.
@@ -697,10 +676,12 @@ location: none
 `location: none` marks a place, stay, or activity as having no geographic coordinates. Coordinate lookup and map placement are outside the scope of the Crumb format. Useful for unnamed waypoints, intentionally abstract places, or privacy.
 
 ```yaml
-- Somewhere private:
-    location: none
-    duration: 2 nights
+- place: Somewhere private
+  location: none
+  duration: 2 nights
 ```
+
+`location: none` opts out of geographic reference. `location: null` is not valid.
 
 ---
 
@@ -959,4 +940,4 @@ time: Saturday night
 
 - [Parser Reference](reference/parser.md) — parsing pipeline, field resolution rules, worked example
 - [Output Data Model](reference/data-model.md) — CrumbDocument TypeScript interfaces
-
+- [Authoring Guide](CRUMB_FOR_AI.md) — compact format reference for AI systems generating crumbs

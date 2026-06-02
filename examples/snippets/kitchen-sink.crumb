@@ -1,0 +1,63 @@
+trip:
+  name: Japan Sampler
+  tags: [asia, food, temples]
+  note: A short autumn loop. Best late October.
+
+itinerary:
+
+  - Osaka                    # bare place — only the name is known so far
+
+  - transport: train
+
+  - place: Kyoto             # a little detail — just how long, a couple of ideas
+    duration: 3 nights
+    plan:
+      - Fushimi Inari                  # bare activity
+      - activity: Nishiki Market       # a touch more
+        priority: maybe
+        note: |
+          Go early: the stalls open around 9 and it's packed by noon.
+
+  - transport: train
+    to: Tokyo
+    departs: 2026-10-24T09:00
+
+  - place: Tokyo             # fully detailed
+    arrives: 2026-10-24
+    duration: 4 nights
+    location: Tokyo, Japan
+    tags: [city, food]
+    plan:
+      - stay: Shinjuku Granbell Hotel
+        arrives: 2026-10-24
+        info:
+          reference: SGH-2231
+      - Senso-ji Temple                # bare activity
+      - activity: teamLab Planets       # detailed activity
+        priority: must
+        time: morning
+        duration: 2h
+      - day:                            # group, title omitted
+        plan:
+          - Meiji Shrine
+          - Harajuku
+      - day: East Tokyo                 # group, with title
+        time: 2026-10-26
+        plan:
+          - activity: Tokyo Skytree
+            time: 9am
+            duration: 1h30m
+          - activity: Akihabara
+            time: afternoon
+
+  - transport: flight
+    from: Tokyo Haneda
+    to:
+      address: London Heathrow
+      lat: 51.4700
+      lng: -0.4543
+    departs: 2026-10-28T11:00+09:00
+    arrives: 2026-10-28T15:30+00:00
+    info:
+      operator: JAL
+      reference: JL043

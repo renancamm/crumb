@@ -1,0 +1,182 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`resolved output shape > matches the snapshot of a representative document 1`] = `
+{
+  "itinerary": [
+    {
+      "arrives": {
+        "date": {
+          "precision": "absolute",
+          "value": "2026-06-01",
+        },
+        "label": "2026-06-01",
+      },
+      "departs": {
+        "anchor": {
+          "date": "2026-06-03",
+          "precedence": "inferred",
+        },
+        "date": {
+          "precision": "absolute",
+          "value": "2026-06-03",
+        },
+        "label": "~Jun 3, 2026",
+      },
+      "duration": {
+        "label": "2 nights",
+        "type": "exact",
+        "unit": "nights",
+        "value": 2,
+      },
+      "info": undefined,
+      "location": {
+        "address": "Somewhere",
+        "label": "Somewhere",
+        "lat": 1.5,
+        "lng": 2.5,
+      },
+      "name": "A",
+      "note": undefined,
+      "plan": [
+        {
+          "arrives": undefined,
+          "departs": undefined,
+          "duration": undefined,
+          "info": [
+            {
+              "key": "ref",
+              "value": "ABC",
+            },
+          ],
+          "location": undefined,
+          "name": "Hotel",
+          "note": undefined,
+          "tags": undefined,
+          "type": "stay",
+        },
+        {
+          "duration": undefined,
+          "info": undefined,
+          "location": undefined,
+          "name": "Walk",
+          "note": undefined,
+          "priority": "must",
+          "tags": undefined,
+          "time": {
+            "anchor": {
+              "date": "2026-06-01",
+              "precedence": "place",
+            },
+            "label": "morning",
+            "time": {
+              "estimate": "09:00",
+              "precision": "loose",
+              "value": "morning",
+            },
+          },
+          "type": "activity",
+        },
+        {
+          "duration": undefined,
+          "kind": "day",
+          "plan": [
+            {
+              "duration": undefined,
+              "info": undefined,
+              "location": undefined,
+              "name": "Museum",
+              "note": undefined,
+              "priority": undefined,
+              "tags": undefined,
+              "time": undefined,
+              "type": "activity",
+            },
+          ],
+          "time": {
+            "anchor": {
+              "date": "2026-06-01",
+              "precedence": "explicit",
+            },
+            "date": {
+              "precision": "absolute",
+              "value": "2026-06-01",
+            },
+            "label": "next day",
+          },
+          "title": "Day one",
+          "type": "group",
+        },
+      ],
+      "tags": undefined,
+      "type": "place",
+    },
+    {
+      "arrives": undefined,
+      "departs": undefined,
+      "duration": undefined,
+      "from": {
+        "label": "A",
+      },
+      "info": undefined,
+      "mode": "train",
+      "note": undefined,
+      "to": {
+        "label": "B",
+      },
+      "type": "transport",
+    },
+    {
+      "arrives": {
+        "anchor": {
+          "date": "2026-06-03",
+          "precedence": "inferred",
+        },
+        "date": {
+          "precision": "absolute",
+          "value": "2026-06-03",
+        },
+        "label": "~Jun 3, 2026",
+      },
+      "departs": {
+        "anchor": {
+          "date": "2026-06-04",
+          "precedence": "inferred",
+        },
+        "date": {
+          "precision": "absolute",
+          "value": "2026-06-04",
+        },
+        "label": "~Jun 4, 2026",
+      },
+      "duration": {
+        "label": "1 night",
+        "type": "exact",
+        "unit": "nights",
+        "value": 1,
+      },
+      "info": undefined,
+      "location": undefined,
+      "name": "B",
+      "note": undefined,
+      "plan": [],
+      "tags": undefined,
+      "type": "place",
+    },
+  ],
+  "trip": {
+    "author": undefined,
+    "duration": {
+      "label": "~3 days",
+      "type": "approximate",
+      "unit": "days",
+      "value": 3,
+    },
+    "info": undefined,
+    "name": "Sample",
+    "note": undefined,
+    "tags": [
+      "x",
+    ],
+  },
+}
+`;

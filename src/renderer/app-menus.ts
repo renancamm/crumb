@@ -258,12 +258,46 @@ document.getElementById("about-generate")!.addEventListener("click", () => {
   generateCtrl.open()
 })
 
-document.getElementById("dl-spec-btn")!.addEventListener("click", () => {
-  const spec = window.__CRUMB_SPEC
-  if (!spec) return
-  const blob = new Blob([spec], { type: "text/markdown" })
+// The prompt = the compact authoring guide + a trailing instruction the user
+// completes with their trip. Pasted whole into any chatbot, it produces a crumb.
+function aiPrompt(): string {
+  const guide = window.__CRUMB_FOR_AI ?? ""
+  return `${guide}
+
+---
+
+Now write a single .crumb document (valid YAML only, no commentary) for the trip below.
+
+Trip: [describe your trip here — e.g. "10 days in Italy: Rome (4 nights), Florence (3), Venice (2), trains between, fly home from Venice"]
+`
+}
+
+document.getElementById("dl-guide-btn")!.addEventListener("click", () => {
+  const guide = window.__CRUMB_FOR_AI
+  if (!guide) return
+  const blob = new Blob([guide], { type: "text/markdown" })
   const url  = URL.createObjectURL(blob)
   const a    = document.createElement("a")
-  a.href = url; a.download = "CRUMB_SPEC.md"; a.click()
+  a.href = url; a.download = "CRUMB_FOR_AI.md"; a.click()
   URL.revokeObjectURL(url)
 })
+
+document.getElementById("copy-prompt-btn")!.addEventListener("click", (e) => {
+  const btn = e.currentTarget as HTMLButtonElement
+  const done = () => { const t = btn.textContent; btn.textContent = "Copied!"; setTimeout(() => { btn.textContent = t }, 1500) }
+  const text = aiPrompt()
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done))
+  } else {
+    fallbackCopy(text, done)
+  }
+})
+
+function fallbackCopy(text: string, done: () => void): void {
+  const ta = document.createElement("textarea")
+  ta.value = text
+  ta.style.position = "fixed"; ta.style.opacity = "0"
+  document.body.appendChild(ta)
+  ta.select()
+  try { document.execCommand("copy"); done() } finally { document.body.removeChild(ta) }
+}

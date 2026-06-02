@@ -1,6 +1,8 @@
-# CRUMB_SPEC Editorial Style Guide
+# Crumb Spec Editorial Style Guide
 
-This document is a brief for AI systems tasked with editing `CRUMB_SPEC.md`. Include it as context whenever asking an AI to update the SPEC. Apply the [Verification Checklist](#verification-checklist) to verify that any proposed change stays within scope and remains useful to all reader types.
+This document is the single editorial authority for the two format documents — `CRUMB_SPEC.md` (the full reference) and `CRUMB_FOR_AI.md` (the compact authoring guide). Include it as context whenever asking an AI to update either document. Apply the [Verification Checklist](#verification-checklist) to verify that any proposed change stays within scope and remains useful to all reader types.
+
+Most of this guide concerns `CRUMB_SPEC.md`. The [Rules for `CRUMB_FOR_AI.md`](#rules-for-crumb_for_aimd) section and the [Anti-drift strategy](#anti-drift-strategy) govern the compact doc and the relationship between the two.
 
 ---
 
@@ -104,9 +106,9 @@ Required pattern for every element with optional sub-fields:
 - Tokyo
 
 # With fields
-- Tokyo:
-    duration: 5 nights
-    tags: [city, food]
+- place: Tokyo
+  duration: 5 nights
+  tags: [city, food]
 ```
 
 ### Rule 6 — Exhaust all bounded vocabularies
@@ -138,13 +140,15 @@ Canonical terms in `CRUMB_SPEC.md`:
 | A list of custom key-value pairs | `MetadataList` |
 | A free-text string supporting markdown | `Text` |
 
+Item kinds are written as the YAML key that introduces each item. In the `itinerary`: `place` (default) and `transport`. In a place's `plan`: `activity` (default), `stay`, and the activity-group kinds `day`, `week`, `group`. These keyword spellings — and the list field name `plan` — are fixed and lowercase; do not introduce variants (`places`, `leg`, `accommodation`, `content`, `items`).
+
 ### Rule 8 — Counter-examples for ambiguous constructs
 
-When a construct has a form that is easy to confuse or get wrong — especially YAML-sensitive or capitalization-sensitive forms — include an explicit note on what is NOT valid.
+When a construct has a form that is easy to confuse or get wrong — especially YAML-sensitive forms — include an explicit note on what is NOT valid.
 
 Example of required disambiguation:
 
-> Transport keywords are lowercase-only. `train` is a transport leg; `Train` is a place name.
+> A bare string in the itinerary is always a place. A transport leg always uses the `transport` key — so `- train` is a place named "train", while `- transport: train` is a transport leg.
 
 Example of required special-value disambiguation:
 
@@ -244,3 +248,53 @@ These are real drift instances found in `CRUMB_SPEC.md`. They serve as named exa
 > Bad: *"When a `day` or `week` group has no explicit `time`, it automatically continues from the previous one."*
 >
 > Good: *"When a `day` or `week` group has no explicit `time`, it begins the day or week immediately following the previous group."*
+
+---
+
+## Rules for `CRUMB_FOR_AI.md`
+
+`CRUMB_FOR_AI.md` is the compact authoring guide: the document handed to an AI system (with no access to a parser) as context for generating or editing a crumb in one shot. It is a deliberate **compression** of `CRUMB_SPEC.md`, not a second source of truth. Everything in the [Editorial Rules](#editorial-rules) above still applies; these rules are additional.
+
+### Rule AI-1 — The spec is authoritative
+
+`CRUMB_FOR_AI.md` never contradicts `CRUMB_SPEC.md` and never defines anything the spec does not. When the two could disagree, the spec wins, and the compact doc is the document that changes. The compact doc ends with a pointer to `CRUMB_SPEC.md` as the full reference.
+
+### Rule AI-2 — Vocabularies are exhaustive and code-derived
+
+Every closed set printed in `CRUMB_FOR_AI.md` — item kinds (`place, transport, activity, group, stay`), transport modes, group kinds, priorities, named periods, seasons — must be listed in full and must match the code constants exactly (see [Anti-drift strategy](#anti-drift-strategy)). This is Rule 6 applied with no exceptions: a compact doc has even less room for "e.g." than the spec, because an AI reading only this doc has nowhere else to learn the complete set.
+
+### Rule AI-3 — Lead with the one rule, then drill the error-prone forms
+
+The doc opens with the kind-key rule (each item declares its kind with its key). The forms an AI gets wrong — kind-as-key, fields as siblings (not nested), quoting YAML-ambiguous names, the closed-fields-vs-`info` boundary — are taught with adjacent ✅/❌ pairs, not prose. A `common mistakes` checklist near the end restates them.
+
+### Rule AI-4 — One complete annotated example over many fragments
+
+A single realistic, mixed-precision example that exercises every construct teaches an AI more reliably than scattered snippets. Shared examples are transcluded from `examples/snippets/` (Rule AI-5), never hand-copied.
+
+### Rule AI-5 — Examples are transcluded, never duplicated
+
+Any YAML example that also appears in `CRUMB_SPEC.md` or is otherwise shared lives as a real `.crumb` file under `examples/snippets/` and is included into the doc by reference. The example text has exactly one source on disk.
+
+### Rule AI-6 — Dates by principle, bounded sets in full
+
+The free-form date grammar is summarized by principle plus a handful of anchors (`2026-09-15`, `September 2026`, `early October`, `morning`, `9am`, `Day 3`, `last day`); the exhaustive grammar stays in `CRUMB_SPEC.md`. The genuinely bounded temporal vocabularies (named periods, seasons, relative anchors) are still listed in full, per Rule AI-2.
+
+### Rule AI-7 — Length budget
+
+`CRUMB_FOR_AI.md` stays under roughly 200 lines. Its value is token efficiency; prose that merely restates the spec's semantics is cut. If a section grows past the budget, compress or move it to the spec.
+
+---
+
+## Anti-drift strategy
+
+Two documents describing one format will drift unless drift is made structurally hard. The defence has two layers.
+
+**Layer A — editorial (this guide).** `SPEC_STYLE.md` is the single rulebook for both documents. There is no third governing doc to keep in sync. Prose drift is caught by applying the [Verification Checklist](#verification-checklist) and the [Rules for `CRUMB_FOR_AI.md`](#rules-for-crumb_for_aimd) to every change.
+
+**Layer B — automated (tests).** Fact drift in the two highest-risk areas is caught by CI:
+
+1. **Vocabularies — the code is the single source.** The closed sets live in code (`Priority` and the transport-mode union in `src/types/primitives.ts`; the item-kind keywords, group kinds, and `plan` field name in `src/parser/pass1-classify.ts`). A test extracts the vocabulary lists printed in both documents and asserts they equal the code constants. A document can never claim a value the parser rejects.
+
+2. **Examples — parsed as fixtures.** Every complete example document lives as a real `.crumb` file under `examples/` (shared snippets under `examples/snippets/`) and is transcluded into the docs (Rule AI-5), so each example has exactly one source on disk. The test runs `parse()` over those `.crumb` files, expecting success — a format change that breaks an example fails the build. The doc code blocks themselves all use ` ```yaml ` fences (for editor and GitHub syntax highlighting; `crumb` is not a recognized language); illustrative fragments and vocabulary listings stay inline as plain ` ```yaml ` and are not parsed. The contract lives on disk — a tested `.crumb` file — not on the fence label.
+
+When a format change lands, both layers must pass before it is complete: the checklist (human) and the vocab + example tests (CI).

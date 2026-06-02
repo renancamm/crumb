@@ -275,18 +275,18 @@ describe("resolveGeolocation", () => {
     expect(resolveGeolocation("none")).toEqual({ label: "none", geocodingDisabled: true })
   })
 
-  it("parses block form with name and coordinates", () => {
-    const r = resolveGeolocation({ name: "Eiffel Tower", lat: 48.858, lng: 2.294 })
-    expect(r).toMatchObject({ label: "Eiffel Tower", name: "Eiffel Tower", lat: 48.858, lng: 2.294 })
+  it("parses block form with address and coordinates", () => {
+    const r = resolveGeolocation({ address: "Champ de Mars, Paris", lat: 48.858, lng: 2.294 })
+    expect(r).toMatchObject({ label: "Champ de Mars, Paris", address: "Champ de Mars, Paris", lat: 48.858, lng: 2.294 })
   })
 
   it("discards coordinates out of valid range", () => {
-    const r = resolveGeolocation({ name: "Bad Coords", lat: 999, lng: 2.0 })
+    const r = resolveGeolocation({ address: "Bad Coords", lat: 999, lng: 2.0 })
     expect(r.lat).toBeUndefined()
     expect(r.lng).toBeUndefined()
   })
 
-  it("uses coordinates as label when no name or address", () => {
+  it("uses coordinates as label when no address", () => {
     const r = resolveGeolocation({ lat: 35.6762, lng: 139.6503 })
     expect(r.label).toBe("35.6762, 139.6503")
     expect(r.lat).toBe(35.6762)

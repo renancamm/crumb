@@ -2,10 +2,18 @@ trip:
   name: Japan — May to July 2026
   author: Bruna Sanches Caricati & Renan Cammarosano de Lima
   duration: 59 nights
-  tags: [japan, asia, first-time, culture, history, food, onsen, temples]
+  tags:
+    - japan
+    - asia
+    - first-time
+    - culture
+    - history
+    - food
+    - onsen
+    - temples
   info:
-  - ANA-reservation: F7ZHBA
-  - ANA-ticket: 2052429593670-671
+    ANA-reservation: F7ZHBA
+    ANA-ticket: 2052429593670-671
   note: |
     A two-month journey through Japan — Tokyo, Hakone, Osaka, Hiroshima,
     Kyoto, and back to Tokyo. First visit for both. Focus on history, culture,
@@ -40,61 +48,48 @@ trip:
 
     **JR Pass:** Not recommended for this trip. Only 5 major Shinkansen
     legs total. Individual tickets via Smart EX are significantly cheaper.
-
 itinerary:
-
-  # ──────────────────────────────────────────
-  # OUTBOUND FLIGHTS
-  # ──────────────────────────────────────────
-
-- flight:
+  - transport: flight
     from:
-      name: Palma de Mallorca Airport (PMI)
+      address: Palma de Mallorca Airport (PMI)
       lat: 39.5517
       lng: 2.7388
     to:
-      name: Zurich Airport (ZRH)
+      address: Zurich Airport (ZRH)
       lat: 47.4647
       lng: 8.5492
     departs: 2026-05-04T08:20
     arrives: 2026-05-04T10:15
     info:
-    - operator: Eurowings
-    - flight: EW6836
-    - seat: 20B
-    - class: W
-    - reservation: F7ZHBA
-
-- flight:
-    from:
-      name: Zurich Airport (ZRH)
+      operator: Eurowings
+      flight: EW6836
+      seat: 20B
+      class: W
+      reservation: F7ZHBA
+  - transport: flight
+    from: Zurich Airport (ZRH)
     to:
-      name: Tokyo Narita International Airport (NRT)
+      address: Tokyo Narita International Airport (NRT)
       lat: 35.7647
       lng: 140.3864
     departs: 2026-05-04T13:05
     arrives: 2026-05-05T09:10
     info:
-    - operator: ANA (operated by Swiss)
-    - flight: NH6752
-    - class: Q
-    - reservation: F7ZHBA
+      operator: ANA (operated by Swiss)
+      flight: NH6752
+      class: Q
+      reservation: F7ZHBA
     note: |
       Fill in Visit Japan Web forms before landing to speed through
       immigration. Try to sleep on the plane — Japan is 7 time zones
       ahead of Spain.
-
-  # ──────────────────────────────────────────
-  # TOKYO — WEEK ONE (7 nights)
-  # ──────────────────────────────────────────
-
-- Tokyo:
-    arrives: 2026-05-05
-    departs: 2026-05-12
+  - place: Tokyo
+    arrives: "2026-05-05"
+    departs: "2026-05-12"
     duration: 7 nights
     location: Tokyo, Japan
-    stay:
-    - Sakura Hotel Nippori:
+    plan:
+      - stay: Sakura Hotel Nippori
         arrives: 2026-05-05T15:00
         departs: 2026-05-12T11:00
         location:
@@ -102,45 +97,34 @@ itinerary:
           lat: 35.7283
           lng: 139.7614
         info:
-        - confirmation: "5531.957.709"
-        - pin: "4587"
-        - phone: +81 3 5685 1200
-        - platform: Booking.com
-        - room: Japanese-Style Room with Shared Bathroom (futon, tatami)
-        - cancellation: free until May 3
-        - price: approx. 84,823 yen — pay at property
+          confirmation: 5531.957.709
+          pin: "4587"
+          phone: +81 3 5685 1200
+          platform: Booking.com
+          room: Japanese-Style Room with Shared Bathroom (futon, tatami)
+          cancellation: free until May 3
+          price: approx. 84,823 yen — pay at property
         note: |
           Yanaka-Sendagi is one of Tokyo's best-preserved old
           neighbourhoods. From Narita take the Keisei Skyliner to
           Nippori Station (41 min, 2,570 yen) — direct and easiest.
           Purchase a Suica card at the airport before boarding.
-
-    activities:
-
-    - day:
-        title: Arrival day — Yanaka neighbourhood
-        time: 2026-05-05
-        status: done
-        note: |
-          Yanaka Cemetery, Yanaka Ginza, Nezu Shrine. Dinner at a nearby
-          okonomiyaki restaurant.
-    - day:
-        title: Tsukiji, water bus to Asakusa, Kappabashi
-        time: 2026-05-06
-        status: done
-        note: |
-          Tsukiji Outer Market for breakfast, then Hamarikyu Gardens and
-          the Tokyo Water Bus up the Sumida River to Asakusa. Senso-ji,
-          Asakusa Shrine, Kappabashi, and Hoppy Street in the afternoon.
-          No dinner — skipped after a full day.
-        items:
-        - Tsukiji Outer Market:
+      - day: Arrival day — Yanaka neighbourhood
+        time: "2026-05-05"
+        plan: []
+      - day: Tsukiji, water bus to Asakusa, Kappabashi
+        time: "2026-05-06"
+        plan:
+          - activity: Tsukiji Outer Market
+            priority: must
+            tags:
+              - market
+              - food
+              - cultural
             time: 8am
             duration: 1h30m
-            priority: must
-            tags: [market, food, cultural]
             location:
-              name: Tsukiji Outer Market
+              address: Tsukiji Outer Market
               lat: 35.6654
               lng: 139.7707
             note: |
@@ -160,12 +144,15 @@ itinerary:
               restaurant industry; this outer ring was always the
               public-facing half, selling surplus and prepared foods
               while the inner market handled wholesale tonnage.
-        - Hamarikyu Gardens:
+          - activity: Hamarikyu Gardens
+            tags:
+              - garden
+              - nature
+              - Edo period
             time: 9:45am
             duration: 45m
-            tags: [garden, nature, Edo period]
             location:
-              name: Hamarikyu Gardens
+              address: Hamarikyu Gardens
               lat: 35.6601
               lng: 139.7634
             note: |
@@ -176,13 +163,17 @@ itinerary:
               Edo-period daimyo gardens still intact in the city.
               The water bus pier is inside the garden — buy your ticket
               at the pier before boarding.
-        - Tokyo Water Bus — Hamarikyu to Asakusa:
+          - activity: Tokyo Water Bus — Hamarikyu to Asakusa
+            priority: must
+            tags:
+              - boat
+              - river
+              - experience
+              - transport
             time: 10:40am
             duration: 40m
-            priority: must
-            tags: [boat, river, experience, transport]
             location:
-              name: Hamarikyu Pier (Suijo Bus)
+              address: Hamarikyu Pier (Suijo Bus)
               lat: 35.6606
               lng: 139.7634
             note: |
@@ -201,13 +192,16 @@ itinerary:
               correct approach. The view of the Skytree rising above
               the old boathouses as you round the final bend is one
               of Tokyo's best.
-        - Senso-ji Temple:
+          - activity: Senso-ji Temple
+            priority: must
+            tags:
+              - temple
+              - cultural
+              - landmark
             time: 11:30am
             duration: 1h30m
-            priority: must
-            tags: [temple, cultural, landmark]
             location:
-              name: Senso-ji Temple
+              address: Senso-ji Temple
               lat: 35.7148
               lng: 139.7967
             note: |
@@ -227,12 +221,15 @@ itinerary:
               shown publicly and reportedly never will be — making
               this the most visited temple in the world for something
               no one has ever seen.
-        - Asakusa Shrine (Asakusa Jinja):
+          - activity: Asakusa Shrine (Asakusa Jinja)
+            tags:
+              - shrine
+              - hidden gem
+              - cultural
             time: 1pm
             duration: 20m
-            tags: [shrine, hidden gem, cultural]
             location:
-              name: Asakusa Shrine
+              address: Asakusa Shrine
               lat: 35.7153
               lng: 139.7966
             note: |
@@ -250,12 +247,15 @@ itinerary:
               her. The contrast in atmosphere — packed temple versus
               quiet shrine 30 metres apart — is one of the most
               striking things in Asakusa.
-        - Kappabashi Kitchenware Street:
+          - activity: Kappabashi Kitchenware Street
+            tags:
+              - shopping
+              - cultural
+              - neighbourhood
             time: 1:30pm
             duration: 1h
-            tags: [shopping, cultural, neighbourhood]
             location:
-              name: Kappabashi-dori, Taito-ku
+              address: Kappabashi-dori, Taito-ku
               lat: 35.7152
               lng: 139.7865
             note: |
@@ -275,30 +275,29 @@ itinerary:
               at pictures — considered awkward in Japanese dining
               culture. Today the most detailed pieces take artisans
               days to make.
-        - Hoppy Street and Asakusa backstreets:
+          - activity: Hoppy Street and Asakusa backstreets
+            tags:
+              - walk
+              - neighbourhood
+              - atmosphere
             time: 3pm
             duration: 1h30m
-            tags: [walk, neighbourhood, atmosphere]
             note: |
               Walked the quiet lanes east and north of Senso-ji —
               old wooden shopfronts, small craft studios. Hoppy Street
               for an afternoon drink.
-    - day:
-        title: Ueno Toshogu, Shinobazu Pond, museum, Akihabara, teamLab
-        time: 2026-05-07
-        status: done
-        note: |
-          Morning order changed from plan — started with Ueno Toshogu
-          Shrine, then Shinobazu Pond, then Tokyo National Museum.
-          Ramen lunch near Ameyoko. Akihabara: Super Potato, game
-          arcade, Radio Kaikan, Yodobashi Camera. Went straight to
-          teamLab from Akihabara. Late night food from 7-Eleven.
-        items:
-        - Ueno Toshogu Shrine:
+      - day: Ueno Toshogu, Shinobazu Pond, museum, Akihabara, teamLab
+        time: "2026-05-07"
+        plan:
+          - activity: Ueno Toshogu Shrine
+            tags:
+              - shrine
+              - hidden gem
+              - cultural
+              - Edo period
             time: morning
-            tags: [shrine, hidden gem, cultural, Edo period]
             location:
-              name: Ueno Toshogu Shrine
+              address: Ueno Toshogu Shrine
               lat: 35.7165
               lng: 139.7741
             note: |
@@ -312,59 +311,73 @@ itinerary:
               vocabulary as the famous Nikko Toshogu — the same gold
               chrysanthemums, the same carved mythological animals —
               but almost always empty.
-        - Shinobazu Pond and Ueno Park:
-            tags: [nature, park, walk]
+          - activity: Shinobazu Pond and Ueno Park
+            tags:
+              - nature
+              - park
+              - walk
             location:
-              name: Shinobazu Pond, Ueno
+              address: Shinobazu Pond, Ueno
               lat: 35.7131
               lng: 139.7714
             note: |
               Large lotus pond in the middle of Ueno Park, with a small
               Benten shrine on an island accessed by a narrow causeway.
-        - Tokyo National Museum:
-            tags: [museum, history, culture]
+          - activity: Tokyo National Museum
+            tags:
+              - museum
+              - history
+              - culture
             location:
-              name: Tokyo National Museum
+              address: Tokyo National Museum
               lat: 35.7189
               lng: 139.7764
             note: |
               Visited the Honkan gallery and Horyuji Treasures Gallery.
               One of the finest rooms of Asian art anywhere in the world.
-        - Ramen lunch near Ameyoko:
-            tags: [food]
+          - activity: Ramen lunch near Ameyoko
+            tags:
+              - food
             location:
-              name: Ameyoko Market area, Ueno
+              address: Ameyoko Market area, Ueno
               lat: 35.7089
               lng: 139.7745
             note: Ramen restaurant near the Ameyoko Market.
-        - Akihabara:
-            tags: [electronics, pop culture, retro gaming]
+          - activity: Akihabara
+            tags:
+              - electronics
+              - pop culture
+              - retro gaming
             location:
-              name: Akihabara Electric Town
+              address: Akihabara Electric Town
               lat: 35.7022
               lng: 139.7742
             note: |
               Super Potato (retro games), game arcade, Radio Kaikan,
               Yodobashi Camera. Went straight to teamLab from here.
-        - Transit to teamLab Planets (Toyosu):
+          - activity: Transit to teamLab Planets (Toyosu)
+            tags:
+              - logistics
             time: 6:30pm
             duration: 25m
-            tags: [logistics]
             note: |
               Hibiya Line from Akihabara to Tsukishima, then Yurakucho
               Line one stop to Toyosu.
-        - teamLab Planets TOKYO:
-            time: 7:30pm
+          - activity: teamLab Planets TOKYO
             priority: must
+            tags:
+              - art
+              - immersive
+              - experience
+            time: 7:30pm
             duration: 1h30m
-            tags: [art, immersive, experience]
             location:
-              name: teamLab Planets TOKYO
-              lat: 35.6500
+              address: teamLab Planets TOKYO
+              lat: 35.65
               lng: 139.7847
             info:
-            - booking: GYG9966Q2V24 (GetYourGuide app)
-            - price: 49.92 EUR for 2 adults
+              booking: GYG9966Q2V24 (GetYourGuide app)
+              price: 49.92 EUR for 2 adults
             note: |
               Four large-scale immersive art environments — including
               a room where you wade barefoot through ankle-deep water
@@ -378,198 +391,205 @@ itinerary:
               it without affecting it, and the koi cannot exist without
               your presence disturbing them. The relationship between
               visitor and artwork is genuinely reciprocal.
-    - day:
-        title: Ameyoko eel lunch, Odaiba, Fuji TV, Gundam, Skytree sunset
-        time: 2026-05-08
-        status: done
-        note: |
-          Lunch at Ameyoko Market — eel BBQ restaurant. Then Yurikamome
-          to Odaiba: Fuji TV building exterior, DiverCity and Gundam
-          statue. Tokyo Skytree — browsed Solamachi stores on floor 4,
-          then Tembo Deck for sunset views. Late dinner at Hoppy Street
-          in Asakusa.
-        items:
-        - Eel BBQ lunch at Ameyoko Market:
-            tags: [food, market]
+      - day: Ameyoko eel lunch, Odaiba, Fuji TV, Gundam, Skytree sunset
+        time: "2026-05-08"
+        plan:
+          - activity: Eel BBQ lunch at Ameyoko Market
+            tags:
+              - food
+              - market
             location:
-              name: Ameyoko Market, Ueno
+              address: Ameyoko Market, Ueno
               lat: 35.7089
               lng: 139.7745
             note: Restaurant specialising in eel BBQ inside the Ameyoko Market area.
-        - Yurikamome monorail to Odaiba:
-            tags: [transport, experience]
+          - activity: Yurikamome monorail to Odaiba
+            tags:
+              - transport
+              - experience
             location:
-              name: Shimbashi Station (Yurikamome Line)
+              address: Shimbashi Station (Yurikamome Line)
               lat: 35.6659
               lng: 139.7576
             note: Driverless elevated monorail crossing Tokyo Bay over the Rainbow Bridge.
-        - Fuji TV Building:
-            tags: [architecture, landmark]
+          - activity: Fuji TV Building
+            tags:
+              - architecture
+              - landmark
             location:
-              name: Fuji TV Building, Odaiba
-              lat: 35.6290
+              address: Fuji TV Building, Odaiba
+              lat: 35.629
               lng: 139.7768
             note: |
               The distinctive sphere suspended between two towers —
               one of Japan's most recognisable pieces of 1990s
               architectural confidence. Viewed from the waterfront.
-        - Gundam statue and DiverCity:
-            tags: [pop culture, experience]
+          - activity: Gundam statue and DiverCity
+            tags:
+              - pop culture
+              - experience
             location:
-              name: DiverCity Tokyo Plaza
+              address: DiverCity Tokyo Plaza
               lat: 35.6249
               lng: 139.7756
             note: Life-size Gundam mobile suit in front of DiverCity mall.
-        - Tokyo Skytree — Solamachi and Tembo Deck:
-            tags: [viewpoint, landmark, shopping]
+          - activity: Tokyo Skytree — Solamachi and Tembo Deck
+            tags:
+              - viewpoint
+              - landmark
+              - shopping
             location:
-              name: Tokyo Skytree
+              address: Tokyo Skytree
               lat: 35.7101
               lng: 139.8107
             info:
-            - booking: GYGBLHRMGF63 (GetYourGuide app)
-            - price: 19.54 EUR for 2 adults
+              booking: GYGBLHRMGF63 (GetYourGuide app)
+              price: 19.54 EUR for 2 adults
             note: |
               Browsed stores on floor 4 of Solamachi, then Tembo Deck
               at 350m for sunset views over Tokyo.
-        - Late dinner at Hoppy Street:
-            tags: [food, izakaya, neighbourhood]
+          - activity: Late dinner at Hoppy Street
+            tags:
+              - food
+              - izakaya
+              - neighbourhood
             location:
-              name: Hoppy Street, Asakusa
+              address: Hoppy Street, Asakusa
               lat: 35.7134
               lng: 139.7954
             note: Casual yakitori izakaya on Hoppy Street in Asakusa.
-    - day:
-        title: Shinjuku — 3D cat, Godzilla, TMG, Kinokuniya, Memory Lane dinner
-        time: 2026-05-09
-        status: done
-        note: |
-          3D cat billboard at Shinjuku East exit, then Godzilla statue
-          on Toho Building street. TMG Building — elevator under
-          maintenance, couldn't go up. Curry lunch in Kabukicho.
-          Walked the main street, browsed Kinokuniya bookshop. Headed
-          toward Shinjuku Gyoen but didn't enter. Hanazono Shrine.
-          Golden Gai — arrived too early, all closed. Finished at
-          Omoide Yokocho — dinner at a tiny yakitori BBQ restaurant.
-        items:
-        - 3D cat billboard:
-            tags: [landmark, street art]
+      - day: Shinjuku — 3D cat, Godzilla, TMG, Kinokuniya, Memory Lane dinner
+        time: "2026-05-09"
+        plan:
+          - activity: 3D cat billboard
+            tags:
+              - landmark
+              - street art
             location:
-              name: Shinjuku East Exit
+              address: Shinjuku East Exit
               lat: 35.6912
               lng: 139.7025
             note: The enormous 3D cat screen at the Shinjuku East exit.
-        - Godzilla statue — Toho Building:
-            tags: [pop culture, landmark]
+          - activity: Godzilla statue — Toho Building
+            tags:
+              - pop culture
+              - landmark
             location:
-              name: Toho Building, Kabukicho
+              address: Toho Building, Kabukicho
               lat: 35.6948
               lng: 139.7025
             note: Godzilla head on the Toho Building roof. Walked the Kabukicho street.
-        - Tokyo Metropolitan Government Building:
-            tags: [architecture, landmark]
+          - activity: Tokyo Metropolitan Government Building
+            tags:
+              - architecture
+              - landmark
             location:
-              name: Tokyo Metropolitan Government Building
+              address: Tokyo Metropolitan Government Building
               lat: 35.6895
               lng: 139.6917
             note: Visited but elevator was under maintenance — couldn't access the observation deck.
-        - Curry lunch in Kabukicho:
-            tags: [food]
+          - activity: Curry lunch in Kabukicho
+            tags:
+              - food
             note: Lunch at a curry restaurant in the Kabukicho area.
-        - Kinokuniya Bookshop:
-            tags: [bookshop, culture]
+          - activity: Kinokuniya Bookshop
+            tags:
+              - bookshop
+              - culture
             location:
-              name: Kinokuniya Shinjuku
+              address: Kinokuniya Shinjuku
               lat: 35.6929
               lng: 139.7024
             note: Browsed the large Kinokuniya bookshop on the main street.
-        - Toward Shinjuku Gyoen (didn't enter):
-            tags: [walk]
+          - activity: Toward Shinjuku Gyoen (didn't enter)
+            tags:
+              - walk
             note: Walked in the direction of the park but didn't go in.
-        - Hanazono Shrine:
-            tags: [shrine, atmosphere]
+          - activity: Hanazono Shrine
+            tags:
+              - shrine
+              - atmosphere
             location:
-              name: Hanazono Shrine
+              address: Hanazono Shrine
               lat: 35.6937
               lng: 139.7072
             note: |
               Compact Shinto shrine in Kabukicho — stone lanterns and
               the main hall, a moment of quiet inside the entertainment
               district.
-        - Golden Gai (closed — too early):
-            tags: [nightlife]
+          - activity: Golden Gai (closed — too early)
+            tags:
+              - nightlife
             location:
-              name: Golden Gai
+              address: Golden Gai
               lat: 35.6943
               lng: 139.7035
             note: Arrived too early — all bars were still closed.
-        - Omoide Yokocho dinner:
-            tags: [food, izakaya, atmosphere]
+          - activity: Omoide Yokocho dinner
+            tags:
+              - food
+              - izakaya
+              - atmosphere
             location:
-              name: Omoide Yokocho
+              address: Omoide Yokocho
               lat: 35.6939
               lng: 139.7006
             note: |
               Dinner at a tiny yakitori BBQ restaurant on Memory Lane
               — charcoal grills, paper lanterns, skewers at the counter.
-    - day:
-        title: Rest day — cafe, Sushiro, Akihabara shopping, Yanaka Ginza
-        time: 2026-05-11
-        status: done
-        note: |
-          Mount Takao skipped — took a lighter rest day instead.
-          Breakfast at a cafe near the hotel. Lunch at Sushiro conveyor
-          belt sushi near Nippori Station. Akihabara for shopping at
-          Yodobashi Camera. Yanaka Ginza at sunset for beer and sake.
-          Dinner at the hotel restaurant — udon.
-        items:
-        - Breakfast at cafe near hotel:
-            tags: [food, slow morning]
+      - day: Rest day — cafe, Sushiro, Akihabara shopping, Yanaka Ginza
+        time: "2026-05-11"
+        plan:
+          - activity: Breakfast at cafe near hotel
+            tags:
+              - food
+              - slow morning
             note: Slow breakfast at a local cafe near Sakura Hotel Nippori.
-        - Sushiro lunch:
-            tags: [food, sushi]
+          - activity: Sushiro lunch
+            tags:
+              - food
+              - sushi
             location:
-              name: Sushiro near Nippori Station
+              address: Sushiro near Nippori Station
               lat: 35.7283
-              lng: 139.7700
+              lng: 139.77
             note: Conveyor belt sushi lunch near Nippori Station.
-        - Akihabara — Yodobashi Camera shopping:
-            tags: [shopping, electronics]
+          - activity: Akihabara — Yodobashi Camera shopping
+            tags:
+              - shopping
+              - electronics
             location:
-              name: Akihabara Electric Town
+              address: Akihabara Electric Town
               lat: 35.7022
               lng: 139.7742
             note: Shopping at Yodobashi Camera.
-        - Yanaka Ginza at sunset:
-            tags: [neighbourhood, drinks, sunset]
+          - activity: Yanaka Ginza at sunset
+            tags:
+              - neighbourhood
+              - drinks
+              - sunset
             location:
-              name: Yanaka Ginza
+              address: Yanaka Ginza
               lat: 35.7243
-              lng: 139.7670
+              lng: 139.767
             note: Beer and sake in Yanaka Ginza at sunset.
-        - Dinner at hotel restaurant:
-            tags: [food]
+          - activity: Dinner at hotel restaurant
+            tags:
+              - food
             note: Udon at the Sakura Hotel Nippori restaurant.
-
-    - day:
-        title: Meiji Shrine, Harajuku, Omotesando, Shibuya Crossing from Starbucks
-        time: 2026-05-10
-        status: done
-        note: |
-          Meiji Shrine, Yoyogi Park (no rockabilly group that day).
-          Lunch at The Beetle in Harajuku. Takeshita Street, then
-          backstreets east of Takeshita. Walked through Omotesando
-          and Aoyama toward Shibuya. Watched the Scramble Crossing
-          from Starbucks 2F (free). Back to hotel, dinner at Kitsune
-          Sushi. Skipped: Daikanyama, Nakameguro, Nezu Museum, Shibuya Sky.
-        items:
-        - Meiji Jingu Shrine:
-            time: 7:30am
+      - day: Meiji Shrine, Harajuku, Omotesando, Shibuya Crossing from Starbucks
+        time: "2026-05-10"
+        plan:
+          - activity: Meiji Jingu Shrine
             priority: must
+            tags:
+              - shrine
+              - nature
+              - spiritual
+            time: 7:30am
             duration: 1h30m
-            tags: [shrine, nature, spiritual]
             location:
-              name: Meiji Jingu Shrine
+              address: Meiji Jingu Shrine
               lat: 35.6763
               lng: 139.6993
             note: |
@@ -589,11 +609,13 @@ itinerary:
               self-sustaining forest ecosystem designed to last
               1,000 years. On weekend mornings Shinto weddings
               process through the inner courtyard in silence.
-
-        - Yoyogi Park:
+          - activity: Yoyogi Park
+            tags:
+              - park
+              - nature
+              - local
             time: 9am
             duration: 30m
-            tags: [park, nature, local]
             note: |
               54 hectares of public park adjacent to Meiji Shrine —
               open forest, wide lawns, and on weekends an
@@ -605,12 +627,15 @@ itinerary:
               since the early 1980s. The juxtaposition of this
               American nostalgia culture directly beside Japan's most
               sacred imperial shrine is uniquely, inexplicably Tokyo.
-        - Takeshita Street, Harajuku:
+          - activity: Takeshita Street, Harajuku
+            tags:
+              - youth culture
+              - shopping
+              - street
             time: 10am
             duration: 1h
-            tags: [youth culture, shopping, street]
             location:
-              name: Takeshita Street
+              address: Takeshita Street
               lat: 35.6715
               lng: 139.7042
             note: |
@@ -625,10 +650,13 @@ itinerary:
               the street itself acts as a designated permission space.
               The elaborate layered crepes (French style, Japanese
               execution) were invented here and remain excellent.
-        - Omotesando Avenue:
+          - activity: Omotesando Avenue
+            tags:
+              - architecture
+              - walk
+              - design
             time: 11am
             duration: 1h30m
-            tags: [architecture, walk, design]
             note: |
               A tree-lined boulevard of flagship stores notable for
               their architecture — Prada (Herzog and de Meuron,
@@ -642,12 +670,16 @@ itinerary:
               preparations, a significant public campaign protected
               them. The Nezu Museum at the south end has a beautiful
               traditional garden (1,500 yen).
-        - Nezu Museum and garden:
+          - activity: Nezu Museum and garden
+            tags:
+              - museum
+              - garden
+              - traditional
+              - hidden gem
             time: 12:30pm
             duration: 45m
-            tags: [museum, garden, traditional, hidden gem]
             location:
-              name: Nezu Museum
+              address: Nezu Museum
               lat: 35.6641
               lng: 139.7152
             note: |
@@ -667,19 +699,23 @@ itinerary:
               contrast between Omotesando's deliberate spectacle and
               this garden's deliberate concealment is worth pausing
               on.
-        - Lunch near Omotesando or Aoyama:
+          - activity: Lunch near Omotesando or Aoyama
+            tags:
+              - food
             time: 1:30pm
-            tags: [food]
             note: |
               The Aoyama neighbourhood behind Omotesando has quiet,
               high-quality restaurants without the boulevard pricing.
               A Japanese curry (kare) lunch set is one of Tokyo's
               great comfort foods — filling, inexpensive, and rarely
               disappointing.
-        - Daikanyama and T-Site Tsutaya:
+          - activity: Daikanyama and T-Site Tsutaya
+            tags:
+              - neighbourhood
+              - bookshop
+              - walk
             time: 2:30pm
             duration: 1h
-            tags: [neighbourhood, bookshop, walk]
             note: |
               Tokyo's quietest sophisticated neighbourhood — a maze
               of low buildings, select shops, and excellent cafes,
@@ -692,12 +728,15 @@ itinerary:
               pattern — what appears abstract is thousands of
               overlapping Ts. The shop stocks vinyl records, art
               books, and design objects alongside books.
-        - Nakameguro canal walk:
+          - activity: Nakameguro canal walk
+            tags:
+              - walk
+              - canal
+              - neighbourhood
             time: 3:30pm
             duration: 45m
-            tags: [walk, canal, neighbourhood]
             location:
-              name: Nakameguro Canal
+              address: Nakameguro Canal
               lat: 35.6419
               lng: 139.6992
             note: |
@@ -718,14 +757,16 @@ itinerary:
               water. In June the leaves are dense and green; in spring
               the cherry trees that line it produce Tokyo's most
               beautiful hanami scene.
-        - Shibuya Sky — rooftop observation:
-            time: 5:30pm
+          - activity: Shibuya Sky — rooftop observation
             priority: must
+            tags:
+              - viewpoint
+              - experience
+            time: 5:30pm
             duration: 1h
-            tags: [viewpoint, experience]
             location:
-              name: Shibuya Sky, Shibuya Scramble Square
-              lat: 35.6590
+              address: Shibuya Sky, Shibuya Scramble Square
+              lat: 35.659
               lng: 139.7025
             note: |
               An open-air rooftop on top of Shibuya Scramble Square
@@ -737,12 +778,15 @@ itinerary:
               — 2,500 people moving in every direction simultaneously,
               organising themselves without collision. Then go down
               and be part of it.
-        - Shibuya Scramble Crossing on foot:
+          - activity: Shibuya Scramble Crossing on foot
+            tags:
+              - landmark
+              - experience
+              - cultural
             time: 6:30pm
             duration: 20m
-            tags: [landmark, experience, cultural]
             location:
-              name: Shibuya Scramble Crossing
+              address: Shibuya Scramble Crossing
               lat: 35.6595
               lng: 139.7004
             note: |
@@ -759,9 +803,10 @@ itinerary:
               it was designed to be, but because it accidentally
               became the most visible expression of how Tokyo actually
               functions: dense, precise, and strangely calm.
-        - Dinner in Shibuya:
+          - activity: Dinner in Shibuya
+            tags:
+              - food
             time: 7pm
-            tags: [food]
             note: |
               Shibuya has excellent options in every direction from
               the crossing. The Udagawacho backstreets northwest of
@@ -769,46 +814,42 @@ itinerary:
               tourist pricing of the main drags. Or head to Log Road
               Daikanyama (a 15-min walk back) for a calmer setting
               after the crossing's energy.
-
-
-    - day:
-        title: Checkout, Romancecar to Hakone, explore Yumoto
-        time: 2026-05-12
-        status: done
-        items:
-        - Checkout and bag handling:
+      - day: Checkout, Romancecar to Hakone, explore Yumoto
+        time: "2026-05-12"
+        plan:
+          - activity: Checkout and bag handling
             time: 11am
             note: |
               Consider TA-Q-BIN forwarding — send bags directly
               to Bansuirou Fukuzumi the night before (ryokan accepts
               from 3pm same day). Or store at Shinjuku Station
               coin lockers.
-
-        - Shinjuku depachika browsing:
+          - activity: Shinjuku depachika browsing
             time: 10am
             duration: 1h
             note: |
               Final Tokyo morning. Browse B1-B2 of Takashimaya or
               Odakyu. Buy a light lunch for the train, or eat at a
               standing noodle shop in the station concourse.
-
-        - Romancecar Hakone 25:
-            time: 12:20pm
+          - activity: Romancecar Hakone 25
             priority: must
+            tags:
+              - train
+              - experience
+            time: 12:20pm
             duration: 1h27m
-            tags: [train, experience]
             location:
-              name: Shinjuku Station — Odakyu Romancecar Platform
+              address: Shinjuku Station — Odakyu Romancecar Platform
               lat: 35.6896
               lng: 139.7006
             info:
-            - train: Romancecar Hakone 25
-            - departs: 12:20 from Shinjuku
-            - arrives: 13:47 at Hakone Yumoto
-            - car: "4"
-            - seats: 5D (Bruna) and 5C (Renan)
-            - booking: CHS832036 (Klook)
-            - price: 14.08 EUR for 2 adults
+              train: Romancecar Hakone 25
+              departs: 12:20 from Shinjuku
+              arrives: 13:47 at Hakone Yumoto
+              car: "4"
+              seats: 5D (Bruna) and 5C (Renan)
+              booking: CHS832036 (Klook)
+              price: 14.08 EUR for 2 adults
             note: |
               A premium reserved-seat express with panoramic windows,
               running direct from Shinjuku to Hakone Yumoto without
@@ -821,66 +862,64 @@ itinerary:
               90 minutes was considered romantic and modern. It still
               works. Show the Klook confirmation and Hakone Freepass
               at the platform gate.
-        - Explore Hakone Yumoto:
-            tags: [walk, neighbourhood, nature]
+          - activity: Explore Hakone Yumoto
+            tags:
+              - walk
+              - neighbourhood
+              - nature
             location:
-              name: Hakone Yumoto
-              lat: 35.2350
-              lng: 139.1050
+              address: Hakone Yumoto
+              lat: 35.235
+              lng: 139.105
             note: |
               Walked the shops along the main street, the Hayakawa
               River, and discovered a small waterfall near a shrine.
-        - Check in and dinner at Bansuirou Fukuzumi:
-            tags: [ryokan, onsen, food]
+          - activity: Check in and dinner at Bansuirou Fukuzumi
+            tags:
+              - ryokan
+              - onsen
+              - food
             note: Checked in to the ryokan and had dinner there.
-- Hakone:
+  - place: Hakone
     arrives: 2026-05-12T13:47
-    departs: 2026-05-14
+    departs: "2026-05-14"
     duration: 2 nights
     location: Hakone, Kanagawa, Japan
-    tags: [onsen, nature, ryokan, mountain, volcanic, Fuji]
-    stay:
-    - Bansuirou Fukuzumi:
+    tags:
+      - onsen
+      - nature
+      - ryokan
+      - mountain
+      - volcanic
+      - Fuji
+    plan:
+      - stay: Bansuirou Fukuzumi
         arrives: 2026-05-12T16:00
         departs: 2026-05-14T09:00
         location:
           address: 250-0311, Hakone, Kanagawa, Japan
           lat: 35.2333
-          lng: 139.1000
+          lng: 139.1
         info:
-        - confirmation: "5549903534"
-        - pin: "9274"
-        - phone: 81460855531
-        - platform: Booking.com
-        - room: Japanese-Style Superior Room B — Private Hot Spring Bath and River View
-        - price: 112,000 yen — payment scheduled May 7 (card ending 6075)
+          confirmation: "5549903534"
+          pin: "9274"
+          phone: 81460855531
+          platform: Booking.com
+          room: Japanese-Style Superior Room B — Private Hot Spring Bath and River View
+          price: 112,000 yen — payment scheduled May 7 (card ending 6075)
         note: |
           A ryokan with a private outdoor rotenburo (hot spring bath)
           overlooking the river. Kaiseki meals served in-room or in
           private dining. Mention seafood preference when confirming
           so the kitchen can adjust the courses.
-    info:
-    - Hakone-Freepass:
-        first-day: 2026-05-12
-        control: "2965129"
-        price: 6,400 yen — already paid
-        note: Verify whether second pass for Renan was purchased.
-        covers: |
-          Hakone Tozan Railway, Tozan Cable Car (Gora-Sounzan),
-          Hakone Ropeway (Sounzan-Togendai via Owakudani),
-          Lake Ashi Sightseeing Cruise, Tozan Bus, Izu-Hakone Bus.
-          Does NOT cover Romancecar or Shinkansen.
-        how-to-use: EMot app — www.emot-tickets.jp/my-tickets
-    activities:
-
-    - day:
-        title: Arrival afternoon — walked Yumoto, checked in, ryokan dinner
-        time: 2026-05-12
-        status: done
-        items:
-        - Hakone Tozan Railway to Chokoku-no-Mori:
+      - day: Arrival afternoon — walked Yumoto, checked in, ryokan dinner
+        time: "2026-05-12"
+        plan:
+          - activity: Hakone Tozan Railway to Chokoku-no-Mori
+            tags:
+              - train
+              - experience
             time: 2pm
-            tags: [train, experience]
             note: |
               Store bags at Yumoto Station coin lockers or arrange ryokan pickup first.
 
@@ -893,14 +932,15 @@ itinerary:
               serve the ryokan industry. The hydrangeas planted
               along the tracks over decades bloom in mid-June into
               a wall of blue and purple visible from the windows.
-
-
-        - Hakone Open-Air Museum:
+          - activity: Hakone Open-Air Museum
             priority: must
+            tags:
+              - art
+              - outdoor
+              - sculpture
             duration: 1h30m
-            tags: [art, outdoor, sculpture]
             location:
-              name: Hakone Open-Air Museum
+              address: Hakone Open-Air Museum
               lat: 35.2397
               lng: 139.0472
             note: |
@@ -915,17 +955,18 @@ itinerary:
               galleries. The outdoor footbath (ashiyu) at the museum
               is free for visitors — soak your feet in naturally
               flowing volcanic spring water while looking at sculpture.
-        - Check in and first rotenburo:
+          - activity: Check in and first rotenburo
             time: 4pm
             note: |
               Change into yukata (provided). Use the private rotenburo
               before dinner. This is the experience — naturally
               flowing hot spring water in a private outdoor bath above
               a mountain river, in a traditional inn. Take your time.
-
-        - Kaiseki dinner:
+          - activity: Kaiseki dinner
+            tags:
+              - food
+              - experience
             time: evening
-            tags: [food, experience]
             note: |
               A multi-course seasonal meal of Kyoto-influenced Japanese
               haute cuisine — each small course beautifully presented,
@@ -935,35 +976,31 @@ itinerary:
               light food served before a tea ceremony to prevent
               drinking matcha on an empty stomach. It evolved into
               Japan's most refined culinary form over 400 years.
-    - day:
-        title: The Hakone Loop — ropeway, volcano, Lake Ashi
-        time: 2026-05-13
-        status: done
-        note: |
-          Full loop completed as planned: Tozan Railway, Cable Car,
-          Ropeway, Owakudani, Lake Ashi cruise, Hakone Shrine.
-          Partial Fuji visibility — cloudy with some clearing.
-          Lunch was 7-Eleven sandwiches eaten by the lakeside before
-          visiting the shrine (not after). Final rotenburo and kaiseki
-          at the ryokan in the evening.
-        items:
-        - Breakfast at the ryokan:
+      - day: The Hakone Loop — ropeway, volcano, Lake Ashi
+        time: "2026-05-13"
+        plan:
+          - activity: Breakfast at the ryokan
             time: morning
-            note: Traditional Japanese breakfast — miso soup, grilled vegetables, tamagoyaki, rice, pickles. Politely 
-              decline the fish if needed.
-
-        - Tozan Railway, then cable car, then ropeway:
+            note: >-
+              Traditional Japanese breakfast — miso soup, grilled vegetables, tamagoyaki, rice,
+              pickles. Politely decline the fish if needed.
+          - activity: Tozan Railway, then cable car, then ropeway
+            tags:
+              - transport
+              - experience
             time: 9am
-            tags: [transport, experience]
-            note: "Route: Yumoto > (Tozan) > Gora > (Cable Car) > Sounzan > (Ropeway) > Owakudani > (Ropeway continues) >
-              Togendai"
-
-        - Owakudani Volcanic Valley:
+            note: >-
+              Route: Yumoto > (Tozan) > Gora > (Cable Car) > Sounzan > (Ropeway) > Owakudani >
+              (Ropeway continues) > Togendai
+          - activity: Owakudani Volcanic Valley
             priority: must
+            tags:
+              - nature
+              - volcanic
+              - experience
             duration: 45m
-            tags: [nature, volcanic, experience]
             location:
-              name: Owakudani
+              address: Owakudani
               lat: 35.2553
               lng: 139.0225
             note: |
@@ -979,14 +1016,17 @@ itinerary:
               gas coating the shell. On a clear day from here, Mount
               Fuji rises over the ridge to the north — one of the
               most dramatic views in Japan.
-        - Lake Ashi Sightseeing Cruise:
+          - activity: Lake Ashi Sightseeing Cruise
             priority: must
+            tags:
+              - boat
+              - lake
+              - scenic
             duration: 35m
-            tags: [boat, lake, scenic]
             location:
-              name: Lake Ashi (Ashino-ko)
-              lat: 35.2040
-              lng: 139.0260
+              address: Lake Ashi (Ashino-ko)
+              lat: 35.204
+              lng: 139.026
             note: |
               A cruise across the volcanic caldera lake on one of
               the pirate-galleon-style ships, from Togendai at the
@@ -998,12 +1038,15 @@ itinerary:
               mornings, Mount Fuji's reflection appears complete in
               the water surface. The pirate ships are a tourism
               conceit from the 1960s and oddly charming.
-        - Hakone Shrine:
+          - activity: Hakone Shrine
             priority: must
+            tags:
+              - shrine
+              - nature
+              - cultural
             duration: 45m
-            tags: [shrine, nature, cultural]
             location:
-              name: Hakone Shrine
+              address: Hakone Shrine
               lat: 35.1981
               lng: 139.0273
             note: |
@@ -1017,50 +1060,58 @@ itinerary:
               tradition, entering from water is the purified approach.
               Very quiet, very old. One of the most beautiful short
               walks in the Hakone area.
-        - Lunch in Moto-Hakone and return by bus:
+          - activity: Lunch in Moto-Hakone and return by bus
             time: midday
             note: |
               Several restaurants on the lakefront. Look for soba —
               Hakone is in buckwheat country. Return by Odakyu
               Highway Bus (Freepass) to Hakone Yumoto.
-
-        - Final onsen and farewell kaiseki:
+          - activity: Final onsen and farewell kaiseki
             time: evening
             note: |
               Last night in the ryokan. Use the private rotenburo
               again — the experience is different at night. A good
               moment to try the ryokan's sake selection.
-
-    - day:
-        title: Checkout, then to Osaka
-        time: 2026-05-14
-        items:
-        - Breakfast and checkout:
+      - day: Checkout, then to Osaka
+        time: "2026-05-14"
+        plan:
+          - activity: Breakfast and checkout
             time: 8am
             note: Checkout 08:00-10:00. Depart for Odawara.
-        - Travel to Osaka:
+          - activity: Travel to Osaka
             note: |
               Hakone Yumoto > Odawara by Tozan train (~13 min).
               Odawara > Shin-Osaka by Nozomi Shinkansen (~1h).
               Book via Smart EX. Freepass does not cover this leg.
-
-- train:
+    info:
+      Hakone-Freepass:
+        first-day: "2026-05-12"
+        control: "2965129"
+        price: 6,400 yen — already paid
+        note: Verify whether second pass for Renan was purchased.
+        covers: |
+          Hakone Tozan Railway, Tozan Cable Car (Gora-Sounzan),
+          Hakone Ropeway (Sounzan-Togendai via Owakudani),
+          Lake Ashi Sightseeing Cruise, Tozan Bus, Izu-Hakone Bus.
+          Does NOT cover Romancecar or Shinkansen.
+        how-to-use: EMot app — www.emot-tickets.jp/my-tickets
+  - transport: train
     from: Hakone (Odawara)
     to: Osaka (Shin-Osaka)
     note: Nozomi Shinkansen, ~1h. Book via Smart EX.
-
-  # ──────────────────────────────────────────
-  # OSAKA (4 nights)
-  # ──────────────────────────────────────────
-
-- Osaka:
-    arrives: 2026-05-14
-    departs: 2026-05-18
+  - place: Osaka
+    arrives: "2026-05-14"
+    departs: "2026-05-18"
     duration: 4 nights
     location: Osaka, Japan
-    tags: [city, food, castle, neighbourhood, history]
-    stay:
-    - "谷町君ホテル 難波80":
+    tags:
+      - city
+      - food
+      - castle
+      - neighbourhood
+      - history
+    plan:
+      - stay: 谷町君ホテル 難波80
         arrives: 2026-05-14T15:00
         departs: 2026-05-18T10:00
         location:
@@ -1068,327 +1119,326 @@ itinerary:
           lat: 34.6559
           lng: 135.4986
         info:
-        - confirmation: "5047.418.327"
-        - pin: "6052"
-        - phone: +81 6 6948 5889
-        - platform: Booking.com
-        - room: King Room (private hot tub, balcony, kitchen)
-        - cancellation: free until May 9
-        - price: approx. 50,252 yen — pay at property
-    activities:
-    - day:
-        title: Arrival Osaka, Dotonbori, okonomiyaki dinner
-        time: 2026-05-14
-        status: done
-        note: |
-          Arrived from Hakone. Checked into 谷町君ホテル 難波80.
-          Skipped Kuromon Market — arrived too late. Walked
-          Dotonbori canal at night. Okonomiyaki dinner near the canal.
-        items:
-        - Arrive and check in:
+          confirmation: 5047.418.327
+          pin: "6052"
+          phone: +81 6 6948 5889
+          platform: Booking.com
+          room: King Room (private hot tub, balcony, kitchen)
+          cancellation: free until May 9
+          price: approx. 50,252 yen — pay at property
+      - day: Arrival Osaka, Dotonbori, okonomiyaki dinner
+        time: "2026-05-14"
+        plan:
+          - activity: Arrive and check in
             note: Arrived from Hakone. Kuromon Market skipped — too late in the day.
-        - Dotonbori:
-            tags: [landmark, atmosphere, night]
+          - activity: Dotonbori
+            tags:
+              - landmark
+              - atmosphere
+              - night
             location:
-              name: Dotonbori Canal
+              address: Dotonbori Canal
               lat: 34.6687
               lng: 135.5013
             note: Walked both canal banks at night. Glico Man and Ebisu Bridge.
-        - Okonomiyaki dinner:
-            tags: [food, local specialty]
+          - activity: Okonomiyaki dinner
+            tags:
+              - food
+              - local specialty
             note: Osaka-style okonomiyaki dinner near Dotonbori.
-    - day:
-        title: Kuromon Market, lost and found, Umeda, Sky Building, Fukushima
-        time: 2026-05-15
-        status: done
-        note: |
-          Kuromon Ichiba Market in the morning. Shin-Osaka lost and
-          found at 1pm to recover a phone. Explored Umeda on foot:
-          Ohatsu Tenjin Shrine, Grand Front Osaka, Nakazakicho
-          neighbourhood for a cafe. Umeda Sky Building at sunset.
-          Dinner in Fukushima.
-        items:
-        - Kuromon Ichiba Market:
-            tags: [market, food, cultural]
+      - day: Kuromon Market, lost and found, Umeda, Sky Building, Fukushima
+        time: "2026-05-15"
+        plan:
+          - activity: Kuromon Ichiba Market
+            tags:
+              - market
+              - food
+              - cultural
             location:
-              name: Kuromon Ichiba Market
+              address: Kuromon Ichiba Market
               lat: 34.6667
               lng: 135.5046
             note: Morning visit to Osaka's historic food market.
-        - Lost and found at Shin-Osaka Station:
-            tags: [logistics]
+          - activity: Lost and found at Shin-Osaka Station
+            tags:
+              - logistics
             note: Recovered a phone left on the train. JR Tokai lost property office.
-        - Ohatsu Tenjin Shrine:
-            tags: [shrine, cultural]
+          - activity: Ohatsu Tenjin Shrine
+            tags:
+              - shrine
+              - cultural
             location:
-              name: Ohatsu Tenjin Shrine, Umeda
-              lat: 34.7010
-              lng: 135.4990
+              address: Ohatsu Tenjin Shrine, Umeda
+              lat: 34.701
+              lng: 135.499
             note: 1,000-year-old Shinto shrine tucked inside the Umeda entertainment district.
-        - Grand Front Osaka:
-            tags: [shopping, architecture]
+          - activity: Grand Front Osaka
+            tags:
+              - shopping
+              - architecture
             location:
-              name: Grand Front Osaka
+              address: Grand Front Osaka
               lat: 34.7052
               lng: 135.4956
             note: Large modern complex north of Osaka Station.
-        - Nakazakicho — cafe:
-            tags: [neighbourhood, cafe, vintage]
+          - activity: Nakazakicho — cafe
+            tags:
+              - neighbourhood
+              - cafe
+              - vintage
             location:
-              name: Nakazakicho
-              lat: 34.7060
-              lng: 135.5020
+              address: Nakazakicho
+              lat: 34.706
+              lng: 135.502
             note: Vintage neighbourhood near Umeda. Coffee in a local cafe.
-        - Umeda Sky Building:
-            tags: [viewpoint, architecture]
+          - activity: Umeda Sky Building
+            tags:
+              - viewpoint
+              - architecture
             location:
-              name: Umeda Sky Building
+              address: Umeda Sky Building
               lat: 34.7056
               lng: 135.4909
             note: Floating Garden Observatory at sunset.
-        - Dinner in Fukushima:
-            tags: [food, izakaya]
+          - activity: Dinner in Fukushima
+            tags:
+              - food
+              - izakaya
             note: Dinner in the Fukushima neighbourhood izakaya district.
-
-    - day:
-        title: Osaka Castle, Shinsekai, Tsutenkaku, food tour
-        time: 2026-05-16
-        status: done
-        note: |
-          Osaka Castle in the morning. Shinsekai in the afternoon —
-          went up Tsutenkaku Tower. Returned to hotel to rest.
-          Evening food tour in the Shinsekai area. Skipped: Shitennoji,
-          Hankai tram, Sumiyoshi Taisha, Hozenji Yokocho.
-        items:
-        - Osaka Castle:
-            tags: [castle, history, cultural]
+      - day: Osaka Castle, Shinsekai, Tsutenkaku, food tour
+        time: "2026-05-16"
+        plan:
+          - activity: Osaka Castle
+            tags:
+              - castle
+              - history
+              - cultural
             location:
-              name: Osaka Castle
+              address: Osaka Castle
               lat: 34.6873
               lng: 135.5259
             note: Morning visit. Museum and moat walk.
-        - Shinsekai and Tsutenkaku Tower:
-            tags: [neighbourhood, cultural, viewpoint]
+          - activity: Shinsekai and Tsutenkaku Tower
+            tags:
+              - neighbourhood
+              - cultural
+              - viewpoint
             location:
-              name: Tsutenkaku Tower, Shinsekai
+              address: Tsutenkaku Tower, Shinsekai
               lat: 34.6526
               lng: 135.5063
             note: Walked Shinsekai retro district. Went up Tsutenkaku Tower.
-        - Rest at hotel:
+          - activity: Rest at hotel
             note: Returned to hotel to rest in the afternoon.
-        - Evening food tour in Shinsekai:
-            tags: [food, tour, neighbourhood]
-            note: Evening food tour in the Shinsekai district.
+          - activity: Evening food tour in Shinsekai
+            tags:
+              - food
+              - tour
+              - neighbourhood
+            note: >-
+              Evening food tour in the Shinsekai district.
 
-              **Cultural note:** The Fudo Myo-o statue has been splashed with ladles
-              of water for so many centuries that thick green moss
-              now encases it entirely — a beautiful accretion of
-              collective ritual. While Dotonbori has been thoroughly
-              commercialised, Hozenji Yokocho has remained genuinely
-              old Osaka — the same small kappo (counter-style)
+              **Cultural note:** The Fudo Myo-o statue has been splashed with ladles of water for so
+              many centuries that thick green moss now encases it entirely — a beautiful accretion
+              of collective ritual. While Dotonbori has been thoroughly commercialised, Hozenji
+              Yokocho has remained genuinely old Osaka — the same small kappo (counter-style)
               restaurants that have been here for decades.
-    - day:
-        title: Kobe day trip — Kobe beef lunch, Kitano, Nada sake district
-        time: 2026-05-17
-        status: done
-        note: |
-          Arrived Kobe at lunchtime. Kobe beef lunch at Kobe Steak
-          Propeller (walk-in). Quick walk in Kitano Ijinkan — left
-          early, not as impressive as expected. Nada sake district —
-          brewery museum and tastings. Back to Osaka. Ramen dinner
-          near the hotel.
-        items:
-        - Kobe beef lunch at Kobe Steak Propeller:
-            tags: [food, Kobe beef, teppanyaki]
+      - day: Kobe day trip — Kobe beef lunch, Kitano, Nada sake district
+        time: "2026-05-17"
+        plan:
+          - activity: Kobe beef lunch at Kobe Steak Propeller
+            tags:
+              - food
+              - Kobe beef
+              - teppanyaki
             location:
-              name: Kobe Steak Propeller, Sannomiya
+              address: Kobe Steak Propeller, Sannomiya
               lat: 34.6913
               lng: 135.1956
             note: Walk-in teppanyaki lunch. Kobe beef set.
-        - Kitano Ijinkan district (brief):
-            tags: [history, architecture, walk]
+          - activity: Kitano Ijinkan district (brief)
+            tags:
+              - history
+              - architecture
+              - walk
             location:
-              name: Kitano Ijinkan, Kobe
+              address: Kitano Ijinkan, Kobe
               lat: 34.6963
               lng: 135.1853
-            note: Short walk through the Meiji-era Western mansions district. Left earlier than planned — less impressive than expected.
-        - Nada sake district — brewery museum:
-            tags: [sake, museum, cultural]
+            note: >-
+              Short walk through the Meiji-era Western mansions district. Left earlier than planned
+              — less impressive than expected.
+          - activity: Nada sake district — brewery museum
+            tags:
+              - sake
+              - museum
+              - cultural
             location:
-              name: Nada Sake District
+              address: Nada Sake District
               lat: 34.7096
               lng: 135.2552
             note: Visited brewery museum. Free tastings.
-        - Ramen dinner near hotel:
-            tags: [food]
+          - activity: Ramen dinner near hotel
+            tags:
+              - food
             note: Ramen restaurant near 谷町君ホテル 難波80 in Namba.
-    - day:
-        title: Checkout, then to Hiroshima
-        time: 2026-05-18
-        items:
-        - Checkout and travel:
+      - day: Checkout, then to Hiroshima
+        time: "2026-05-18"
+        plan:
+          - activity: Checkout and travel
             time: 9am
             note: Nozomi Shinkansen from Shin-Osaka to Hiroshima (~1h15m). Book via Smart EX.
-
-- train:
+  - transport: train
     from: Osaka (Shin-Osaka)
     to: Hiroshima
     note: Nozomi Shinkansen. ~1h15m. Book via Smart EX.
-
-  # ──────────────────────────────────────────
-  # HIROSHIMA (2 nights)
-  # ──────────────────────────────────────────
-
-- Hiroshima:
-    arrives: 2026-05-18
-    departs: 2026-05-20
+  - place: Hiroshima
+    arrives: "2026-05-18"
+    departs: "2026-05-20"
     duration: 2 nights
     location: Hiroshima, Japan
-    tags: [history, peace, culture, UNESCO]
-    stay:
-    - Smile Hotel Hiroshima:
+    tags:
+      - history
+      - peace
+      - culture
+      - UNESCO
+    plan:
+      - stay: Smile Hotel Hiroshima
         arrives: 2026-05-18T15:00
         departs: 2026-05-20T11:00
         location:
           address: Naka-ku Nagarekawa-cho 7-10, Hiroshima 730-0028, Japan
           lat: 34.3953
-          lng: 132.4600
+          lng: 132.46
         info:
-        - confirmation: "9190961846079502936"
-        - pin: "129134"
-        - check-in-number: "627693527"
-        - recommended-code: 8RA7WULP
-        - phone: +81 82-240-4000
-        - platform: Booking.com
-        - room: Double Room
-        - price: 73.48 EUR — already paid
+          confirmation: "9190961846079502936"
+          pin: "129134"
+          check-in-number: "627693527"
+          recommended-code: 8RA7WULP
+          phone: +81 82-240-4000
+          platform: Booking.com
+          room: Double Room
+          price: 73.48 EUR — already paid
         note: Present check-in number 627693527 with photo ID.
-    activities:
-
-    - day:
-        title: Arrive Hiroshima, Peace Memorial, A-Bomb Dome, Hiroshima Castle
-        time: 2026-05-18
-        status: done
-        note: |
-          Checkout Osaka. Nozomi to Hiroshima. Checked into Smile Hotel,
-          dropped bags. 7-Eleven snacks. Peace Memorial Museum (full
-          visit). Peace Memorial Park — Cenotaph, Peace Flame,
-          Children's Monument. A-Bomb Dome. Then walked to Hiroshima
-          Castle. Back to hotel for check-in. Okonomiyaki dinner nearby.
-        items:
-        - Checkout Osaka and Nozomi to Hiroshima:
-            tags: [logistics, transport]
+      - day: Arrive Hiroshima, Peace Memorial, A-Bomb Dome, Hiroshima Castle
+        time: "2026-05-18"
+        plan:
+          - activity: Checkout Osaka and Nozomi to Hiroshima
+            tags:
+              - logistics
+              - transport
             note: Checkout 谷町君ホテル 難波80. Nozomi Shinkansen from Shin-Osaka to Hiroshima.
-        - Check in and 7-Eleven snacks:
-            tags: [logistics, food]
+          - activity: Check in and 7-Eleven snacks
+            tags:
+              - logistics
+              - food
             note: Dropped bags at Smile Hotel. 7-Eleven snacks before heading out.
-        - Peace Memorial Museum:
-            tags: [museum, history, UNESCO]
+          - activity: Peace Memorial Museum
+            tags:
+              - museum
+              - history
+              - UNESCO
             location:
-              name: Hiroshima Peace Memorial Museum
+              address: Hiroshima Peace Memorial Museum
               lat: 34.3954
               lng: 132.4531
             note: Full visit to the Peace Memorial Museum.
-        - Peace Memorial Park:
-            tags: [history, UNESCO, walk]
+          - activity: Peace Memorial Park
+            tags:
+              - history
+              - UNESCO
+              - walk
             location:
-              name: Hiroshima Peace Memorial Park
+              address: Hiroshima Peace Memorial Park
               lat: 34.3943
               lng: 132.4526
             note: Cenotaph, Peace Flame, Children's Peace Monument.
-        - A-Bomb Dome:
-            tags: [history, UNESCO, landmark]
+          - activity: A-Bomb Dome
+            tags:
+              - history
+              - UNESCO
+              - landmark
             location:
-              name: Genbaku Dome
+              address: Genbaku Dome
               lat: 34.3955
-              lng: 132.4530
+              lng: 132.453
             note: Stood in front of the preserved ruin 580 metres from the hypocentre.
-        - Hiroshima Castle:
-            tags: [castle, history]
+          - activity: Hiroshima Castle
+            tags:
+              - castle
+              - history
             location:
-              name: Hiroshima Castle
-              lat: 34.4020
+              address: Hiroshima Castle
+              lat: 34.402
               lng: 132.4597
             note: Walked to Hiroshima Castle after the A-Bomb Dome.
-        - Okonomiyaki dinner near hotel:
-            tags: [food, local specialty]
+          - activity: Okonomiyaki dinner near hotel
+            tags:
+              - food
+              - local specialty
             note: Hiroshima-style layered okonomiyaki at a restaurant near Smile Hotel.
-
-    - day:
-        title: Miyajima — shrine, torii, Mount Misen, shopping street
-        time: 2026-05-19
-        status: done
-        note: |
-          Late breakfast, arrived Miyajima around lunchtime. Itsukushima
-          Shrine and floating torii. Ropeway up Mount Misen, 30-minute
-          trail to the summit, ropeway back down. Walked the main
-          shopping street near the ferry. Ferry back to Hiroshima.
-          Sushi dinner in Hiroshima. Skipped: Senjokaku Hall.
-        items:
-        - Itsukushima Shrine and floating torii:
-            tags: [shrine, UNESCO, landmark]
+      - day: Miyajima — shrine, torii, Mount Misen, shopping street
+        time: "2026-05-19"
+        plan:
+          - activity: Itsukushima Shrine and floating torii
+            tags:
+              - shrine
+              - UNESCO
+              - landmark
             location:
-              name: Itsukushima Shrine
-              lat: 34.2960
+              address: Itsukushima Shrine
+              lat: 34.296
               lng: 132.3197
             note: Visited the shrine and torii gate on arrival at the island.
-        - Mount Misen — ropeway and summit trail:
-            tags: [hiking, nature, spiritual]
+          - activity: Mount Misen — ropeway and summit trail
+            tags:
+              - hiking
+              - nature
+              - spiritual
             location:
-              name: Mount Misen
+              address: Mount Misen
               lat: 34.2862
               lng: 132.3234
             note: |
               Ropeway up. 30-minute trail to the summit. Ropeway back
               down. 360° views of the Seto Inland Sea from the top.
-        - Main shopping street near the ferry:
-            tags: [walk, shopping, food]
+          - activity: Main shopping street near the ferry
+            tags:
+              - walk
+              - shopping
+              - food
             note: Walked the main shopping street. Momiji manju (maple-leaf cakes).
-        - Sushi dinner in Hiroshima:
-            tags: [food, sushi]
+          - activity: Sushi dinner in Hiroshima
+            tags:
+              - food
+              - sushi
             note: Sushi restaurant dinner back in Hiroshima.
-
-    - day:
-        title: Checkout, then to Kyoto
-        time: 2026-05-20
-        items:
-        - Checkout and travel:
+      - day: Checkout, then to Kyoto
+        time: "2026-05-20"
+        plan:
+          - activity: Checkout and travel
             time: 10am
             note: Nozomi Shinkansen from Hiroshima to Kyoto (~55 min). Book via Smart EX.
-
-- train:
+  - transport: train
     from: Hiroshima
     to: Kyoto
     note: Nozomi Shinkansen. ~55 min. Book via Smart EX.
-
-  # ──────────────────────────────────────────
-  # KYOTO (17 nights)
-  # ──────────────────────────────────────────
-
-- Kyoto:
-    arrives: 2026-05-20
-    departs: 2026-06-06
+  - place: Kyoto
+    arrives: "2026-05-20"
+    departs: "2026-06-06"
     duration: 17 nights
     location: Kyoto, Japan
-    tags: [temples, culture, history, shrines, food, geisha, zen, gardens]
-    note: |
-      Kyoto is Japan's soul — over 2,000 temples and shrines, 17 UNESCO
-      World Heritage sites, preserved geisha districts, and some of
-      the country's finest cuisine. With 17 nights you have the rare
-      gift of time. Go slowly. Return to places that moved you.
-
-      A key advantage of staying 17 nights: you can visit popular places
-      at dawn (before crowds) and return in the evening (when they're
-      lit differently). Fushimi Inari is a genuinely different place
-      at 6am versus 10am.
-
-      Late May and early June: wisteria, iris, and early hydrangea
-      season. Temperatures 20-27C, occasional rain. Rainy season
-      typically begins in Kyoto around June 5-10. Rainy Kyoto temples
-      — especially moss gardens and stone paths after rain — are among
-      the most beautiful things Japan offers.
-    stay:
-    - RIHGA Place Kyoto Shijo Karasuma:
+    tags:
+      - temples
+      - culture
+      - history
+      - shrines
+      - food
+      - geisha
+      - zen
+      - gardens
+    plan:
+      - stay: RIHGA Place Kyoto Shijo Karasuma
         arrives: 2026-05-20T15:00
         departs: 2026-05-22T11:00
         location:
@@ -1396,14 +1446,13 @@ itinerary:
           lat: 35.0028
           lng: 135.7585
         info:
-        - confirmation: "5151688310"
-        - pin: "2031"
-        - platform: Booking.com
-        - room: King Room
-        - cancellation: free until May 17, 2026 at 11:59 PM JST
-        - price: 132.10 EUR — pay at property
-
-    - INA HOUSE GION:
+          confirmation: "5151688310"
+          pin: "2031"
+          platform: Booking.com
+          room: King Room
+          cancellation: free until May 17, 2026 at 11:59 PM JST
+          price: 132.10 EUR — pay at property
+      - stay: INA HOUSE GION
         arrives: 2026-05-22T15:00
         departs: 2026-06-06T05:00
         location:
@@ -1411,36 +1460,35 @@ itinerary:
           lat: 35.0035
           lng: 135.7753
         info:
-        - confirmation: "5266033075"
-        - pin: "1290"
-        - phone: 819071700039
-        - platform: Booking.com
-        - room: Double Room with Private Bathroom
-        - price: 210,953 yen — already paid (non-refundable)
+          confirmation: "5266033075"
+          pin: "1290"
+          phone: 819071700039
+          platform: Booking.com
+          room: Double Room with Private Bathroom
+          price: 210,953 yen — already paid (non-refundable)
         note: |
           Non-refundable. No date changes possible. Apartment with
           kitchen in the Gion district — you can walk from the front
           door directly into one of the most beautiful neighbourhoods
           in Japan.
-
-    activities:
-
-    - day:
-        title: Arrival, Nishiki Market, Gion at dusk
-        time: 2026-05-20
-        items:
-        - Arrive from Hiroshima:
+      - day: Arrival, Nishiki Market, Gion at dusk
+        time: "2026-05-20"
+        plan:
+          - activity: Arrive from Hiroshima
             time: midday
-            note: Hotel check-in from 3pm. Store bags and go directly to Nishiki Market — it closes in the early 
-              evening.
-
-        - Nishiki Market:
-            time: 2pm
+            note: >-
+              Hotel check-in from 3pm. Store bags and go directly to Nishiki Market — it closes in
+              the early evening.
+          - activity: Nishiki Market
             priority: must
+            tags:
+              - market
+              - food
+              - cultural
+            time: 2pm
             duration: 1h30m
-            tags: [market, food, cultural]
             location:
-              name: Nishiki Market
+              address: Nishiki Market
               lat: 35.0047
               lng: 135.7659
             note: |
@@ -1456,13 +1504,17 @@ itinerary:
               pickled cucumber on a stick, and freshly made sesame
               tofu. The preservation of this street-level artisan food
               culture in a modern city is not accidental.
-        - Gion evening walk:
-            time: 5pm
+          - activity: Gion evening walk
             priority: must
+            tags:
+              - geisha
+              - historical
+              - cultural
+              - neighbourhood
+            time: 5pm
             duration: 2h
-            tags: [geisha, historical, cultural, neighbourhood]
             location:
-              name: Gion, Kyoto
+              address: Gion, Kyoto
               lat: 35.0036
               lng: 135.7752
             note: |
@@ -1483,10 +1535,11 @@ itinerary:
               training. Walk quietly; do not block their path or use
               flash photography. Miyagawa-cho (the parallel geisha
               district, south of Gion) is quieter and more authentic.
-
-        - Obanzai dinner:
+          - activity: Obanzai dinner
+            tags:
+              - food
+              - Kyoto cuisine
             time: 8pm
-            tags: [food, Kyoto cuisine]
             note: |
               Kyoto-style home cooking — small seasonal dishes of
               simmered vegetables, tofu, pickles, and egg dishes
@@ -1498,18 +1551,21 @@ itinerary:
               geography requiring a cuisine of refinement without
               relying on fresh seafood. Many dishes are intensely
               vegetable-forward and exactly suited to your preferences.
-    - day:
-        title: Fushimi Inari at dawn, then Uji
-        time: 2026-05-21
-        note: Set an alarm. The dawn visit to Fushimi Inari is the most important timing call of the entire trip.
-        items:
-        - Fushimi Inari Taisha at dawn:
-            time: 6am
+      - day: Fushimi Inari at dawn, then Uji
+        time: "2026-05-21"
+        plan:
+          - activity: Fushimi Inari Taisha at dawn
             priority: must
+            tags:
+              - shrine
+              - UNESCO
+              - nature
+              - hiking
+              - dawn
+            time: 6am
             duration: 2h
-            tags: [shrine, UNESCO, nature, hiking, dawn]
             location:
-              name: Fushimi Inari Taisha
+              address: Fushimi Inari Taisha
               lat: 34.9671
               lng: 135.7727
             note: |
@@ -1532,14 +1588,18 @@ itinerary:
               (kitsune) is the divine messenger. At 6am you have
               this to yourself. By 9am tour buses arrive. By 10am
               it is one of the most crowded places in Japan.
-
-        - Uji:
-            time: 10am
+          - activity: Uji
             priority: must
+            tags:
+              - UNESCO
+              - temple
+              - food
+              - tea
+              - nature
+            time: 10am
             duration: 4h
-            tags: [UNESCO, temple, food, tea, nature]
             location:
-              name: Uji City, Kyoto Prefecture
+              address: Uji City, Kyoto Prefecture
               lat: 34.8841
               lng: 135.7981
             note: |
@@ -1562,21 +1622,22 @@ itinerary:
               from China. Tea plants are covered with straw before
               harvest to concentrate chlorophyll, producing the bright
               green colour and umami depth of high-grade matcha.
-
-    - day:
-        title: Arashiyama at dawn, then move to INA HOUSE GION
-        time: 2026-05-22
-        note: Another early alarm. Arashiyama's bamboo grove is transformed at 7am.
-        items:
-        - Arashiyama Bamboo Grove and Tenryu-ji:
-            time: 7am
+      - day: Arashiyama at dawn, then move to INA HOUSE GION
+        time: "2026-05-22"
+        plan:
+          - activity: Arashiyama Bamboo Grove and Tenryu-ji
             priority: must
+            tags:
+              - nature
+              - UNESCO
+              - temple
+              - dawn
+            time: 7am
             duration: 3h
-            tags: [nature, UNESCO, temple, dawn]
             location:
-              name: Arashiyama Bamboo Grove
-              lat: 35.0170
-              lng: 135.6720
+              address: Arashiyama Bamboo Grove
+              lat: 35.017
+              lng: 135.672
             note: |
               After the bamboo, enter Tenryu-ji garden (500 yen garden,
               800 yen with interior — the interior is worth it).
@@ -1595,13 +1656,15 @@ itinerary:
               into the garden's composition as if they belong to it.
               At 7am you may have the bamboo path entirely to
               yourself. By 8:30am it is full.
-
-        - Jojakko-ji Temple:
+          - activity: Jojakko-ji Temple
             priority: must
+            tags:
+              - temple
+              - moss garden
+              - atmosphere
             duration: 45m
-            tags: [temple, moss garden, atmosphere]
             location:
-              name: Jojakko-ji Temple
+              address: Jojakko-ji Temple
               lat: 35.0269
               lng: 135.6699
             note: |
@@ -1615,32 +1678,21 @@ itinerary:
               moss is extraordinary — a deep, luminous green covering
               every stone and root. One of those places that feels
               like a genuine discovery even though it is not hidden.
-        - Checkout RIHGA, check into INA HOUSE GION:
+          - activity: Checkout RIHGA, check into INA HOUSE GION
             time: midday
             note: |
               RIHGA checkout at 11am. INA HOUSE check-in from 3pm.
               The two are about 20 minutes' walk apart in central
               Kyoto. Your Gion home for 15 nights.
-
-        # ─────────────────────────────────────────
-        # KYOTO LONG STAY — circuits and plans
-        # Arrange these across the 14 remaining
-        # nights to suit weather and energy.
-        # ─────────────────────────────────────────
-
-    - plan:
-        title: "Circuit A — Eastern Higashiyama Walk"
-        note: |
-          A natural walking route east from the Gion apartment,
-          climbing gently into the hills. Best on a weekday morning,
-          starting by 8am. The full circuit takes 3-4 hours at a
-          comfortable pace. Return at dusk for Kiyomizudera's evening
-          light.
-        items:
-        - Yasaka Shrine:
-            tags: [shrine, cultural, neighbourhood]
+      - group: Circuit A — Eastern Higashiyama Walk
+        plan:
+          - activity: Yasaka Shrine
+            tags:
+              - shrine
+              - cultural
+              - neighbourhood
             location:
-              name: Yasaka Shrine
+              address: Yasaka Shrine
               lat: 35.0037
               lng: 135.7784
             note: |
@@ -1653,19 +1705,25 @@ itinerary:
               great festivals. The shrine grounds are a genuine
               community space: locals walk dogs here in the morning,
               children play after school.
-        - Maruyama Park:
-            tags: [park, nature, local]
+          - activity: Maruyama Park
+            tags:
+              - park
+              - nature
+              - local
             note: |
               Kyoto's central public park adjacent to Yasaka — famous
               for its enormous weeping cherry tree, bare but
               extraordinary even in leaf in May. The small food stalls
               operating morning through evening are genuinely local.
-        - Chion-in Temple:
-            tags: [temple, cultural, history]
+          - activity: Chion-in Temple
+            tags:
+              - temple
+              - cultural
+              - history
             location:
-              name: Chion-in Temple
+              address: Chion-in Temple
               lat: 35.0088
-              lng: 135.7830
+              lng: 135.783
             note: |
               Headquarters of the Jodo Buddhist sect — the main gate
               (sanmon) is the largest wooden gate in Japan, and the
@@ -1677,11 +1735,15 @@ itinerary:
               name. This revolutionary democratisation of Buddhism
               made the temple enormously popular. The bell here weighs
               70 tonnes and requires 17 monks to ring it.
-        - Kodai-ji Temple:
+          - activity: Kodai-ji Temple
             priority: must
-            tags: [temple, zen, garden, cultural]
+            tags:
+              - temple
+              - zen
+              - garden
+              - cultural
             location:
-              name: Kodai-ji Temple
+              address: Kodai-ji Temple
               lat: 35.0013
               lng: 135.7825
             note: |
@@ -1694,9 +1756,12 @@ itinerary:
               Hideyoshi's closest confidante throughout his rise from
               peasant to national ruler. The temple reflects her taste:
               refined without ostentation.
-        - Ninen-zaka and Sannen-zaka:
+          - activity: Ninen-zaka and Sannen-zaka
             priority: must
-            tags: [historical street, Edo, cultural]
+            tags:
+              - historical street
+              - Edo
+              - cultural
             note: |
               Two connected stone-paved lanes of Edo-period machiya
               (townhouses) — one of Japan's most intact historic
@@ -1708,13 +1773,17 @@ itinerary:
               long narrow buildings (to minimise frontage tax) with
               multiple interior courtyards. Walk before 9am or
               after 5pm to avoid tour groups.
-        - Kiyomizudera Temple:
+          - activity: Kiyomizudera Temple
             priority: must
-            tags: [temple, UNESCO, viewpoint, cultural]
+            tags:
+              - temple
+              - UNESCO
+              - viewpoint
+              - cultural
             location:
-              name: Kiyomizudera
+              address: Kiyomizudera
               lat: 34.9949
-              lng: 135.7850
+              lng: 135.785
             note: |
               Return at dusk — the valley lit in soft orange light,
               with the pagoda silhouette against the sky, is one
@@ -1731,19 +1800,17 @@ itinerary:
               test of faith that it was eventually banned. The Otowa
               waterfall below has three streams: longevity, love,
               and academic success. Entry 500 yen.
-
-    - plan:
-        title: "Circuit B — Northern Higashiyama and the Philosopher's Path"
-        note: |
-          A northward walk from the Gion apartment into the quieter
-          temple zone along the canal. Best on a weekday, starting
-          at Nanzen-ji and walking north. Allow 4-5 hours.
-        items:
-        - Nanzen-ji Temple:
+      - group: Circuit B — Northern Higashiyama and the Philosopher's Path
+        plan:
+          - activity: Nanzen-ji Temple
             priority: must
-            tags: [temple, zen, UNESCO, architecture]
+            tags:
+              - temple
+              - zen
+              - UNESCO
+              - architecture
             location:
-              name: Nanzen-ji Temple
+              address: Nanzen-ji Temple
               lat: 35.0115
               lng: 135.7923
             note: |
@@ -1759,11 +1826,15 @@ itinerary:
               extraordinary and is now considered a masterpiece of
               cultural integration. The Hojo's Leaping Tiger garden
               costs 500 yen.
-        - Philosopher's Path (Tetsugaku-no-Michi):
+          - activity: Philosopher's Path (Tetsugaku-no-Michi)
             priority: must
-            tags: [walk, canal, nature, literary]
+            tags:
+              - walk
+              - canal
+              - nature
+              - literary
             location:
-              name: Philosopher's Path, Kyoto
+              address: Philosopher's Path, Kyoto
               lat: 35.0208
               lng: 135.7955
             note: |
@@ -1778,11 +1849,14 @@ itinerary:
               this path every morning. Hundreds of Kyoto school
               philosophers have used it since, making it a public
               space with genuine intellectual lineage. Walk slowly.
-        - Honen-in:
+          - activity: Honen-in
             priority: must
-            tags: [temple, hidden gem, garden]
+            tags:
+              - temple
+              - hidden gem
+              - garden
             location:
-              name: Honen-in
+              address: Honen-in
               lat: 35.0237
               lng: 135.7966
             note: |
@@ -1796,11 +1870,15 @@ itinerary:
               season — they represent the pure water that purifies
               those who pass between them. One of Kyoto's most
               quietly beautiful places. Check opening hours in advance.
-        - Ginkaku-ji (Silver Pavilion):
-            tags: [temple, garden, UNESCO, cultural]
+          - activity: Ginkaku-ji (Silver Pavilion)
+            tags:
+              - temple
+              - garden
+              - UNESCO
+              - cultural
             location:
-              name: Ginkaku-ji
-              lat: 35.0270
+              address: Ginkaku-ji
+              lat: 35.027
               lng: 135.7985
             note: |
               The Silver Pavilion — which is neither silver nor a
@@ -1816,18 +1894,17 @@ itinerary:
               ground — a refinement of aesthetic contemplation that
               required extraordinary confidence in subtle beauty.
               Entry 500 yen.
-    - plan:
-        title: "Circuit C — Northwest Kyoto (Golden Temple circuit)"
-        note: |
-          Kinkaku-ji, Ryoan-ji, and Ninna-ji are within comfortable
-          walking distance. Start at Kinkaku-ji at exactly 9am before
-          tour groups descend.
-        items:
-        - Kinkaku-ji (Golden Pavilion):
+      - group: Circuit C — Northwest Kyoto (Golden Temple circuit)
+        plan:
+          - activity: Kinkaku-ji (Golden Pavilion)
             priority: must
-            tags: [temple, UNESCO, landmark, cultural]
+            tags:
+              - temple
+              - UNESCO
+              - landmark
+              - cultural
             location:
-              name: Kinkaku-ji
+              address: Kinkaku-ji
               lat: 35.0394
               lng: 135.7292
             note: |
@@ -1843,11 +1920,15 @@ itinerary:
               could not bear that it would outlast him. Mishima Yukio's
               novel The Temple of the Golden Pavilion (1956) tells
               the arsonist's psychology. Go at 9am.
-        - Ryoan-ji:
+          - activity: Ryoan-ji
             priority: must
-            tags: [temple, zen, garden, UNESCO]
+            tags:
+              - temple
+              - zen
+              - garden
+              - UNESCO
             location:
-              name: Ryoan-ji
+              address: Ryoan-ji
               lat: 35.0345
               lng: 135.7182
             note: |
@@ -1864,10 +1945,14 @@ itinerary:
               The one hidden stone — whichever angle you approach
               from, one is always behind another — may be the garden's
               most precise statement. Sit on the veranda in silence.
-        - Ninna-ji Temple:
-            tags: [temple, UNESCO, imperial, cultural]
+          - activity: Ninna-ji Temple
+            tags:
+              - temple
+              - UNESCO
+              - imperial
+              - cultural
             location:
-              name: Ninna-ji
+              address: Ninna-ji
               lat: 35.0313
               lng: 135.7156
             note: |
@@ -1880,11 +1965,15 @@ itinerary:
               were always imperial princes, making it the most
               aristocratic temple in Japan. Free outer precinct;
               500 yen for the Shinden garden.
-        - Koryu-ji Temple:
+          - activity: Koryu-ji Temple
             priority: maybe
-            tags: [temple, sculpture, history, hidden gem]
+            tags:
+              - temple
+              - sculpture
+              - history
+              - hidden gem
             location:
-              name: Koryu-ji Temple
+              address: Koryu-ji Temple
               lat: 35.0111
               lng: 135.6973
             note: |
@@ -1904,20 +1993,17 @@ itinerary:
               a university student was so overcome while looking at
               it that he touched the statue's hand; the finger broke.
               He was convicted of cultural property destruction.
-
-
-    - plan:
-        title: "Circuit D — Central Kyoto"
-        note: |
-          A slower, more urban Kyoto day — the castle, the market,
-          and the evening canal. All within comfortable walking distance
-          of each other and the Gion apartment.
-        items:
-        - Nijo Castle:
+      - group: Circuit D — Central Kyoto
+        plan:
+          - activity: Nijo Castle
             priority: must
-            tags: [castle, history, UNESCO, cultural]
+            tags:
+              - castle
+              - history
+              - UNESCO
+              - cultural
             location:
-              name: Nijo Castle
+              address: Nijo Castle
               lat: 35.0142
               lng: 135.7481
             note: |
@@ -1936,14 +2022,19 @@ itinerary:
               restoration of imperial rule — ending 265 years of
               shogunate government. The room where he made this
               declaration is marked.
-        - Nishiki Market (return):
-            tags: [food, market]
+          - activity: Nishiki Market (return)
+            tags:
+              - food
+              - market
             note: Return to graze slowly — now that you know what you liked on the first visit.
-
-        - Pontocho lane at dusk:
-            tags: [neighbourhood, restaurant, cultural, atmospheric]
+          - activity: Pontocho lane at dusk
+            tags:
+              - neighbourhood
+              - restaurant
+              - cultural
+              - atmospheric
             location:
-              name: Pontocho, Kyoto
+              address: Pontocho, Kyoto
               lat: 35.0054
               lng: 135.7702
             note: |
@@ -1959,18 +2050,14 @@ itinerary:
               defining summer pleasures. The season starts in June,
               which means you may catch the early yuka if the weather
               cooperates.
-    - plan:
-        title: "Tea ceremony"
-        note: |
-          Book a session near the Gion apartment. Urasenke (the main
-          school of tea ceremony) has its headquarters in Kyoto and
-          offers visitor sessions. En tea ceremony (Gion area) and
-          Camellia Tea Experience (Gion area) also offer small-group
-          or private sessions. Book in advance. Cost: 2,000-5,000 yen.
-        items:
-        - Formal tea ceremony session:
+      - group: Tea ceremony
+        plan:
+          - activity: Formal tea ceremony session
             priority: must
-            tags: [cultural, experience, Zen]
+            tags:
+              - cultural
+              - experience
+              - Zen
             note: |
               A guided session of chado (the way of tea) — preparation
               of powdered matcha in a tatami room following the gestures
@@ -1984,18 +2071,17 @@ itinerary:
               (wabi-sabi) — the most prized tea bowls are irregular,
               cracked, repaired with gold lacquer (kintsugi). Each
               scar becomes part of the object's beauty.
-    - plan:
-        title: "Day trip — Nara"
-        note: |
-          45 min from Kyoto by Kintetsu Kyoto Line to Kintetsu-Nara
-          (760 yen each — faster than JR, recommended). Full day.
-          Nara is the right size for a long slow day.
-        items:
-        - Todai-ji Temple and the Great Buddha:
+      - group: Day trip — Nara
+        plan:
+          - activity: Todai-ji Temple and the Great Buddha
             priority: must
-            tags: [temple, history, UNESCO, landmark]
+            tags:
+              - temple
+              - history
+              - UNESCO
+              - landmark
             location:
-              name: Todai-ji Temple
+              address: Todai-ji Temple
               lat: 34.6888
               lng: 135.8398
             note: |
@@ -2012,13 +2098,16 @@ itinerary:
               The pillar inside with the hole (the same size as the
               Buddha's nostril) was installed for visitors to squeeze
               through — those who fit are promised enlightenment.
-        - Nara Deer Park:
+          - activity: Nara Deer Park
             priority: must
-            tags: [nature, cultural, experience]
+            tags:
+              - nature
+              - cultural
+              - experience
             location:
-              name: Nara Deer Park
+              address: Nara Deer Park
               lat: 34.6841
-              lng: 135.8440
+              lng: 135.844
             note: |
               Over 1,200 wild sika deer roam freely through Nara
               Park and the surrounding streets, considered sacred
@@ -2032,13 +2121,16 @@ itinerary:
               to bow when they see shika senbei crackers (200 yen)
               — a conditioned behaviour producing an experience of
               apparent courtesy. Guard your bags.
-        - Kasuga Taisha Shrine:
+          - activity: Kasuga Taisha Shrine
             priority: must
-            tags: [shrine, UNESCO, historical]
+            tags:
+              - shrine
+              - UNESCO
+              - historical
             location:
-              name: Kasuga Taisha
+              address: Kasuga Taisha
               lat: 34.6813
-              lng: 135.8480
+              lng: 135.848
             note: |
               A UNESCO shrine at the end of a forest path lined with
               3,000 stone and bronze lanterns, the inner sanctuary
@@ -2049,59 +2141,75 @@ itinerary:
               enshrines four deities including Amenokoyane-no-Mikoto,
               patron of scholarship, to whom Japanese students still
               pray before examinations.
-        - Naramachi:
-            tags: [neighbourhood, historical, walk, lunch]
-            note: |
-              Have lunch here. Look for kama-meshi (clay pot rice). Walk back through the deer park to the station.
+          - activity: Naramachi
+            tags:
+              - neighbourhood
+              - historical
+              - walk
+              - lunch
+            note: >
+              Have lunch here. Look for kama-meshi (clay pot rice). Walk back through the deer park
+              to the station.
+
 
               The preserved old merchant quarter south of Todai-ji
+
               — narrow lanes of traditional machiya, small shops,
+
               and local restaurants.
-
-
-    - plan:
-        title: "Overnight trip — Koyasan"
-        note: |
-          Two days, one night. The most important overnight trip
-          of the Kyoto long stay and should not be skipped.
-
-          Route from Kyoto: Kyoto > Osaka (Namba) by JR or Kintetsu,
-          then Nankai Koya Line to Gokurakubashi, then 5-minute
-          cable car up the mountain. Total: ~2.5 hours.
-
-          Book shukubo (temple lodging) well in advance — Eko-in
-          or Rengejoin are recommended.
-        items:
-        - Okunoin Cemetery:
+      - group: Overnight trip — Koyasan
+        plan:
+          - activity: Okunoin Cemetery
             priority: must
-            tags: [cemetery, spiritual, UNESCO, atmosphere]
+            tags:
+              - cemetery
+              - spiritual
+              - UNESCO
+              - atmosphere
             location:
-              name: Okunoin, Koyasan
+              address: Okunoin, Koyasan
               lat: 34.2171
               lng: 135.5944
-            note: |
-              The inner sanctuary (Toro-do, hall of 10,000 lanterns) is open 24 hours. No photography in the inner hall.
+            note: >
+              The inner sanctuary (Toro-do, hall of 10,000 lanterns) is open 24 hours. No
+              photography in the inner hall.
+
 
               A 2km forest path through 200,000 grave markers
+
               to the inner sanctuary of Kobo Daishi — Japan's most
+
               sacred Buddhist site, where the saint is believed to
+
               be in eternal meditation.
 
+
               **Cultural note:** Kobo Daishi (Kukai, 774-835 AD) founded Koyasan as
+
               a centre for Shingon Buddhism. He is not believed to
+
               have died — according to Shingon teaching, he entered
+
               nyujo (deep meditation) in 835 and remains in this
+
               state awaiting Maitreya (the next Buddha). Food is
+
               still brought to him twice daily in the inner sanctuary.
+
               The path passes under 1,000-year-old cedar trees,
+
               past markers for samurai, emperors, and feudal lords,
+
               alongside corporate monuments from Nissin Cup Noodle
+
               and Panasonic. Visit at dusk; return at dawn.
-
-
-        - Kongobu-ji Temple:
+          - activity: Kongobu-ji Temple
             priority: must
-            tags: [temple, cultural, UNESCO, garden]
+            tags:
+              - temple
+              - cultural
+              - UNESCO
+              - garden
             note: |
               The head temple of Shingon Buddhism, housing the
               largest rock garden in Japan (Banryutei — two dragons
@@ -2111,7 +2219,7 @@ itinerary:
               **Cultural note:** Founded by Kobo Daishi in 819 AD. The main hall's
               sliding screen paintings (fusuma-e) by the Kano school
               are extraordinary.
-        - Shukubo (temple lodging):
+          - activity: Shukubo (temple lodging)
             note: |
               Stay overnight in a monastery guesthouse — tatami
               rooms, communal baths fed by natural springs, vegetarian
@@ -2126,7 +2234,7 @@ itinerary:
               bearing the wishes of the living. The sound of temple
               drums at dawn in this mountain monastery is not easily
               forgotten.
-        - Garan Complex (morning):
+          - activity: Garan Complex (morning)
             note: |
               Koyasan's central religious campus — the Konpon Daito
               pagoda (a remarkable orange two-story pagoda housing
@@ -2137,51 +2245,67 @@ itinerary:
               three-dimensional mandala. Daishi believed pilgrims
               who entered this space were literally entering the
               centre of the cosmos.
-    - plan:
-        title: "Day trip — Kurama and Kibune"
-        note: |
-          Eizan Railway from Demachiyanagi Station (northeast Kyoto)
-          to Kurama, ~30 minutes. Hike over the mountain to Kibune.
-          Return to Kyoto via Kibune-guchi. Full day.
-        items:
-        - Kurama-dera Temple:
+      - group: Day trip — Kurama and Kibune
+        plan:
+          - activity: Kurama-dera Temple
             priority: must
-            tags: [temple, hiking, spiritual, mountain]
+            tags:
+              - temple
+              - hiking
+              - spiritual
+              - mountain
             location:
-              name: Kurama-dera
+              address: Kurama-dera
               lat: 35.1154
               lng: 135.7709
-            note: |
-              The funicular (200 yen) goes partway up. The full climb to the inner sanctuary takes 30-40 minutes and is worth every step.
+            note: >
+              The funicular (200 yen) goes partway up. The full climb to the inner sanctuary takes
+              30-40 minutes and is worth every step.
+
 
               A mountain temple of intense spiritual atmosphere —
+
               the path from the gate climbs through ancient cedar
+
               forest to the main hall, then continues to the inner
+
               sanctuary at the summit.
 
+
               **Cultural note:** Kurama-yama is believed to be the dwelling of Sojobo,
+
               king of the tengu (mountain spirits). The 12th-century
+
               warrior Minamoto no Yoshitsune trained in swordsmanship
+
               here under the tengu's instruction, according to legend.
+
               In 1922, Mikao Usui experienced his spiritual awakening
+
               on this mountain and subsequently developed Reiki
+
               healing from it. The mountain carries more spiritual
+
               weight per square kilometre than anywhere else near Kyoto.
-
-
-        - Hike Kurama to Kibune:
+          - activity: Hike Kurama to Kibune
             priority: must
+            tags:
+              - hiking
+              - nature
+              - forest
             duration: 1h
-            tags: [hiking, nature, forest]
             note: |
               A 45-60 minute forest trail over the mountain ridge
               — well-marked, through old-growth cedar and cypress,
               descending into the Kibune River valley.
-        - Kawadoko dining at Kibune:
+          - activity: Kawadoko dining at Kibune
             priority: must
-            tags: [food, experience, seasonal]
+            tags:
+              - food
+              - experience
+              - seasonal
             location:
-              name: Kibune, Kyoto
+              address: Kibune, Kyoto
               lat: 35.1162
               lng: 135.7593
             note: |
@@ -2196,19 +2320,17 @@ itinerary:
               options. Even without a full meal, sit at one of the
               riverside cafes and have matcha and sweets while
               listening to the river below.
-    - plan:
-        title: "Day trip — Himeji Castle"
-        note: |
-          1 hour from Kyoto by Nozomi Shinkansen to Himeji (~3,000
-          yen each). Book via Smart EX. Arrive Himeji Station by 9am
-          — the castle opens at 9am and tour groups arrive by 10am.
-          Book entry tickets online in advance.
-        items:
-        - Himeji Castle:
+      - group: Day trip — Himeji Castle
+        plan:
+          - activity: Himeji Castle
             priority: must
-            tags: [castle, UNESCO, history, architecture]
+            tags:
+              - castle
+              - UNESCO
+              - history
+              - architecture
             location:
-              name: Himeji Castle
+              address: Himeji Castle
               lat: 34.8394
               lng: 134.6939
             note: |
@@ -2225,27 +2347,28 @@ itinerary:
               designed to confuse invaders. The castle has never
               fallen. A bomb that landed in the grounds in 1945
               reportedly failed to detonate.
-        - Koko-en Garden:
+          - activity: Koko-en Garden
+            tags:
+              - garden
+              - nature
             duration: 45m
-            tags: [garden, nature]
             note: |
               Entry 310 yen. Combined ticket with the castle available.
 
               A traditional garden of nine separate sub-gardens
               adjacent to the castle, recreated in 1992 on the
               original site of the feudal lord's west compound.
-
-
-    - plan:
-        title: "Circuit E — Arashiyama extended"
-        note: A slower return to Arashiyama for the places missed on the dawn visit. Go mid-morning, not at dawn.
-        items:
-        - Daikaku-ji Temple:
-            tags: [temple, imperial, garden]
+      - group: Circuit E — Arashiyama extended
+        plan:
+          - activity: Daikaku-ji Temple
+            tags:
+              - temple
+              - imperial
+              - garden
             location:
-              name: Daikaku-ji
+              address: Daikaku-ji
               lat: 35.0263
-              lng: 135.6640
+              lng: 135.664
             note: |
               An imperial villa converted to a Shingon temple, with
               Japan's oldest ornamental garden pond (Osawa Pond, 9th
@@ -2256,12 +2379,16 @@ itinerary:
               for imperial moon-viewing parties. The Saga school of
               ikebana (flower arrangement) originated here and still
               teaches here today.
-        - Adashino Nembutsu-ji Temple:
+          - activity: Adashino Nembutsu-ji Temple
             priority: must
-            tags: [temple, history, atmosphere, remote]
+            tags:
+              - temple
+              - history
+              - atmosphere
+              - remote
             location:
-              name: Adashino Nembutsu-ji
-              lat: 35.0330
+              address: Adashino Nembutsu-ji
+              lat: 35.033
               lng: 135.6572
             note: |
               A remote temple holding 8,000 stone Buddha figures
@@ -2275,35 +2402,32 @@ itinerary:
               performed memorial services here. The stone figures
               were gathered over centuries — each represents a person
               whose death would otherwise have been forgotten.
-    - day:
-        title: Nintendo Museum
-        time: 2026-06-01
-        note: |
-          Morning free. Download QR codes from
-          check.museum-tickets.nintendo.com/myticket from 2pm on
-          May 31. Screenshot both QR codes for offline access.
-
-          Route: Kyoto Station > Ogura Station (Kintetsu Kyoto Line,
-          ~15 min) > 10 min walk to the museum.
-        items:
-        - Download QR codes:
+      - day: Nintendo Museum
+        time: "2026-06-01"
+        plan:
+          - activity: Download QR codes
             time: 2pm on May 31
-            note: "URL: https://check.museum-tickets.nintendo.com/myticket — screenshot both QR codes, one for each person."
-
-        - Nintendo Museum:
-            time: 4:30pm
+            note: >-
+              URL: https://check.museum-tickets.nintendo.com/myticket — screenshot both QR codes,
+              one for each person.
+          - activity: Nintendo Museum
             priority: must
+            tags:
+              - museum
+              - experience
+              - design
+              - cultural
+            time: 4:30pm
             duration: 1h
-            tags: [museum, experience, design, cultural]
             location:
-              name: Nintendo Museum
+              address: Nintendo Museum
               lat: 34.9315
               lng: 135.7686
             info:
-            - purchase: M0715019526
-            - visit: "2026-06-01, 4:30 PM - 5:00 PM (JST)"
-            - price: 6,600 yen total (2 adults) — already paid
-            - tickets: Sanches Caricati Bruna and Cammarosano de Lima Renan
+              purchase: M0715019526
+              visit: 2026-06-01, 4:30 PM - 5:00 PM (JST)
+              price: 6,600 yen total (2 adults) — already paid
+              tickets: Sanches Caricati Bruna and Cammarosano de Lima Renan
             note: |
               Arrive on time. Tickets are strictly timed entry.
 
@@ -2322,34 +2446,40 @@ itinerary:
               the design thinking behind every era of Nintendo hardware
               — and the Japanese cultural obsession with miniaturisation
               and tactile pleasure — is fascinating.
+    note: |
+      Kyoto is Japan's soul — over 2,000 temples and shrines, 17 UNESCO
+      World Heritage sites, preserved geisha districts, and some of
+      the country's finest cuisine. With 17 nights you have the rare
+      gift of time. Go slowly. Return to places that moved you.
 
-- train:
+      A key advantage of staying 17 nights: you can visit popular places
+      at dawn (before crowds) and return in the evening (when they're
+      lit differently). Fushimi Inari is a genuinely different place
+      at 6am versus 10am.
+
+      Late May and early June: wisteria, iris, and early hydrangea
+      season. Temperatures 20-27C, occasional rain. Rainy season
+      typically begins in Kyoto around June 5-10. Rainy Kyoto temples
+      — especially moss gardens and stone paths after rain — are among
+      the most beautiful things Japan offers.
+  - transport: train
     from: Kyoto
     to: Tokyo
     note: Nozomi Shinkansen. ~2h20m. Book via Smart EX.
-
-  # ──────────────────────────────────────────
-  # TOKYO — LONG STAY (27 nights)
-  # ──────────────────────────────────────────
-
-- Tokyo:
-    arrives: 2026-06-06
-    departs: 2026-07-03
+  - place: Tokyo
+    arrives: "2026-06-06"
+    departs: "2026-07-03"
     duration: 27 nights
     location: Toshima City, Tokyo, Japan
-    tags: [city, long-stay, neighbourhoods, rainy-season, food, museums]
-    note: |
-      The rainy season (tsuyu) covers most of this stay — roughly 40-50%
-      chance of rain on any given day, peaking mid-June. It rarely rains
-      all day. Mornings are often clear; afternoon showers are most
-      common. The humidity (75-90%) is more challenging than the rain.
-      Strategy: outdoor sightseeing in mornings before 1pm; museums and
-      indoor experiences in afternoons and evenings.
-
-      Buy the Grutto Pass on arrival (2,500 yen). Valid 2 months
-      at 107 museums, gardens, and zoos. Essential for this stay.
-    stay:
-    - Kitten House (Airbnb):
+    tags:
+      - city
+      - long-stay
+      - neighbourhoods
+      - rainy-season
+      - food
+      - museums
+    plan:
+      - stay: Kitten House (Airbnb)
         arrives: 2026-06-06T16:00
         departs: 2026-07-03T10:00
         location:
@@ -2357,24 +2487,21 @@ itinerary:
           lat: 35.7295
           lng: 139.7185
         info:
-        - confirmation: HMQFACNZ3K
-        - host: Yume
-        - host-phone: +81 80-7282-5592
-        - platform: Airbnb
-        - price: 1,980.44 EUR — already paid
-        - type: Brooklyn-style 2LDK, 3 min from Shin-Otsuka, workspace included
+          confirmation: HMQFACNZ3K
+          host: Yume
+          host-phone: +81 80-7282-5592
+          platform: Airbnb
+          price: 1,980.44 EUR — already paid
+          type: Brooklyn-style 2LDK, 3 min from Shin-Otsuka, workspace included
         note: |
           Shin-Otsuka is on the Yurakucho and Marunouchi lines.
           Ikebukuro (one stop) is a major hub with easy access to
           Shibuya, Shinjuku, and central Tokyo. Otsuka is a genuine
           residential neighbourhood — local shotengai, sento, and
           izakayas without tourist pricing.
-    activities:
-
-    - plan:
-        title: Grutto Pass — buy on arrival
-        items:
-        - Grutto Pass 2026:
+      - group: Grutto Pass — buy on arrival
+        plan:
+          - activity: Grutto Pass 2026
             priority: must
             note: |
               Buy from any participating venue on arrival (2,500 yen).
@@ -2386,21 +2513,20 @@ itinerary:
               and historic sites — including Tokyo National Museum,
               Ueno Zoo, Shinjuku Gyoen, and dozens of smaller
               museums.
-
-        # ─────────────────────────────────────────
-        # NEIGHBOURHOOD WALKS
-        # ─────────────────────────────────────────
-
-    - plan:
-        title: "Neighbourhood — Shimokitazawa"
-        items:
-        - Shimokitazawa:
+      - group: Neighbourhood — Shimokitazawa
+        plan:
+          - activity: Shimokitazawa
             priority: must
-            tags: [neighbourhood, indie, vintage, music, walk]
+            tags:
+              - neighbourhood
+              - indie
+              - vintage
+              - music
+              - walk
             location:
-              name: Shimokitazawa
+              address: Shimokitazawa
               lat: 35.6611
-              lng: 139.6680
+              lng: 139.668
             note: |
               Tokyo's most creative independent neighbourhood —
               vintage clothing shops, tiny live music venues (jazz,
@@ -2413,14 +2539,17 @@ itinerary:
               neighbourhood — an extraordinary concentration. The
               Sunday flea market at the old station site runs
               year-round. ~30 min from Shin-Otsuka via Ikebukuro.
-    - plan:
-        title: "Neighbourhood — Nakameguro and Daikanyama"
-        items:
-        - Nakameguro canal walk:
+      - group: Neighbourhood — Nakameguro and Daikanyama
+        plan:
+          - activity: Nakameguro canal walk
             priority: must
-            tags: [neighbourhood, canal, walk, food]
+            tags:
+              - neighbourhood
+              - canal
+              - walk
+              - food
             location:
-              name: Nakameguro Canal
+              address: Nakameguro Canal
               lat: 35.6419
               lng: 139.6992
             note: |
@@ -2434,24 +2563,26 @@ itinerary:
               most desirable strolling district happened gradually
               from the 1990s onward. In June the leaves are dense
               and green — a lush, quiet urban walk.
-        - Daikanyama T-Site Tsutaya:
+          - activity: Daikanyama T-Site Tsutaya
             note: |
               The adjacent Anjin bar (vintage magazines, cocktails) is excellent in the evening.
 
               A flagship bookshop in a wooded campus — art books,
               vinyl records, design objects, and magazines from
               around the world. Designed by Klein Dytham Architecture.
-
-
-    - plan:
-        title: "Neighbourhood — Kagurazaka"
-        items:
-        - Kagurazaka:
+      - group: Neighbourhood — Kagurazaka
+        plan:
+          - activity: Kagurazaka
             priority: must
-            tags: [neighbourhood, Franco-Japanese, food, cultural, walk]
+            tags:
+              - neighbourhood
+              - Franco-Japanese
+              - food
+              - cultural
+              - walk
             location:
-              name: Kagurazaka
-              lat: 35.7010
+              address: Kagurazaka
+              lat: 35.701
               lng: 139.7417
             note: |
               A neighbourhood with a genuine Franco-Japanese character
@@ -2467,15 +2598,19 @@ itinerary:
               blend that now feels organic. The only neighbourhood
               in Tokyo where you can eat a perfect croissant in the
               shadow of a centuries-old geisha house.
-    - plan:
-        title: "Neighbourhood — Koenji"
-        items:
-        - Koenji:
-            tags: [neighbourhood, alternative, vintage, records, walk]
+      - group: Neighbourhood — Koenji
+        plan:
+          - activity: Koenji
+            tags:
+              - neighbourhood
+              - alternative
+              - vintage
+              - records
+              - walk
             location:
-              name: Koenji
+              address: Koenji
               lat: 35.7057
-              lng: 139.6490
+              lng: 139.649
             note: |
               Tokyo's alternative neighbourhood — the best place for
               vintage clothing and record hunting, with a strong punk
@@ -2489,11 +2624,14 @@ itinerary:
               The vintage shops here are different from Harajuku's
               tourist-facing ones — these are for people who know
               what they are looking for.
-    - plan:
-        title: "Neighbourhood — Yanaka revisited"
-        items:
-        - Yanaka in depth:
-            tags: [neighbourhood, historical, walk, local]
+      - group: Neighbourhood — Yanaka revisited
+        plan:
+          - activity: Yanaka in depth
+            tags:
+              - neighbourhood
+              - historical
+              - walk
+              - local
             note: |
               Return to the neighbourhood from Week 1 — this time
               slower, finding the shops you missed, drinking coffee
@@ -2506,46 +2644,62 @@ itinerary:
               In the evening, the Yanaka Beer Hall (former public
               bath building converted to craft beer bar) is an
               excellent local spot.
-        - Nezu Shrine hydrangeas (mid-June):
-            tags: [shrine, garden, seasonal]
+          - activity: Nezu Shrine hydrangeas (mid-June)
+            tags:
+              - shrine
+              - garden
+              - seasonal
             note: |
               Nezu Shrine's hill transforms in mid-June — thousands
               of hydrangea plants on the hillside behind the torii
               tunnel. A completely different and extraordinary
               experience from the May visit.
-    - plan:
-        title: "Museum cluster — Roppongi"
-        note: Mori Art Museum, 21_21 Design Sight, and the National Art Center are all within 15 minutes' walk in 
-          Roppongi Midtown. A full day of contemporary art and design.
-        items:
-        - Mori Art Museum and Tokyo City View:
+      - group: Museum cluster — Roppongi
+        plan:
+          - activity: Mori Art Museum and Tokyo City View
             priority: must
-            tags: [museum, contemporary art, viewpoint]
+            tags:
+              - museum
+              - contemporary art
+              - viewpoint
             location:
-              name: Mori Art Museum, Roppongi Hills
+              address: Mori Art Museum, Roppongi Hills
               lat: 35.6604
               lng: 139.7292
-            note: |
-              Go in the evening — the Tokyo night view from the City View rooftop is among the best in the city.
+            note: >
+              Go in the evening — the Tokyo night view from the City View rooftop is among the best
+              in the city.
+
 
               One of Asia's finest contemporary art museums on the
+
               53rd floor of Roppongi Hills Mori Tower — the ticket
+
               also covers Tokyo City View (rooftop deck with 360°
+
               views, best at night).
 
+
               **Cultural note:** Founded by developer Minoru Mori (1934-2012), who
+
               insisted on putting the city's highest cultural
+
               institution at the top of his commercial tower — the
+
               idea that art should occupy the highest point, with
+
               commerce below, was a deliberate statement about values.
+
               The collection focuses on Asia-Pacific contemporary
+
               art in ways Western institutions do not.
-
-
-        - 21_21 Design Sight:
-            tags: [museum, design, culture]
+          - activity: 21_21 Design Sight
+            tags:
+              - museum
+              - design
+              - culture
             location:
-              name: 21_21 Design Sight, Midtown Roppongi
+              address: 21_21 Design Sight, Midtown Roppongi
               lat: 35.6655
               lng: 139.7305
             note: |
@@ -2559,15 +2713,14 @@ itinerary:
               piece of steel bent to cover the entire space — itself
               a design object. Ando placed most of the museum below
               grade, with only the roof visible from the park.
-    - plan:
-        title: "Museum — Tokyo National Museum (full return)"
-        note: |
-          Return for what was missed on May 7 — the Heiseikan and
-          a slower look at the Horyuji Treasures. Use the Grutto Pass.
-        items:
-        - Heiseikan (Japanese Archaeology):
+      - group: Museum — Tokyo National Museum (full return)
+        plan:
+          - activity: Heiseikan (Japanese Archaeology)
             priority: must
-            tags: [museum, history, archaeology]
+            tags:
+              - museum
+              - history
+              - archaeology
             note: |
               The permanent archaeology gallery tracing Japan from
               the Jomon period (14,000 BCE) through the Nara period
@@ -2580,15 +2733,16 @@ itinerary:
               (bizarre goggle-eyed clay figures) remain completely
               mysterious; their purpose is unknown but they appear
               to represent a cosmology with no surviving documentation.
-    - plan:
-        title: "Museum — Edo-Tokyo Museum (Ryogoku)"
-        note: Recently renovated. Near the Kokugikan sumo arena — combine with a sumo district walk.
-        items:
-        - Edo-Tokyo Museum:
+      - group: Museum — Edo-Tokyo Museum (Ryogoku)
+        plan:
+          - activity: Edo-Tokyo Museum
             priority: must
-            tags: [museum, history, Tokyo]
+            tags:
+              - museum
+              - history
+              - Tokyo
             location:
-              name: Edo-Tokyo Museum
+              address: Edo-Tokyo Museum
               lat: 35.6966
               lng: 139.7965
             note: |
@@ -2604,30 +2758,18 @@ itinerary:
               the 1945 firebombing (80,000+ dead in a single night).
               Each time, Tokyo rebuilt in a new form. The current
               city is its fourth major iteration.
-    - plan:
-        title: "Museum — Ghibli Museum"
-        note: |
-          TICKET BOOKING IS URGENT.
-
-          Tickets go on sale the 10th of each month at 10:00 AM JST
-          for the following month, via Lawson Ticket (l-tike.com/ghibli).
-          In Japan, buy at any Lawson Loppi machine — no Japanese phone
-          number required, payment by credit card.
-
-          For a June visit: buy at a Lawson Loppi on May 10 at 10am JST.
-          For a July visit: buy at any Lawson in Japan on June 10 at 10am JST.
-
-          Set a phone reminder for both dates. Weekday visits are
-          easier to book than weekends. The museum is in Mitaka —
-          ~35 min from Shin-Otsuka (Ikebukuro > Mitaka Station, then
-          loop bus or 20-min walk through Inokashira Park).
-        items:
-        - Ghibli Museum, Mitaka:
+      - group: Museum — Ghibli Museum
+        plan:
+          - activity: Ghibli Museum, Mitaka
             priority: must
+            tags:
+              - museum
+              - design
+              - art
+              - experience
             duration: 2h
-            tags: [museum, design, art, experience]
             location:
-              name: Ghibli Museum
+              address: Ghibli Museum
               lat: 35.6963
               lng: 139.5705
             note: |
@@ -2647,20 +2789,18 @@ itinerary:
               visitors find rooms they missed the first time.
               Each ticket includes one screening of an exclusive
               Ghibli short film not available anywhere else.
-
-
-    - plan:
-        title: "Museum — teamLab Borderless (Azabudai Hills)"
-        note: Book tickets well in advance at teamlab.art. Different from Planets — larger, more maze-like. Art reacts 
-          to your presence differently.
-        items:
-        - teamLab Borderless:
+      - group: Museum — teamLab Borderless (Azabudai Hills)
+        plan:
+          - activity: teamLab Borderless
             priority: maybe
-            tags: [art, immersive, experience]
+            tags:
+              - art
+              - immersive
+              - experience
             location:
-              name: teamLab Borderless, Azabudai Hills
+              address: teamLab Borderless, Azabudai Hills
               lat: 35.6564
-              lng: 139.7430
+              lng: 139.743
             note: |
               A vast maze of interconnected art environments where
               digital artworks bleed through walls, floors, and
@@ -2673,21 +2813,18 @@ itinerary:
               state that responds to every visitor. The Japanese
               concept of "en" (connection) underlies all of
               teamLab's work.
-    - plan:
-        title: "Sumo morning practice"
-        note: |
-          Arrange through your Airbnb host Yume or a specialist
-          service (Tokyo Sumo Tours or similar). Practice (keiko) runs
-          6-10am daily at stables near Ryogoku. Small groups observe
-          in strict silence. Book weeks in advance. This is real
-          professional training, not a performance.
-        items:
-        - Sumo stable morning practice (keiko):
+      - group: Sumo morning practice
+        plan:
+          - activity: Sumo stable morning practice (keiko)
             priority: must
+            tags:
+              - cultural
+              - sport
+              - Shinto
+              - experience
             duration: 2h
-            tags: [cultural, sport, Shinto, experience]
             location:
-              name: Ryogoku, Tokyo
+              address: Ryogoku, Tokyo
               lat: 35.6961
               lng: 139.7928
             note: |
@@ -2704,21 +2841,18 @@ itinerary:
               before a tournament. Observing it in a working stable,
               with the wrestlers feet from you, is one of Tokyo's
               most authentic experiences.
-    - plan:
-        title: "Kabuki at Kabukiza Theatre"
-        note: |
-          Kabukiza Theatre is in Ginza, 30 min from Shin-Otsuka.
-          Single-act tickets (hitomaku-mi, available at the box office
-          on the day, 1,000-3,000 yen) are the right entry point —
-          a full programme is 4-5 hours. English synopsis sheets
-          available. Check the June programme at shochiku.co.jp.
-        items:
-        - Kabuki performance:
+      - group: Kabuki at Kabukiza Theatre
+        plan:
+          - activity: Kabuki performance
             priority: must
+            tags:
+              - theatre
+              - cultural
+              - art
+              - traditional
             duration: 1h30m
-            tags: [theatre, cultural, art, traditional]
             location:
-              name: Kabukiza Theatre, Ginza
+              address: Kabukiza Theatre, Ginza
               lat: 35.6697
               lng: 139.7648
             note: |
@@ -2736,20 +2870,17 @@ itinerary:
               during a performance (kakegoe) is an ancient form of
               audience participation. The Kabukiza Theatre (rebuilt
               2013) was designed by Kengo Kuma.
-    - plan:
-        title: "Oedo Antique Market"
-        note: |
-          Held the first and third Sunday of each month at Tokyo
-          International Forum (near Yurakucho Station). 9am-4pm. Free.
-
-          June 2026 dates: June 7 and June 21.
-          July 2026 date: July 5.
-        items:
-        - Oedo Antique Market:
+      - group: Oedo Antique Market
+        plan:
+          - activity: Oedo Antique Market
             priority: must
-            tags: [market, antiques, cultural, shopping]
+            tags:
+              - market
+              - antiques
+              - cultural
+              - shopping
             location:
-              name: Tokyo International Forum, Marunouchi
+              address: Tokyo International Forum, Marunouchi
               lat: 35.6765
               lng: 139.7634
             note: |
@@ -2764,17 +2895,16 @@ itinerary:
               — a sake cup from the 1850s, a Buddhist household altar
               piece, an Edo-period ukiyo-e print. Haggling is accepted
               but must be done respectfully. Bring cash.
-    - plan:
-        title: "Day trip — Kamakura"
-        note: |
-          1 hour from Shinjuku by JR Shonan-Shinjuku Line to Kamakura
-          (~920 yen each). Go on a weekday.
-        items:
-        - Kotoku-in Great Buddha:
+      - group: Day trip — Kamakura
+        plan:
+          - activity: Kotoku-in Great Buddha
             priority: must
-            tags: [history, landmark, sculpture]
+            tags:
+              - history
+              - landmark
+              - sculpture
             location:
-              name: Kotoku-in, Kamakura
+              address: Kotoku-in, Kamakura
               lat: 35.3167
               lng: 139.5356
             note: |
@@ -2789,11 +2919,15 @@ itinerary:
               the statue through doors in its back — inside, rivets
               the size of fists hold it together. Entry 300 yen;
               20 yen extra to enter the statue.
-        - Hokoku-ji (Bamboo Temple):
+          - activity: Hokoku-ji (Bamboo Temple)
             priority: must
-            tags: [temple, garden, bamboo, cultural]
+            tags:
+              - temple
+              - garden
+              - bamboo
+              - cultural
             location:
-              name: Hokoku-ji Temple
+              address: Hokoku-ji Temple
               lat: 35.3235
               lng: 139.5617
             note: |
@@ -2807,32 +2941,36 @@ itinerary:
               beautiful tea experiences available outside Kyoto
               — the bamboo filters the light into something entirely
               green and still.
-        - Zen temples near Kita-Kamakura:
-            tags: [temple, Zen, cultural]
+          - activity: Zen temples near Kita-Kamakura
+            tags:
+              - temple
+              - Zen
+              - cultural
             note: |
               Get off one stop before Kamakura at Kita-Kamakura.
               Engaku-ji (1282 AD, one of Japan's great Zen monasteries)
               and Kencho-ji (1253 AD, Japan's first Zen training
               monastery) are both 5 minutes' walk from the station.
-
-        - Yuigahama Beach walk:
+          - activity: Yuigahama Beach walk
+            tags:
+              - nature
+              - walk
+              - beach
             time: late afternoon
-            tags: [nature, walk, beach]
-            note: End the day at the beach — Kamakura's Pacific coastline with mountains rising behind it is a beautiful
-              last view before the train home.
-
-    - plan:
-        title: "Day trip — Nikko"
-        note: |
-          2 hours from Ueno by Tobu Nikko Line (direct express,
-          1,390 yen each). Purchase the Tobu Nikko All Area Pass for
-          unlimited local transport. Go on a weekday. Arrive by 10am.
-        items:
-        - Tosho-gu Shrine complex:
+            note: >-
+              End the day at the beach — Kamakura's Pacific coastline with mountains rising behind
+              it is a beautiful last view before the train home.
+      - group: Day trip — Nikko
+        plan:
+          - activity: Tosho-gu Shrine complex
             priority: must
-            tags: [shrine, UNESCO, history, architecture]
+            tags:
+              - shrine
+              - UNESCO
+              - history
+              - architecture
             location:
-              name: Nikko Tosho-gu
+              address: Nikko Tosho-gu
               lat: 36.7581
               lng: 139.5989
             note: |
@@ -2849,25 +2987,27 @@ itinerary:
               concept in Japan. The Yomeimon Gate contains one pillar
               carved upside down — an intentional structural flaw,
               because only the gods may create something perfect.
-        - Kegon Falls:
-            tags: [nature, waterfall]
+          - activity: Kegon Falls
+            tags:
+              - nature
+              - waterfall
             note: |
               Take the elevator (570 yen) for the observation platform at the base.
 
               A 97-metre waterfall dropping from Lake Chuzenji into
               the Daiya River valley — one of Japan's three great
               waterfalls.
-
-
-    - plan:
-        title: "Day trip — Kawagoe (Little Edo)"
-        note: 40 min from Ikebukuro by Tobu Tojo Line (~480 yen each).
-        items:
-        - Kawagoe historic district:
+      - group: Day trip — Kawagoe (Little Edo)
+        plan:
+          - activity: Kawagoe historic district
             priority: maybe
-            tags: [history, cultural, walk, food]
+            tags:
+              - history
+              - cultural
+              - walk
+              - food
             location:
-              name: Kawagoe, Saitama
+              address: Kawagoe, Saitama
               lat: 35.9252
               lng: 139.4856
             note: |
@@ -2882,28 +3022,33 @@ itinerary:
               style. Famous for sweet potato (imo) products — snacks,
               soft-serve, shochu — and for the bell tower (Toki-no-Kane)
               that has rung the hours since 1624.
-    - plan:
-        title: "Day trip — Yokohama"
-        note: 30 min from Shinjuku by Shonan-Shinjuku Line (~680 yen each).
-        items:
-        - Yokohama Chinatown:
-            tags: [food, cultural, neighbourhood]
+      - group: Day trip — Yokohama
+        plan:
+          - activity: Yokohama Chinatown
+            tags:
+              - food
+              - cultural
+              - neighbourhood
             location:
-              name: Yokohama Chinatown
+              address: Yokohama Chinatown
               lat: 35.4419
               lng: 139.6449
-            note: |
-              Excellent for roast meat (char siu), dumplings, and steamed buns — none of which involve seafood.
+            note: >
+              Excellent for roast meat (char siu), dumplings, and steamed buns — none of which
+              involve seafood.
+
 
               Japan's largest Chinatown — 500+ restaurants and shops
+
               in a dense grid centring on the Kanteibyo temple.
-
-
-        - Sankeien Garden:
+          - activity: Sankeien Garden
             priority: must
-            tags: [garden, history, architecture]
+            tags:
+              - garden
+              - history
+              - architecture
             location:
-              name: Sankeien Garden
+              address: Sankeien Garden
               lat: 35.4139
               lng: 139.6336
             note: |
@@ -2917,19 +3062,13 @@ itinerary:
               historical structures from across the country before they
               were demolished — an intentional act of conservation
               rather than a surviving accident.
-    - plan:
-        title: "Day trip — Kawaguchiko / Mount Fuji (weather-dependent)"
-        note: |
-          2 hours from Shinjuku by express bus (direct to Kawaguchiko,
-          2,000 yen each way — book at Shinjuku Expressway Bus Terminal).
-
-          ONLY GO IF MOUNT FUJI IS VISIBLE. Check fuji-san.info the
-          day before and the morning of the planned visit. During the
-          rainy season (June-mid July), Fuji is frequently obscured.
-          The day trip is not worth making for the lake alone.
-        items:
-        - Lake Kawaguchi and Fuji Panorama Ropeway:
-            tags: [nature, Mount Fuji, viewpoint]
+      - group: Day trip — Kawaguchiko / Mount Fuji (weather-dependent)
+        plan:
+          - activity: Lake Kawaguchi and Fuji Panorama Ropeway
+            tags:
+              - nature
+              - Mount Fuji
+              - viewpoint
             note: |
               Lake Kawaguchi is the most accessible of the five Fuji
               lakes — the ropeway from Kachikachi-yama gives elevated
@@ -2944,12 +3083,15 @@ itinerary:
               (1831) established it as a global icon. Viewing it
               clearly from the Five Lakes area, reflected in still
               water, is one of Japan's most affecting sights.
-    - plan:
-        title: "Local rhythms — living in Otsuka"
-        items:
-        - Weekly sento visits:
+      - group: Local rhythms — living in Otsuka
+        plan:
+          - activity: Weekly sento visits
             priority: must
-            tags: [local, cultural, relax, neighbourhood]
+            tags:
+              - local
+              - cultural
+              - relax
+              - neighbourhood
             note: |
               A neighbourhood public bath (sento) charges ~500 yen
               and is a community institution — residents of all ages
@@ -2964,10 +3106,13 @@ itinerary:
               In a city where apartment living compresses life, the
               sento is one of the last genuinely communal spaces.
               Ask Yume (host) for the nearest one.
-        - Toden Arakawa tram ride:
-            tags: [local, transport, experience]
+          - activity: Toden Arakawa tram ride
+            tags:
+              - local
+              - transport
+              - experience
             location:
-              name: Otsuka Station — Toden Arakawa Line
+              address: Otsuka Station — Toden Arakawa Line
               lat: 35.7349
               lng: 139.7285
             note: |
@@ -2982,8 +3127,11 @@ itinerary:
               the 1964 Olympics, when most lines were removed to ease
               road traffic. Ride it end to end on a slow afternoon
               — 170 yen flat fare, about 1 hour.
-        - Otsuka shotengai and local izakayas:
-            tags: [local, food, neighbourhood]
+          - activity: Otsuka shotengai and local izakayas
+            tags:
+              - local
+              - food
+              - neighbourhood
             note: |
               The covered shopping street around Otsuka Station has
               local butchers, vegetable shops, and a fishmonger.
@@ -2991,10 +3139,12 @@ itinerary:
               residents, not tourists. Find one by wandering rather
               than researching — the best ones have hand-written menus
               and no English signage.
-
-        - Depachika circuit — Isetan Shinjuku:
+          - activity: Depachika circuit — Isetan Shinjuku
             priority: must
-            tags: [food, cultural, experience]
+            tags:
+              - food
+              - cultural
+              - experience
             note: |
               Return visits to the B1-B2 floors of Isetan in Shinjuku
               — Japan's finest department store food halls, with
@@ -3004,44 +3154,53 @@ itinerary:
               Also worth trying Matsuya Ginza and Mitsukoshi Nihonbashi
               for different curatorial perspectives. The Isetan B1
               wagashi counter alone is worth a dedicated visit.
-- flight:
+    note: |
+      The rainy season (tsuyu) covers most of this stay — roughly 40-50%
+      chance of rain on any given day, peaking mid-June. It rarely rains
+      all day. Mornings are often clear; afternoon showers are most
+      common. The humidity (75-90%) is more challenging than the rain.
+      Strategy: outdoor sightseeing in mornings before 1pm; museums and
+      indoor experiences in afternoons and evenings.
+
+      Buy the Grutto Pass on arrival (2,500 yen). Valid 2 months
+      at 107 museums, gardens, and zoos. Essential for this stay.
+  - transport: flight
     from:
-      name: Tokyo Haneda Airport (HND)
+      address: Tokyo Haneda Airport (HND)
       lat: 35.5494
       lng: 139.7798
     to:
-      name: Munich Airport (MUC)
+      address: Munich Airport (MUC)
       lat: 48.3537
-      lng: 11.7750
+      lng: 11.775
     departs: 2026-07-03T09:25+09:00
     arrives: 2026-07-03T16:45+02:00
     info:
-    - operator: ANA
-    - flight: NH5851
-    - terminal: "3"
-    - class: S
-    - reservation: F7ZHBA
+      operator: ANA
+      flight: NH5851
+      terminal: "3"
+      class: S
+      reservation: F7ZHBA
     note: |
       Allow 2.5 hours before departure for international check-in.
       From Shin-Otsuka to Haneda: Yurakucho Line to Shinagawa (~35 min),
       then Keikyu Airport Line to Haneda Terminal 3 (~15 min).
       Total ~50 min. Leave the apartment by 6:30am.
-
-- flight:
+  - transport: flight
     from:
-      name: Munich Airport (MUC)
+      address: Munich Airport (MUC)
       lat: 48.3537
-      lng: 11.7750
+      lng: 11.775
     to:
-      name: Palma de Mallorca Airport (PMI)
+      address: Palma de Mallorca Airport (PMI)
       lat: 39.5517
       lng: 2.7388
     departs: 2026-07-03T19:35+02:00
     arrives: 2026-07-03T21:45+02:00
     info:
-    - operator: Eurowings
-    - flight: EW6893
-    - terminal: "2"
-    - seat: 20B
-    - class: G
-    - reservation: F7ZHBA
+      operator: Eurowings
+      flight: EW6893
+      terminal: "2"
+      seat: 20B
+      class: G
+      reservation: F7ZHBA

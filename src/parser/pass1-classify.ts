@@ -2,42 +2,66 @@
  * Pass 1 — Structure
  *
  * Transforms the raw JavaScript object produced by js-yaml into a
- * RawCrumbDocument. No field values are resolved at this stage — all
- * moments, durations, and geolocations remain as raw strings or objects.
+ * RawCrumbDocument. No field values are resolved here — moments, durations,
+ * and geolocations remain raw strings or objects.
+ *
+ * The model is one recursive rule: every list has a default kind, and an item
+ * is either a bare string (the default kind, name only) or a mapping whose key
+ * names its kind. The kind key's value is the item's name (its mode, for
+ * transport; its title, for a group); all other keys are sibling fields.
+ *
+ *   itinerary  — default `place`; other kind `transport`
+ *   plan       — default `activity`; other kinds `stay`, `day`, `week`, `group`
+ *
+ * Unknown kinds and unknown fields are hard errors, so malformed input is
+ * reported rather than silently reshaped.
  */
 
 import {
   GroupKind,
+  GROUP_KINDS,
   MetadataItem,
   TransportMode,
+  TRANSPORT_MODES,
   TripMeta,
 } from "../types/primitives"
 import {
   RawActivity,
   RawActivityGroup,
-  RawActivityItem,
   RawCrumbDocument,
   RawGeolocation,
   RawItineraryItem,
   RawPlace,
+  RawPlanItem,
   RawStay,
   RawTransportLeg,
 } from "../types/raw"
 
-const TRANSPORT_KEYWORDS = new Set<string>([
-  "train", "flight", "bus", "car", "ferry", "walk", "bike", "transport",
-])
+// ─── Vocabularies & field sets ───────────────────────────────────────────────
 
-const ACTIVITY_GROUP_KEYWORDS = new Set<string>(["day", "week", "plan"])
+const TRANSPORT_MODE_SET = new Set<string>(TRANSPORT_MODES)
+const GROUP_KIND_SET     = new Set<string>(GROUP_KINDS)
+
+const TOP_LEVEL_KEYS   = ["trip", "itinerary"]
+const TRIP_FIELDS      = ["name", "author", "duration", "tags", "info", "note"]
+const PLACE_FIELDS     = ["arrives", "departs", "duration", "location", "tags", "plan", "info", "note"]
+const TRANSPORT_FIELDS = ["from", "to", "departs", "arrives", "duration", "info", "note"]
+const ACTIVITY_FIELDS  = ["priority", "tags", "time", "duration", "location", "info", "note"]
+const STAY_FIELDS      = ["arrives", "departs", "duration", "location", "tags", "info", "note"]
+const GROUP_FIELDS     = ["time", "duration", "plan"]
+
+const ITINERARY_KINDS = ["place", "transport"]
+const PLAN_KINDS      = ["activity", "stay", "day", "week", "group"]
 
 // ─── Entry point ─────────────────────────────────────────────────────────────
 
 export function classify(raw: unknown): RawCrumbDocument {
-  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
-    throw new Error("Invalid crumb document: root must be a YAML mapping")
+  const doc = asMapping(raw)
+  if (!doc) {
+    throw new Error("Invalid crumb document: the root must be a YAML mapping with `trip` and/or `itinerary`.")
   }
 
-  const doc = raw as Record<string, unknown>
+  rejectUnknownKeys(doc, TOP_LEVEL_KEYS, "the document root")
 
   return {
     trip:      doc["trip"] != null ? parseTripMeta(doc["trip"]) : undefined,
@@ -48,11 +72,10 @@ export function classify(raw: unknown): RawCrumbDocument {
 // ─── Trip metadata ───────────────────────────────────────────────────────────
 
 function parseTripMeta(raw: unknown): TripMeta {
-  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
-    return {}
-  }
+  const r = asMapping(raw)
+  if (!r) return {}
 
-  const r = raw as Record<string, unknown>
+  rejectUnknownKeys(r, TRIP_FIELDS, "`trip`")
 
   return {
     name:     asString(r["name"]),
@@ -67,315 +90,302 @@ function parseTripMeta(raw: unknown): TripMeta {
 // ─── Itinerary ───────────────────────────────────────────────────────────────
 
 function parseItinerary(raw: unknown): RawItineraryItem[] {
-  if (!Array.isArray(raw)) return []
-
-  const items: RawItineraryItem[] = []
-
-  for (const item of raw) {
-    const parsed = parseItineraryItem(item)
-    if (parsed) items.push(parsed)
+  if (raw == null) return []
+  if (!Array.isArray(raw)) {
+    throw new Error("`itinerary` must be a list of places and transport legs.")
   }
-
-  return items
+  return raw.map(parseItineraryItem)
 }
 
-function parseItineraryItem(item: unknown): RawItineraryItem | null {
-  // Bare string: e.g. `- train` or `- Tokyo`
-  if (typeof item === "string") {
-    const name = coercePlaceName(item)
-    if (TRANSPORT_KEYWORDS.has(name.toLowerCase())) {
-      return { type: "transport", mode: name.toLowerCase() as TransportMode }
-    }
-    return { type: "place", name, activities: [] }
+function parseItineraryItem(item: unknown): RawItineraryItem {
+  // Bare string → a place (the itinerary's default kind).
+  if (isScalar(item)) {
+    return { type: "place", name: scalarToString(item), plan: [] }
   }
 
-  if (typeof item !== "object" || item === null || Array.isArray(item)) {
-    return null
+  const obj = asMapping(item)
+  if (!obj) {
+    throw new Error("Each itinerary item must be a place name or a mapping keyed `place` or `transport`.")
   }
 
-  const obj = item as Record<string, unknown>
-  const keys = Object.keys(obj)
+  const kind = pickKind(obj, ITINERARY_KINDS, "an itinerary item",
+    'Write "- place: Name" for a stop or "- transport: train" for a leg.')
 
-  if (keys.length === 0) return null
-
-  const key = keys[0]
-  const value = obj[key]
-
-  const nameLower = key.toLowerCase()
-
-  if (TRANSPORT_KEYWORDS.has(nameLower)) {
-    return parseTransportLeg(nameLower as TransportMode, value)
-  }
-
-  return parsePlace(coercePlaceName(key), value)
+  if (kind === "transport") return parseTransport(obj)
+  return parsePlace(requireName(obj["place"], "place"), obj)
 }
 
 // ─── Place ───────────────────────────────────────────────────────────────────
 
-function parsePlace(name: string, value: unknown): RawPlace {
-  if (value === null || value === undefined) {
-    return { type: "place", name, activities: [] }
-  }
-
-  if (typeof value !== "object" || Array.isArray(value)) {
-    return { type: "place", name, activities: [] }
-  }
-
-  const r = value as Record<string, unknown>
+function parsePlace(name: string, obj: Record<string, unknown>): RawPlace {
+  rejectUnknownFields(obj, "place", PLACE_FIELDS, "place", name)
 
   return {
-    type:      "place",
+    type:     "place",
     name,
-    arrives:   asString(r["arrives"]),
-    departs:   asString(r["departs"]),
-    duration:  asString(r["duration"]),
-    location:  parseGeolocation(r["location"]),
-    tags:      asStringArray(r["tags"]),
-    stay:      parseStays(r["stay"]),
-    activities: parseActivities(r["activities"]),
-    info:      parseInfo(r["info"]),
-    note:      asString(r["note"]),
+    arrives:  asString(obj["arrives"]),
+    departs:  asString(obj["departs"]),
+    duration: asString(obj["duration"]),
+    location: parseGeolocation(obj["location"]),
+    tags:     asStringArray(obj["tags"]),
+    plan:     parsePlan(obj["plan"]),
+    info:     parseInfo(obj["info"]),
+    note:     asString(obj["note"]),
   }
 }
 
 // ─── Transport leg ───────────────────────────────────────────────────────────
 
-function parseTransportLeg(mode: TransportMode, value: unknown): RawTransportLeg {
-  if (value === null || value === undefined) {
-    return { type: "transport", mode }
-  }
-
-  if (typeof value !== "object" || Array.isArray(value)) {
-    return { type: "transport", mode }
-  }
-
-  const r = value as Record<string, unknown>
+function parseTransport(obj: Record<string, unknown>): RawTransportLeg {
+  rejectUnknownFields(obj, "transport", TRANSPORT_FIELDS, "transport leg")
 
   return {
     type:     "transport",
-    mode,
-    from:     parseGeolocation(r["from"]),
-    to:       parseGeolocation(r["to"]),
-    departs:  asString(r["departs"]),
-    arrives:  asString(r["arrives"]),
-    duration: asString(r["duration"]),
-    info:     parseInfo(r["info"]),
-    note:     asString(r["note"]),
+    mode:     parseMode(obj["transport"]),
+    from:     parseGeolocation(obj["from"]),
+    to:       parseGeolocation(obj["to"]),
+    departs:  asString(obj["departs"]),
+    arrives:  asString(obj["arrives"]),
+    duration: asString(obj["duration"]),
+    info:     parseInfo(obj["info"]),
+    note:     asString(obj["note"]),
   }
 }
 
-// ─── Activities ──────────────────────────────────────────────────────────────
+// ─── Plan (a place's list of stays, activities, and groups) ───────────────────
 
-function parseActivities(raw: unknown): RawActivityItem[] {
-  if (!Array.isArray(raw)) return []
-
-  const items: RawActivityItem[] = []
-
-  for (const item of raw) {
-    const parsed = parseActivityItem(item)
-    if (parsed) items.push(parsed)
+function parsePlan(raw: unknown): RawPlanItem[] {
+  if (raw == null) return []
+  if (!Array.isArray(raw)) {
+    throw new Error("`plan` must be a list of activities, stays, and groups.")
   }
-
-  return items
+  return raw.map(parsePlanItem)
 }
 
-function parseActivityItem(item: unknown): RawActivityItem | null {
-  if (typeof item === "string") {
-    return { type: "activity", name: item }
+function parsePlanItem(item: unknown): RawPlanItem {
+  // Bare string → an activity (the plan's default kind).
+  if (isScalar(item)) {
+    return { type: "activity", name: scalarToString(item) }
   }
 
-  if (typeof item !== "object" || item === null || Array.isArray(item)) {
-    return null
+  const obj = asMapping(item)
+  if (!obj) {
+    throw new Error("Each plan item must be an activity name or a mapping keyed `activity`, `stay`, `day`, `week`, or `group`.")
   }
 
-  const obj = item as Record<string, unknown>
-  const keys = Object.keys(obj)
-  if (keys.length === 0) return null
+  const kind = pickKind(obj, PLAN_KINDS, "a plan item",
+    'Write "- activity: Name", "- stay: Hotel", or "- day:" / "- week:" / "- group:".')
 
-  const key = keys[0]
-  const value = obj[key]
-
-  if (ACTIVITY_GROUP_KEYWORDS.has(key)) {
-    return parseActivityGroup(key as GroupKind, value)
-  }
-
-  return parseActivity(key, value)
+  if (kind === "stay")            return parseStay(requireName(obj["stay"], "stay"), obj)
+  if (GROUP_KIND_SET.has(kind))   return parseGroup(kind as GroupKind, obj)
+  return parseActivity(requireName(obj["activity"], "activity"), obj)
 }
 
-function parseActivity(name: string, value: unknown): RawActivity {
-  if (value === null || value === undefined) {
-    return { type: "activity", name }
-  }
-
-  if (typeof value !== "object" || Array.isArray(value)) {
-    return { type: "activity", name }
-  }
-
-  const r = value as Record<string, unknown>
+function parseActivity(name: string, obj: Record<string, unknown>): RawActivity {
+  rejectUnknownFields(obj, "activity", ACTIVITY_FIELDS, "activity", name)
 
   return {
     type:     "activity",
     name,
-    priority: asString(r["priority"]),
-    tags:     asStringArray(r["tags"]),
-    time:     asString(r["time"]),
-    duration: asString(r["duration"]),
-    location: parseGeolocation(r["location"]),
-    info:     parseInfo(r["info"]),
-    note:     asString(r["note"]),
+    priority: asString(obj["priority"]),
+    tags:     asStringArray(obj["tags"]),
+    time:     asString(obj["time"]),
+    duration: asString(obj["duration"]),
+    location: parseGeolocation(obj["location"]),
+    info:     parseInfo(obj["info"]),
+    note:     asString(obj["note"]),
   }
 }
 
-function parseActivityGroup(kind: GroupKind, value: unknown): RawActivityGroup {
-  // Two forms:
-  // Simple list form: `day:\n  - Item A\n  - Item B`
-  // Block form: `day:\n    title: ...\n    items:\n      - ...`
+function parseStay(name: string, obj: Record<string, unknown>): RawStay {
+  rejectUnknownFields(obj, "stay", STAY_FIELDS, "stay", name)
 
-  if (Array.isArray(value)) {
-    // Simple list form — items directly
-    return {
-      type:  "group",
-      kind,
-      items: parseActivitiesFromList(value),
-    }
+  return {
+    type:     "stay",
+    name,
+    arrives:  asString(obj["arrives"]),
+    departs:  asString(obj["departs"]),
+    duration: asString(obj["duration"]),
+    location: parseGeolocation(obj["location"]),
+    tags:     asStringArray(obj["tags"]),
+    info:     parseInfo(obj["info"]),
+    note:     asString(obj["note"]),
   }
+}
 
-  if (typeof value !== "object" || value === null) {
-    return { type: "group", kind, items: [] }
-  }
-
-  const r = value as Record<string, unknown>
+function parseGroup(kind: GroupKind, obj: Record<string, unknown>): RawActivityGroup {
+  rejectUnknownFields(obj, kind, GROUP_FIELDS, `${kind} group`)
 
   return {
     type:     "group",
     kind,
-    title:    asString(r["title"]),
-    time:     asString(r["time"]),
-    duration: asString(r["duration"]),
-    items:    parseActivitiesFromList(r["items"]),
+    title:    optionalTitle(obj[kind], kind),
+    time:     asString(obj["time"]),
+    duration: asString(obj["duration"]),
+    plan:     parseGroupPlan(obj["plan"], kind),
   }
 }
 
-function parseActivitiesFromList(raw: unknown): RawActivity[] {
-  if (!Array.isArray(raw)) return []
-
-  const items: RawActivity[] = []
-
-  for (const item of raw) {
-    if (typeof item === "string") {
-      items.push({ type: "activity", name: item })
-      continue
-    }
-
-    if (typeof item === "object" && item !== null && !Array.isArray(item)) {
-      const obj = item as Record<string, unknown>
-      const keys = Object.keys(obj)
-      if (keys.length > 0) {
-        const key = keys[0]
-        items.push(parseActivity(key, obj[key]))
-      }
-    }
+/** A group's `plan` holds activities only — no nested groups or stays. */
+function parseGroupPlan(raw: unknown, kind: GroupKind): RawActivity[] {
+  if (raw == null) return []
+  if (!Array.isArray(raw)) {
+    throw new Error(`A ${kind} group's \`plan\` must be a list of activities.`)
   }
 
-  return items
-}
+  return raw.map((item) => {
+    if (isScalar(item)) return { type: "activity", name: scalarToString(item) } as RawActivity
 
-// ─── Stays ───────────────────────────────────────────────────────────────────
-
-function parseStays(raw: unknown): RawStay[] | undefined {
-  if (!Array.isArray(raw)) return undefined
-
-  const stays: RawStay[] = []
-
-  for (const item of raw) {
-    if (typeof item === "string") {
-      stays.push({ name: item })
-      continue
+    const obj = asMapping(item)
+    if (!obj) {
+      throw new Error(`A ${kind} group's \`plan\` must contain activities.`)
     }
 
-    if (typeof item === "object" && item !== null && !Array.isArray(item)) {
-      const obj = item as Record<string, unknown>
-      const keys = Object.keys(obj)
-      if (keys.length > 0) {
-        const key = keys[0]
-        const value = obj[key]
-        stays.push(parseStay(key, value))
-      }
+    const k = pickKind(obj, PLAN_KINDS, `an item in a ${kind} group`,
+      "Groups contain only activities — no nested groups or stays.")
+    if (k !== "activity") {
+      throw new Error(`A ${kind} group's \`plan\` holds only activities, but found "${k}". Groups cannot be nested, and stays belong in a place's plan.`)
     }
-  }
-
-  return stays.length > 0 ? stays : undefined
-}
-
-function parseStay(name: string, value: unknown): RawStay {
-  if (value === null || value === undefined || typeof value !== "object" || Array.isArray(value)) {
-    return { name }
-  }
-
-  const r = value as Record<string, unknown>
-
-  return {
-    name,
-    arrives:  asString(r["arrives"]),
-    departs:  asString(r["departs"]),
-    duration: asString(r["duration"]),
-    location: parseGeolocation(r["location"]),
-    tags:     asStringArray(r["tags"]),
-    info:     parseInfo(r["info"]),
-    note:     asString(r["note"]),
-  }
+    return parseActivity(requireName(obj["activity"], "activity"), obj)
+  })
 }
 
 // ─── Geolocation ─────────────────────────────────────────────────────────────
 
 function parseGeolocation(raw: unknown): RawGeolocation | undefined {
-  if (raw === null || raw === undefined) return undefined
-
+  if (raw == null) return undefined
   if (typeof raw === "string") return raw
 
-  if (typeof raw === "object" && !Array.isArray(raw)) {
-    const r = raw as Record<string, unknown>
-    const geo: { name?: string; address?: string; lat?: number; lng?: number } = {}
+  const r = asMapping(raw)
+  if (!r) return undefined
 
-    if (typeof r["name"]    === "string") geo.name    = r["name"]
-    if (typeof r["address"] === "string") geo.address = r["address"]
-    if (typeof r["lat"]     === "number") geo.lat     = r["lat"]
-    if (typeof r["lng"]     === "number") geo.lng     = r["lng"]
-
-    return geo
-  }
-
-  return undefined
+  const geo: { address?: string; lat?: number; lng?: number } = {}
+  if (typeof r["address"] === "string") geo.address = r["address"]
+  if (typeof r["lat"]     === "number") geo.lat     = r["lat"]
+  if (typeof r["lng"]     === "number") geo.lng     = r["lng"]
+  return geo
 }
 
-// ─── Info (MetadataList) ─────────────────────────────────────────────────────
+// ─── Info (MetadataList — a plain map of custom key-value pairs) ──────────────
 
 function parseInfo(raw: unknown): MetadataItem[] | undefined {
-  if (!Array.isArray(raw)) return undefined
+  const r = asMapping(raw)
+  if (!r) return undefined
 
   const items: MetadataItem[] = []
-
-  for (const item of raw) {
-    if (typeof item === "object" && item !== null && !Array.isArray(item)) {
-      const obj = item as Record<string, unknown>
-      for (const [k, v] of Object.entries(obj)) {
-        if (k.trim() === "") continue
-        if (typeof v === "string" || typeof v === "number") {
-          items.push({ key: k, value: v })
-        }
-      }
-    }
+  for (const [k, v] of Object.entries(r)) {
+    if (k.trim() === "") continue
+    const value = scalarToInfoValue(v)
+    if (value != null) items.push({ key: k, value })
   }
 
   return items.length > 0 ? items : undefined
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Kind dispatch & field validation ─────────────────────────────────────────
+
+/** Identify which of the recognized kind keywords this mapping declares. */
+function pickKind(
+  obj: Record<string, unknown>,
+  recognized: string[],
+  context: string,
+  hint: string,
+): string {
+  const present = recognized.filter((k) => k in obj)
+
+  if (present.length === 0) {
+    const found = Object.keys(obj).map((k) => `"${k}"`).join(", ") || "none"
+    throw new Error(`${capitalize(context)} must declare its kind. Expected one of: ${recognized.join(", ")}. Found: ${found}. ${hint}`)
+  }
+  if (present.length > 1) {
+    throw new Error(`${capitalize(context)} declares more than one kind (${present.join(", ")}). Each item is exactly one kind.`)
+  }
+  return present[0]
+}
+
+/** Reject any key that is neither the kind discriminator nor a known field. */
+function rejectUnknownFields(
+  obj: Record<string, unknown>,
+  kindKey: string,
+  allowed: string[],
+  kindLabel: string,
+  name?: string,
+): void {
+  for (const key of Object.keys(obj)) {
+    if (key === kindKey) continue
+    if (!allowed.includes(key)) {
+      const who = name ? `${kindLabel} "${name}"` : kindLabel
+      throw new Error(`Unknown field "${key}" on ${who}. Valid fields: ${allowed.join(", ")}. Put custom details under "info".`)
+    }
+  }
+}
+
+function rejectUnknownKeys(obj: Record<string, unknown>, allowed: string[], context: string): void {
+  for (const key of Object.keys(obj)) {
+    if (!allowed.includes(key)) {
+      throw new Error(`Unknown key "${key}" in ${context}. Valid keys: ${allowed.join(", ")}.`)
+    }
+  }
+}
+
+// ─── Value coercion ────────────────────────────────────────────────────────────
+
+/** The name/mode/title that follows a kind key must be a scalar, never a block. */
+function requireName(value: unknown, kindLabel: string): string {
+  if (typeof value === "string") {
+    if (value.trim() === "") throw new Error(`A ${kindLabel} requires a name.`)
+    return value
+  }
+  if (value instanceof Date) return value.toISOString().slice(0, 10)
+  if (typeof value === "number" || typeof value === "boolean") return String(value)
+  if (value == null) {
+    throw new Error(`A ${kindLabel} requires a name — write "- ${kindLabel}: Name".`)
+  }
+  throw new Error(`Expected a name after "${kindLabel}:", but found a nested block. ${capitalize(kindLabel)} fields are siblings of the "${kindLabel}" key, not nested under it.`)
+}
+
+function optionalTitle(value: unknown, kind: string): string | undefined {
+  if (value == null) return undefined
+  if (typeof value === "string") return value.trim() === "" ? undefined : value
+  if (value instanceof Date) return value.toISOString().slice(0, 10)
+  if (typeof value === "number" || typeof value === "boolean") return String(value)
+  throw new Error(`Expected a title (or nothing) after "${kind}:", but found a nested block. Group fields (time, duration, plan) are siblings.`)
+}
+
+function parseMode(value: unknown): TransportMode {
+  if (value == null) return "other"
+  if (typeof value === "object") {
+    throw new Error('Expected a transport mode after "transport:", but found a nested block. Transport fields are siblings.')
+  }
+  const m = String(value).trim().toLowerCase()
+  return (TRANSPORT_MODE_SET.has(m) ? m : "other") as TransportMode
+}
+
+// ─── Scalar helpers ────────────────────────────────────────────────────────────
+
+function asMapping(value: unknown): Record<string, unknown> | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value) || value instanceof Date) {
+    return null
+  }
+  return value as Record<string, unknown>
+}
+
+function isScalar(value: unknown): boolean {
+  return typeof value === "string"
+    || typeof value === "number"
+    || typeof value === "boolean"
+    || value instanceof Date
+}
+
+function scalarToString(value: unknown): string {
+  if (typeof value === "string") return value
+  if (value instanceof Date) return value.toISOString().slice(0, 10)
+  return String(value)
+}
 
 function asString(value: unknown): string | undefined {
-  if (value === null || value === undefined) return undefined
+  if (value == null) return undefined
   if (typeof value === "string") return value
-  // YAML may parse dates as Date objects or numbers — convert to string
   if (value instanceof Date) return value.toISOString().slice(0, 10)
   if (typeof value === "number" || typeof value === "boolean") return String(value)
   return undefined
@@ -387,16 +397,13 @@ function asStringArray(value: unknown): string[] | undefined {
   return result.length > 0 ? result : undefined
 }
 
-function coercePlaceName(name: unknown): string {
-  if (typeof name === "string") return name
-  if (name instanceof Date) return name.toISOString().slice(0, 10)
-  if (typeof name === "number" || typeof name === "boolean") {
-    console.warn(`[crumb] Place name "${name}" is not a string — coercing. Quote it in the source file to be explicit.`)
-    return String(name)
-  }
-  if (name === null || name === undefined) {
-    console.warn(`[crumb] Place name is null/undefined — coercing to "null". Quote it in the source file.`)
-    return "null"
-  }
-  return String(name)
+function scalarToInfoValue(value: unknown): string | number | undefined {
+  if (typeof value === "string" || typeof value === "number") return value
+  if (value instanceof Date) return value.toISOString().slice(0, 10)
+  if (typeof value === "boolean") return String(value)
+  return undefined
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1)
 }

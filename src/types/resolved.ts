@@ -8,7 +8,6 @@ import {
   NamedSpan,
   Priority,
   TransportMode,
-  TripMeta,
 } from "./primitives"
 
 export type { TripMeta } from "./primitives"
@@ -63,7 +62,6 @@ export type ResolvedDuration =
 export interface ResolvedGeolocation {
   label:              string
   geocodingDisabled?: true
-  name?:              string
   address?:           string
   lat?:               number
   lng?:               number
@@ -81,23 +79,8 @@ export interface Activity {
   note?:     string
 }
 
-export interface UngroupedActivities {
-  type:  "ungrouped"
-  items: Activity[]
-}
-
-export interface ActivityGroup {
-  type:      "group"
-  kind:      GroupKind
-  title?:    string
-  time?:     ResolvedMoment
-  duration?: ResolvedDuration
-  items:     Activity[]
-}
-
-export type ActivityItem = UngroupedActivities | ActivityGroup
-
 export interface Stay {
+  type:      "stay"
   name:      string
   arrives?:  ResolvedMoment
   departs?:  ResolvedMoment
@@ -108,18 +91,29 @@ export interface Stay {
   note?:     string
 }
 
+export interface ActivityGroup {
+  type:      "group"
+  kind:      GroupKind
+  title?:    string
+  time?:     ResolvedMoment
+  duration?: ResolvedDuration
+  plan:      Activity[]
+}
+
+/** An item in a place's `plan` list — an activity, a stay, or an activity group. */
+export type PlanItem = Activity | Stay | ActivityGroup
+
 export interface Place {
-  type:       "place"
-  name:       string
-  arrives?:   ResolvedMoment
-  departs?:   ResolvedMoment
-  duration?:  ResolvedDuration
-  location?:  ResolvedGeolocation
-  tags?:      string[]
-  stay?:      Stay[]
-  activities: ActivityItem[]
-  info?:      MetadataItem[]
-  note?:      string
+  type:      "place"
+  name:      string
+  arrives?:  ResolvedMoment
+  departs?:  ResolvedMoment
+  duration?: ResolvedDuration
+  location?: ResolvedGeolocation
+  tags?:     string[]
+  plan:      PlanItem[]
+  info?:     MetadataItem[]
+  note?:     string
 }
 
 export interface TransportLeg {

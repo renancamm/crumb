@@ -1,0 +1,90 @@
+trip:
+  name: Lisbon — An Evergreen Guide
+  tags: [portugal, city, food, viewpoints]
+  note: |
+    A loose, no-dates guide to Lisbon — viewpoints to catch the light, places to
+    eat well, neighbourhoods to get lost in, and a few easy escapes.
+
+    Built across seven hills above the river Tagus, Lisbon is one of Europe's
+    oldest cities and its westernmost capital — a place of tiled façades, rattling
+    yellow trams, melancholy *fado* song, and a famously soft, clear light. Much of
+    the centre was rebuilt on a grand grid after the catastrophic 1755 earthquake;
+    the surviving medieval tangle is Alfama. It was from here that the Age of
+    Discovery set sail. Wander first, plan later — a city to feel, not to tick off.
+
+itinerary:
+
+  - place: Lisbon
+    location: Lisbon, Portugal
+    plan:
+
+      - group: Miradouros (viewpoints)
+        plan:
+          - activity: Miradouro de Santa Luzia
+            priority: must
+            note: |
+              Tiled terrace over Alfama's rooftops to the river. Come at late
+              afternoon, when the light turns the whole hillside gold.
+          - activity: Miradouro da Senhora do Monte
+            priority: must
+            location:
+              lat: 38.7197
+              lng: -9.1336
+            note: |
+              The highest viewpoint in the city, and the least crowded. Locals
+              bring a bottle of wine and wait for the sunset.
+          - activity: Miradouro de São Pedro de Alcântara
+            note: |
+              An easy stroll from Bairro Alto. Take the Glória funicular up
+              rather than the steep climb — it's a Lisbon ritual in itself.
+          - activity: Miradouro das Portas do Sol
+            note: Postcard view down into Alfama, right beside Santa Luzia — do both in one pass.
+
+      - group: Where to eat
+        plan:
+          - activity: Time Out Market
+            priority: must
+            note: A food hall under one roof gathering some of the city's best chefs. Go off-peak.
+          - activity: Pastéis de Belém
+            priority: must
+            note: |
+              The original custard tart, baked to a secret 1837 recipe. Sit
+              inside to eat them warm, dusted with cinnamon.
+          - activity: Cervejaria Ramiro
+            priority: must
+            note: |
+              Lisbon's temple of seafood. Finish with a prego — a garlicky steak
+              sandwich — exactly as the locals do, as dessert.
+          - activity: Ginjinha bars near Largo de São Domingos
+            location:
+              lat: 38.7145
+              lng: -9.1390
+            note: |
+              Tiny standing-room bars pouring ginjinha, the local sour-cherry
+              liqueur, into shot glasses. Ask for it "com elas" for the boozy cherries.
+
+      - group: Neighbourhoods to wander
+        plan:
+          - activity: Alfama
+            priority: must
+            note: |
+              The oldest quarter, a maze of lanes that survived the 1755
+              earthquake. Follow the sound of fado spilling from tiny tavernas at night.
+          - activity: Bairro Alto
+            note: Sleepy by day, the loudest district after dark — the done thing is to drink in the street.
+          - activity: Belém
+            note: Riverside district of grand monuments — the Jerónimos Monastery and the Belém Tower.
+          - activity: Mouraria
+            note: The multicultural birthplace of fado, just over the hill from Alfama. Gritty and real.
+
+      - group: Day trips
+        plan:
+          - activity: Sintra
+            priority: must
+            note: |
+              A misty hilltown of fairy-tale palaces. Buy timed tickets for Pena
+              Palace in advance and take the early train from Rossio.
+          - activity: Cascais
+            note: A breezy seaside town a short coastal train west. Rent a bike out to the Boca do Inferno cliffs.
+          - activity: Cabo da Roca
+            note: The westernmost point of mainland Europe, all wind and cliffs. Pair it with Sintra.

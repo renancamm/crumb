@@ -17,7 +17,6 @@
 import type { MetadataItem } from "../types/primitives"
 import type {
   Activity,
-  ActivityGroup,
   CrumbDocument,
   Place,
   ResolvedDuration,
@@ -25,8 +24,13 @@ import type {
   ResolvedTripMeta,
   Stay,
   TransportLeg,
-  UngroupedActivities,
 } from "../types/resolved"
+import {
+  placeStays,
+  placeActivityItems,
+  type UngroupedActivities,
+  type RenderActivityGroup,
+} from "./plan-view"
 import { CSS } from "./css"
 import { ICON_STAY, ICON_ARRIVES, ICON_DEPARTS, ICON_CLOCK, ICON_CORNER_DOWN_RIGHT, ICON_CORNER_UP_RIGHT, ICON_PLANE, ICON_TRAIN, ICON_BUS, ICON_CAR, ICON_SHIP, ICON_WALK, ICON_BIKE, ICON_ROUTE, ICON_PIN_OFF, ICON_PRIORITY_MUST, ICON_PRIORITY_MAYBE, modeIconSvg } from "./icons"
 import {
@@ -60,8 +64,10 @@ export interface AppOptions {
   source?: string
   /** Example files keyed by filename. Only used when includeEditor is true. */
   examples?: Record<string, string>
-  /** CRUMB_SPEC.md content for the "Download spec" button. Only used when includeEditor is true. */
+  /** CRUMB_SPEC.md content (full reference). Only used when includeEditor is true. */
   specContent?: string
+  /** CRUMB_FOR_AI.md content — the compact authoring guide used by the "Generate with AI" prompt. Only used when includeEditor is true. */
+  aiGuideContent?: string
 }
 
 // ─── Pure content render ──────────────────────────────────────────────────────
@@ -209,15 +215,17 @@ function renderPlaceFullDetail(place: Place, index: number, totalPlaces: number,
     bodyParts.push(`<div class="tags">${place.tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>`)
   if (place.note)
     bodyParts.push(`<div class="note place-note">${renderMarkdown(place.note)}</div>`)
-  if (place.stay?.length)
-    bodyParts.push(renderStays(place.stay))
+  const stays = placeStays(place)
+  if (stays.length)
+    bodyParts.push(renderStays(stays))
   if (place.info?.length)
     bodyParts.push(renderInfoList(place.info, ""))
-  if (place.activities.length > 0) {
+  const activityItems = placeActivityItems(place)
+  if (activityItems.length > 0) {
     const actParts: string[] = [`<div class="activities">`]
     const counter = { n: 0 }
     let dayIdx = 0, weekIdx = 0
-    for (const actItem of place.activities) {
+    for (const actItem of activityItems) {
       if (actItem.type === "ungrouped") {
         actParts.push(renderUngrouped(actItem, counter))
       } else {
@@ -353,8 +361,9 @@ function renderActivityListItem(act: Activity, flatIdx: number, lbl: string): st
 function renderPlaceActivities(place: Place): string {
   const parts: string[] = []
 
-  if (place.stay?.length) {
-    place.stay.forEach((stay, sIdx) => {
+  const stays = placeStays(place)
+  if (stays.length) {
+    stays.forEach((stay, sIdx) => {
       const dateStr = stay.arrives && stay.departs ? formatPlainDateRange(stay.arrives, stay.departs)
                     : stay.arrives ? formatMoment(stay.arrives)
                     : stay.departs ? formatMoment(stay.departs) : ""
@@ -367,15 +376,15 @@ function renderPlaceActivities(place: Place): string {
     })
   }
 
-  let actFlatIdx = 0, dayIdx = 0, weekIdx = 0, planIdx = 0, ungroupedIdx = 0
-  for (const actItem of place.activities) {
+  let actFlatIdx = 0, dayIdx = 0, weekIdx = 0, groupIdx = 0, ungroupedIdx = 0
+  for (const actItem of placeActivityItems(place)) {
     if (actItem.type === "group") {
-      const isPlan = actItem.kind === "plan"
-      const gIdx   = isPlan              ? ++planIdx
+      const isPlan = actItem.kind === "group"
+      const gIdx   = isPlan              ? ++groupIdx
                    : actItem.kind === "day"  ? ++dayIdx
                    : actItem.kind === "week" ? ++weekIdx : 0
       if (isPlan) {
-        const label = actItem.title ?? "Plan"
+        const label = actItem.title ?? "Group"
         parts.push(
           `  <li class="list-divider list-divider--plan">` +
           `<span class="list-item-body"><span class="list-item-label">${escape(label)}</span></span></li>`
@@ -454,7 +463,7 @@ function renderPanelHeader({ stickyBar, badge, title, meta }: PanelHeaderOpts): 
 /** Total activity count across all groups in a place (for card metadata). */
 function countActivities(place: Place): number {
   let n = 0
-  for (const actItem of place.activities) n += actItem.items.length
+  for (const actItem of placeActivityItems(place)) n += actItem.items.length
   return n
 }
 
@@ -616,21 +625,21 @@ function findActivityByFlatIndex(
   place: Place,
   flatIdx: number,
 ): { act: Activity; actGroupLetterIdx: number; groupLabel?: string; groupNum?: number } | null {
-  let count = 0, dayIdx = 0, weekIdx = 0, planIdx = 0, ungroupedIdx = 0
-  for (const actItem of place.activities) {
+  let count = 0, dayIdx = 0, weekIdx = 0, groupIdx = 0, ungroupedIdx = 0
+  for (const actItem of placeActivityItems(place)) {
     if (actItem.type === "group") {
-      const isPlan = actItem.kind === "plan"
-      if (isPlan)                       planIdx++
+      const isPlan = actItem.kind === "group"
+      if (isPlan)                       groupIdx++
       else if (actItem.kind === "day")  dayIdx++
       else if (actItem.kind === "week") weekIdx++
-      const gIdx = isPlan ? planIdx : actItem.kind === "day" ? dayIdx : weekIdx
+      const gIdx = isPlan ? groupIdx : actItem.kind === "day" ? dayIdx : weekIdx
       let localIdx = 0
       for (const act of actItem.items) {
         if (count === flatIdx) return {
           act,
           actGroupLetterIdx: localIdx,
           groupNum: gIdx,
-          groupLabel: isPlan ? (actItem.title ?? "Plan") : formatOrdinal(gIdx, actItem.kind as "day" | "week"),
+          groupLabel: isPlan ? (actItem.title ?? "Group") : formatOrdinal(gIdx, actItem.kind as "day" | "week"),
         }
         count++; localIdx++
       }
@@ -658,7 +667,7 @@ export function renderModalContent(doc: CrumbDocument, modal: ModalRef): string 
   if (modal.type === "stay") {
     const places = doc.itinerary.filter(i => i.type === "place") as Place[]
     const place  = modal.placeIdx !== null ? places[modal.placeIdx - 1] : null
-    const stay   = place?.stay?.[modal.itemIdx]
+    const stay   = place ? placeStays(place)[modal.itemIdx] : undefined
     return stay ? renderStayPanel(stay) : ""
   }
 
@@ -788,17 +797,18 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
       <button class="modal-x" id="generate-close-x"<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       <div class="modal-header">
         <div class="modal-title">Generate with AI</div>
-        <div class="modal-description">Download the Crumb spec, upload it to an AI assistant, then describe your trip.</div>
+        <div class="modal-description">Copy the prompt into any AI assistant (ChatGPT, Claude, …), describe your trip, then paste the result back into the editor.</div>
       </div>
       <div class="modal-body">
         <div class="ref-prompt-block">
-          <div class="ref-prompt-label">Sample prompt</div>
-          <div class="ref-prompt-text">Plan a 2-week trip to Japan for two people in October. Include Tokyo (5 nights), Kyoto (4 nights), and Osaka (3 nights). Add shinkansen legs between cities. Include must-do activities with morning/afternoon timings. Output as a valid .crumb document.</div>
+          <div class="ref-prompt-label">Then describe your trip, for example:</div>
+          <div class="ref-prompt-text">Plan a 10-day trip to Italy in October: Rome (4 nights), Florence (3), Venice (2). High-speed trains between cities, fly home from Venice. Include must-do sights with morning/afternoon timings and a hotel in Rome.</div>
         </div>
       </div>
       <div class="modal-footer">
         <button class="action-btn" id="generate-close">Close</button>
-        <button class="action-btn primary" id="dl-spec-btn">Download spec</button>
+        <button class="action-btn" id="dl-guide-btn">Download guide</button>
+        <button class="action-btn primary" id="copy-prompt-btn">Copy prompt</button>
       </div>
     </div>
   </div>
@@ -836,6 +846,7 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
   const editorGlobals = includeEditor ? `
     window.__CRUMB_SOURCE   = "";
     window.__CRUMB_SPEC     = ${JSON.stringify(options.specContent ?? "")};
+    window.__CRUMB_FOR_AI   = ${JSON.stringify(options.aiGuideContent ?? "")};
     window.__CRUMB_EXAMPLES = ${JSON.stringify(options.examples ?? {})};` : ""
 
   const editorScript = includeEditor ? `\n  <script>${options.editorBundle}</script>` : ""
@@ -904,7 +915,8 @@ function durOrUnknown(dur: ResolvedDuration): string {
 
 function resolvePlaceDisplayDuration(place: Place): Place["duration"] {
   if (place.duration) return place.duration
-  if (place.stay?.length === 1 && place.stay[0].duration) return place.stay[0].duration
+  const stays = placeStays(place)
+  if (stays.length === 1 && stays[0].duration) return stays[0].duration
   return undefined
 }
 
@@ -984,15 +996,17 @@ function renderPlace(place: Place, index = 0): string {
     bodyParts.push(`<div class="tags">${place.tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>`)
   if (place.note)
     bodyParts.push(`<div class="note place-note">${renderMarkdown(place.note)}</div>`)
-  if (place.stay?.length)
-    bodyParts.push(renderStays(place.stay))
+  const stays = placeStays(place)
+  if (stays.length)
+    bodyParts.push(renderStays(stays))
   if (place.info?.length)
     bodyParts.push(renderInfoList(place.info, ""))
-  if (place.activities.length > 0) {
+  const activityItems = placeActivityItems(place)
+  if (activityItems.length > 0) {
     const actParts: string[] = [`<div class="activities">`]
     const counter = { n: 0 }
     let dayIdx = 0, weekIdx = 0
-    for (const actItem of place.activities) {
+    for (const actItem of activityItems) {
       if (actItem.type === "ungrouped") {
         actParts.push(renderUngrouped(actItem, counter))
       } else {
@@ -1246,10 +1260,10 @@ function renderUngrouped(container: UngroupedActivities, counter: ActCounter): s
   return `    <ul class="activity-list ungrouped">${container.items.map(a => renderActivityItem(a, counter.n++)).join("\n")}</ul>`
 }
 
-function renderActivityGroup(group: ActivityGroup, counter: ActCounter, groupIndex = 0): string {
-  const isPlan = group.kind === "plan"
+function renderActivityGroup(group: RenderActivityGroup, counter: ActCounter, groupIndex = 0): string {
+  const isPlan = group.kind === "group"
   const cls    = isPlan ? "activity-group plan-group" : "activity-group"
-  const kind   = isPlan ? "Plan" : group.kind === "week" ? "Week" : "Day"
+  const kind   = isPlan ? "Group" : group.kind === "week" ? "Week" : "Day"
 
   let header: string
   if (isPlan && group.title) {
@@ -1416,12 +1430,12 @@ export function buildPopupMeta(doc: CrumbDocument): Record<string, string> {
     if (range) parts.push(range)
     if (parts.length) meta[item.name] = parts.join(" • ")
 
-    for (const stay of item.stay ?? []) {
+    for (const stay of placeStays(item)) {
       const r = formatPlainDateRange(stay.arrives, stay.departs)
       if (r) meta[stay.name] = r
     }
 
-    for (const group of item.activities) {
+    for (const group of placeActivityItems(item)) {
       for (const act of group.items) {
         const ap: string[] = []
         if (act.time) {

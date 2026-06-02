@@ -1,0 +1,52 @@
+trip:
+  name: Japan — two weeks in October
+  author: Mara
+  duration: 10 nights
+  tags: [japan, first-time, food, temples]
+  note: Coming together. Flying into Tokyo, out of Osaka. Still need to book hotels and the shinkansen.
+
+itinerary:
+
+  - place: Tokyo
+    arrives: early October
+    duration: 4 nights
+    plan:
+      - Senso-ji Temple
+      - activity: teamLab Planets
+        priority: must
+      - Shibuya Crossing
+      - Tsukiji Outer Market
+      - activity: Day trip to Nikko
+        priority: maybe
+        location:
+          lat: 36.7580
+          lng: 139.5988
+
+  - transport: train      # shinkansen to Kyoto
+
+  - place: Kyoto
+    duration: 3 nights
+    plan:
+      - activity: Fushimi Inari
+        priority: must
+      - Arashiyama Bamboo Grove
+      - Kinkaku-ji
+      - activity: Gion in the evening
+        location:
+          lat: 35.0037
+          lng: 135.7745
+
+  - transport: train
+
+  - place: Osaka
+    duration: 3 nights
+    plan:
+      - activity: Dotonbori
+        priority: must
+      - Osaka Castle
+      - Kuromon Market
+      - activity: Day trip to Nara
+        priority: maybe
+        location:
+          lat: 34.6851
+          lng: 135.8431

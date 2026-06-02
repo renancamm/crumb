@@ -20,6 +20,7 @@ import { updateMap, fitAllPlaces, applyDetailMarkerFilter, fitTransportHubs, map
 import { state, ZOOM_PLACE_FLY, ZOOM_DETAIL_FLY, MOBILE_MAX_W, FLY_DURATION } from "./app-state"
 import { initSheet, exitSheet, goMedium } from "./app-sheet"
 import { ICON_PIN_OFF } from "./icons"
+import { placeStays, placeActivityItems } from "./plan-view"
 import type { ModalRef } from "./app-state"
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -84,9 +85,9 @@ function getPlaceItems(): PlaceItem[] {
   const place  = places[state.activePlaceIndex - 1]
   if (!place) return []
   const items: PlaceItem[] = []
-  ;(place.stay ?? []).forEach((_: any, i: number) => items.push({ type: "stay", itemIdx: i }))
+  placeStays(place).forEach((_, i) => items.push({ type: "stay", itemIdx: i }))
   let actFlatIdx = 0
-  for (const actItem of place.activities)
+  for (const actItem of placeActivityItems(place))
     for (const _ of actItem.items) items.push({ type: "activity", itemIdx: actFlatIdx++ })
   return items
 }
@@ -204,7 +205,7 @@ function openDetail(modal: ModalRef): void {
   if (modal.type === "stay" && modal.placeIdx !== null) {
     const places = doc.itinerary.filter((i: any) => i.type === "place") as any[]
     const place  = places[modal.placeIdx - 1]
-    const stay   = place?.stay?.[modal.itemIdx]
+    const stay   = place ? placeStays(place)[modal.itemIdx] : undefined
     if (stay && state.geoIndex.staysFailed.has(stay.name)) {
       const noMapTag = `<span class="tag tag--icon">${ICON_PIN_OFF} No map</span>`
       const tagsEl = panelContent.querySelector<HTMLElement>(".panel-stay-body .tags")
@@ -223,7 +224,7 @@ function openDetail(modal: ModalRef): void {
     let actName: string | null = null
     if (place) {
       let idx = 0
-      outer: for (const actItem of place.activities) {
+      outer: for (const actItem of placeActivityItems(place)) {
         for (const a of actItem.items) {
           if (idx === modal.itemIdx) { actName = a.name; break outer }
           idx++
@@ -254,14 +255,14 @@ function focusDetailMarker(modal: ModalRef): void {
 
   if (modal.type === "activity") {
     let flatIdx = 0
-    outer: for (const actItem of place.activities) {
+    outer: for (const actItem of placeActivityItems(place)) {
       for (const act of actItem.items) {
         if (flatIdx === modal.itemIdx) { geo = state.geoIndex.activities.get(act.name) ?? undefined; break outer }
         flatIdx++
       }
     }
   } else if (modal.type === "stay") {
-    const stay = place.stay?.[modal.itemIdx]
+    const stay = placeStays(place)[modal.itemIdx]
     if (stay) geo = state.geoIndex.stays.get(stay.name) ?? undefined
   }
 
@@ -465,7 +466,7 @@ document.addEventListener("crumb:marker", (e: Event) => {
     if (!place) return
 
     if (type === "stay") {
-      const stayIdx = (place.stay ?? []).findIndex((s: any) => s.name === name)
+      const stayIdx = placeStays(place).findIndex((s) => s.name === name)
       if (stayIdx < 0) return
       if (state.activePlaceIndex !== placeIdx) setActivePlace(placeIdx)
       openDetail({ type: "stay", placeIdx, itemIdx: stayIdx })
@@ -473,7 +474,7 @@ document.addEventListener("crumb:marker", (e: Event) => {
     }
 
     let flatIdx = 0
-    for (const actItem of place.activities) {
+    for (const actItem of placeActivityItems(place)) {
       for (const act of actItem.items) {
         if (act.name === name) {
           if (state.activePlaceIndex !== placeIdx) setActivePlace(placeIdx)

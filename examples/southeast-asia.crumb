@@ -1,0 +1,228 @@
+trip:
+  name: Southeast Asia — Three Weeks Overland
+  author: Priya & Sam
+  duration: 3 weeks
+  tags: [thailand, laos, vietnam, temples, food, backpacking]
+  note: |
+    Bangkok down through Laos and Vietnam — a mix of flights, an overnight train,
+    and a lot of street food. A loose plan; add or drop nights as you go. Sort a
+    Vietnam e-visa before you fly, and carry small, clean US dollars for visas
+    and border crossings.
+
+itinerary:
+
+  - place: Bangkok
+    arrives: early November
+    duration: 3 nights
+    location: Bangkok, Thailand
+    tags: [city, temples, street-food]
+    note: |
+      Thailand's chaotic, exhilarating capital — gilded temples and royal palaces
+      threaded between street-food alleys, canals, malls, and tuk-tuks. It rewards
+      surrender: accept the heat and the noise, eat from the carts, and take the
+      breezy river ferries instead of fighting the traffic.
+    plan:
+      - activity: Grand Palace & Wat Pho
+        priority: must
+        location:
+          lat: 13.7500
+          lng: 100.4915
+        note: |
+          The former royal seat and the Emerald Buddha, Thailand's most sacred
+          image, carved from a single block of jade. Next door, Wat Pho holds the
+          46m Reclining Buddha and the country's oldest massage school. Dress
+          modestly — shoulders and knees covered — or you'll be turned away.
+      - activity: Wat Arun at sunset
+        location:
+          lat: 13.7437
+          lng: 100.4889
+        note: |
+          The "Temple of Dawn" on the river's west bank, its spire encrusted with
+          broken Chinese porcelain that glitters at golden hour. Cross on the 4-baht
+          ferry and watch the light from a rooftop bar opposite.
+      - activity: Chatuchak Weekend Market
+        priority: maybe
+        location:
+          lat: 13.7998
+          lng: 100.5503
+        note: One of the world's largest markets — 15,000 stalls, open weekends only. Go early, before the heat and the crowds peak.
+      - activity: Boat down the Chao Phraya
+        location:
+          lat: 13.7188
+          lng: 100.5140
+        note: Hop on the orange-flag express ferry — the locals' commute and the best-value tour in the city.
+
+  - transport: flight
+    to: Luang Prabang
+    note: A short hop north into the mountains of Laos. Budget carriers fly it daily; book ahead in high season.
+
+  - place: Luang Prabang
+    duration: 3 nights
+    location: Luang Prabang, Laos
+    tags: [temples, river, slow]
+    note: |
+      A tiny UNESCO-listed town where the Mekong meets the Nam Khan — the former
+      royal capital of Laos, all saffron-robed monks, gilded temples, and
+      French-colonial shophouses. The pace is famously, deliberately slow; this
+      is the place on the trip to do nothing in particular.
+    plan:
+      - activity: Kuang Si Falls
+        priority: must
+        location:
+          lat: 19.7490
+          lng: 101.9928
+        note: |
+          Turquoise limestone pools tumbling through the jungle, 30 minutes out of
+          town. Swim in the lower tiers and climb to the top for the main cascade.
+          Shared minivans leave from the centre all morning.
+      - activity: Alms-giving at dawn
+        location:
+          lat: 19.8896
+          lng: 102.1370
+        note: |
+          At sunrise, lines of monks walk the streets collecting offerings of sticky
+          rice (the *tak bat*, a centuries-old ritual). If you watch, do so quietly
+          from across the street and never use a flash — it is a daily devotion, not
+          a show. Buy rice from a respectful vendor, or simply observe.
+      - activity: Mount Phousi at sunset
+        location:
+          lat: 19.8915
+          lng: 102.1355
+        note: Climb the 300-odd steps up the town's central hill for a 360° view over the rivers and rooftops as the light fades.
+      - activity: Browse the night market on Sisavangvong Road
+        location:
+          lat: 19.8901
+          lng: 102.1349
+        note: Lao textiles, lanterns, and handicrafts laid out along the main street every evening — haggle gently.
+
+  - transport: flight
+    to: Hanoi
+
+  - place: Hanoi
+    duration: 3 nights
+    location: Hanoi, Vietnam
+    tags: [city, history, food]
+    note: |
+      Vietnam's thousand-year-old capital — a dense, motorbike-swarmed Old Quarter
+      where each street was once a guild selling a single trade, wrapped around a
+      legend-haunted lake. Crossing the road is an art: step out slowly and let
+      the scooters flow around you. Some of the best street food in Asia is here.
+    plan:
+      - activity: Wander the Old Quarter
+        location:
+          lat: 21.0340
+          lng: 105.8500
+        note: Thirty-six ancient guild streets, each once devoted to a single trade — silk, silver, tin, paper.
+      - activity: Train Street
+        priority: maybe
+        location:
+          lat: 21.0288
+          lng: 105.8430
+        note: |
+          A working railway runs within arm's reach of the houses, and cafés set
+          stools along the track between trains. Check the timetable, order a coffee,
+          and stand well back when the barrier drops — it's thrilling and very close.
+      - activity: Hoan Kiem Lake & Ngoc Son Temple
+        location:
+          lat: 21.0287
+          lng: 105.8525
+        note: The Old Quarter's tranquil heart, named for a legend of a returned sword; a red bridge leads to a temple on a tiny island.
+      - activity: Bun cha for lunch
+        priority: must
+        location:
+          lat: 21.0118
+          lng: 105.8500
+        note: |
+          Hanoi's signature dish — grilled pork patties in a sweet-sour broth with
+          noodles and herbs, eaten at lunchtime. Best from a smoky street stall on a
+          plastic stool; the smell of the grilling pork will lead you there.
+
+  - transport: train
+    to: Da Nang
+    duration: overnight
+    note: |
+      The Reunification Express down the coast. Book a soft-sleeper berth; the
+      morning stretch over the Hai Van Pass, between mountains and sea, is one of
+      the world's great train rides. Hội An is a 45-minute taxi from Da Nang station.
+
+  - place: Hội An
+    duration: 4 nights
+    location: Hội An, Vietnam
+    tags: [old-town, beach, tailors]
+    note: |
+      A lantern-lit former trading port, exquisitely preserved, where Japanese,
+      Chinese, and European merchants met from the 15th century on — you can still
+      see the Japanese covered bridge and the old guild halls. The car-free old
+      town, the beach, and a hundred tailors' shops make it the trip's easy idyll.
+    plan:
+      - activity: Old Town lanterns after dark
+        priority: must
+        location:
+          lat: 15.8772
+          lng: 108.3270
+        note: |
+          As night falls the car-free old town switches off its harsh lights and
+          glows with thousands of silk lanterns reflected in the river. Loveliest
+          just after sunset; float a paper lantern downstream for luck.
+      - activity: An Bang Beach
+        location:
+          lat: 15.9070
+          lng: 108.3380
+        note: A wide, easy beach a short bike ride from town — a good afternoon off your feet.
+      - activity: Have a suit or dress tailored
+        priority: maybe
+        location:
+          lat: 15.8800
+          lng: 108.3270
+        note: |
+          Hội An's tailors will make a garment to measure in a day or two. Order
+          early in your stay so there's time for a fitting, and bring a photo of
+          exactly what you want.
+      - activity: Take a riverside cooking class
+        location:
+          lat: 15.8760
+          lng: 108.3280
+        note: Most classes start with a market tour by boat, then teach a few Vietnamese staples to cook (and eat).
+
+  - transport: flight
+    from: Da Nang
+    to: Ho Chi Minh City
+
+  - place: Ho Chi Minh City
+    duration: 3 nights
+    location: Ho Chi Minh City, Vietnam
+    tags: [city, history, nightlife]
+    note: |
+      Vietnam's fast, southern megacity — still Saigon to many — where French
+      boulevards and colonial landmarks meet rooftop bars and round-the-clock
+      energy. This is the country's commercial engine, and the war's history sits
+      close to the surface; give it time for both.
+    plan:
+      - activity: War Remnants Museum
+        priority: must
+        location:
+          lat: 10.7793
+          lng: 106.6920
+        note: |
+          An unflinching, essential account of the war from the Vietnamese
+          perspective — sobering and at times graphic. Allow a couple of hours, and
+          start upstairs before the courtyard of captured aircraft and tanks.
+      - activity: Cu Chi Tunnels
+        priority: maybe
+        location:
+          lat: 11.1430
+          lng: 106.4640
+        note: |
+          A vast network of hand-dug tunnels northwest of the city where Viet Cong
+          fighters lived and fought; you can crawl through a widened section. Most
+          go on a half-day guided trip — the boat option up the river beats the bus.
+      - activity: Ben Thanh Market
+        location:
+          lat: 10.7723
+          lng: 106.6980
+        note: The city's landmark market — souvenirs and bartering by day, a sprawl of street-food stalls by night.
+      - activity: Sunset drink on a District 1 rooftop
+        location:
+          lat: 10.7770
+          lng: 106.7020
+        note: End the trip up high — the city's skyline glitters and the heat finally lifts.

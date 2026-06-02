@@ -1,0 +1,9 @@
+trip:
+  name: Japan, this autumn
+  duration: 2 weeks
+  note: First time in Japan — a couple of weeks, flying out of Osaka. Nothing booked yet.
+
+itinerary:
+  - Tokyo
+  - Kyoto
+  - Osaka

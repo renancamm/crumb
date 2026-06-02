@@ -14,6 +14,7 @@ declare global {
     // Editor-mode only (undefined in viewer-only output):
     __CRUMB_SOURCE?:   string
     __CRUMB_SPEC?:     string
+    __CRUMB_FOR_AI?:   string
     __CRUMB_EXAMPLES?: Record<string, string>
     // Always present:
     __CRUMB_DATA:     CrumbDocument | null

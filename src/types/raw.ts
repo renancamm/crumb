@@ -13,7 +13,7 @@ export type RawDuration = string
 
 export type RawGeolocation =
   | string
-  | { name?: string; address?: string; lat?: number; lng?: number }
+  | { address?: string; lat?: number; lng?: number }
 
 export interface RawActivity {
   type:      "activity"
@@ -27,18 +27,8 @@ export interface RawActivity {
   note?:     string
 }
 
-export interface RawActivityGroup {
-  type:      "group"
-  kind:      GroupKind
-  title?:    string
-  time?:     RawMoment
-  duration?: RawDuration
-  items:     RawActivity[]
-}
-
-export type RawActivityItem = RawActivity | RawActivityGroup
-
 export interface RawStay {
+  type:      "stay"
   name:      string
   arrives?:  RawMoment
   departs?:  RawMoment
@@ -49,18 +39,29 @@ export interface RawStay {
   note?:     string
 }
 
+export interface RawActivityGroup {
+  type:      "group"
+  kind:      GroupKind
+  title?:    string
+  time?:     RawMoment
+  duration?: RawDuration
+  plan:      RawActivity[]
+}
+
+/** An item in a place's `plan` list. */
+export type RawPlanItem = RawActivity | RawStay | RawActivityGroup
+
 export interface RawPlace {
-  type:       "place"
-  name:       string
-  arrives?:   RawMoment
-  departs?:   RawMoment
-  duration?:  RawDuration
-  location?:  RawGeolocation
-  tags?:      string[]
-  stay?:      RawStay[]
-  activities: RawActivityItem[]
-  info?:      MetadataItem[]
-  note?:      string
+  type:      "place"
+  name:      string
+  arrives?:  RawMoment
+  departs?:  RawMoment
+  duration?: RawDuration
+  location?: RawGeolocation
+  tags?:     string[]
+  plan:      RawPlanItem[]
+  info?:     MetadataItem[]
+  note?:     string
 }
 
 export interface RawTransportLeg {

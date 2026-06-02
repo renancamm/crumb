@@ -16,6 +16,7 @@ import {
   ICON_WALK, ICON_BIKE, ICON_ROUTE, ICON_PIN_OFF, ICON_ARRIVES, ICON_DEPARTS, ICON_CLOCK,
 } from "./icons"
 import { escape, activityLabel } from "./format"
+import { placeStays, placeActivityItems } from "./plan-view"
 import { state, ZOOM_OVERVIEW, ZOOM_DETAIL, ZOOM_PLACE_FLY, ROUTE_COLOR, MOBILE_MAX_W } from "./app-state"
 import { focusMarker } from "./app-focus"
 
@@ -189,16 +190,16 @@ function collectActivityGeoTargets(doc: CrumbDocument): ActivityGeoTarget[] {
   for (const item of doc.itinerary) {
     if (item.type !== "place") continue
     placeIdx++
-    let dayIdx = 0, weekIdx = 0, planIdx = 0, ungroupedIdx = 0
-    for (const actItem of (item.activities ?? [])) {
+    let dayIdx = 0, weekIdx = 0, groupIdx = 0, ungroupedIdx = 0
+    for (const actItem of placeActivityItems(item)) {
       if (actItem.type === "group") {
-        const isPlan = actItem.kind === "plan"
-        if (isPlan)                        planIdx++
+        const isPlan = actItem.kind === "group"
+        if (isPlan)                        groupIdx++
         else if (actItem.kind === "day")   dayIdx++
         else if (actItem.kind === "week")  weekIdx++
-        const groupNum = isPlan ? planIdx : actItem.kind === "day" ? dayIdx : actItem.kind === "week" ? weekIdx : undefined
+        const groupNum = isPlan ? groupIdx : actItem.kind === "day" ? dayIdx : actItem.kind === "week" ? weekIdx : undefined
         let actGroupIdx = 0
-        for (const act of (actItem.items ?? [])) {
+        for (const act of actItem.items) {
           if (!act.location?.geocodingDisabled) {
             const hasCoords  = act.location?.lat != null && act.location?.lng != null
             const queryLabel = act.location?.label && act.location.label !== "none" ? act.location.label : act.name
@@ -215,7 +216,7 @@ function collectActivityGeoTargets(doc: CrumbDocument): ActivityGeoTarget[] {
         }
       } else {
         let localIdx = ungroupedIdx
-        for (const act of (actItem.items ?? [])) {
+        for (const act of actItem.items) {
           if (!act.location?.geocodingDisabled) {
             const hasCoords  = act.location?.lat != null && act.location?.lng != null
             const queryLabel = act.location?.label && act.location.label !== "none" ? act.location.label : act.name
@@ -243,7 +244,7 @@ function collectStayGeoTargets(doc: CrumbDocument): StayGeoTarget[] {
   for (const item of doc.itinerary) {
     if (item.type !== "place") continue
     placeIdx++
-    for (const stay of (item.stay ?? [])) {
+    for (const stay of placeStays(item)) {
       if (stay.location?.geocodingDisabled) continue
       const hasCoords  = stay.location?.lat != null && stay.location?.lng != null
       const queryLabel = !hasCoords && stay.location?.label && stay.location.label !== "none"

@@ -16,29 +16,30 @@ import {
   LoosePeriod,
   NamedSpan,
   Priority,
+  SEASONS,
   TripMeta,
 } from "../types/primitives"
 import {
   RawActivity,
   RawActivityGroup,
-  RawActivityItem,
   RawCrumbDocument,
   RawDuration,
   RawGeolocation,
   RawItineraryItem,
   RawMoment,
   RawPlace,
+  RawPlanItem,
   RawStay,
   RawTransportLeg,
 } from "../types/raw"
 import {
   Activity,
   ActivityGroup,
-  ActivityItem,
   CrumbDocument,
   DateRef,
   DurationEstimate,
   Place,
+  PlanItem,
   ResolvedDuration,
   ResolvedGeolocation,
   ResolvedMoment,
@@ -46,7 +47,6 @@ import {
   Stay,
   TimeOfDay,
   TransportLeg,
-  UngroupedActivities,
 } from "../types/resolved"
 
 // ─── Entry point ─────────────────────────────────────────────────────────────
@@ -80,17 +80,16 @@ function resolveItineraryItem(item: RawItineraryItem): Place | TransportLeg {
 
 function resolvePlace(raw: RawPlace): Place {
   return {
-    type:       "place",
-    name:       raw.name,
-    arrives:    raw.arrives  != null ? resolveMoment(raw.arrives)  : undefined,
-    departs:    raw.departs  != null ? resolveMoment(raw.departs)  : undefined,
-    duration:   raw.duration != null ? resolveDuration(raw.duration) : undefined,
-    location:   raw.location != null ? resolveGeolocation(raw.location) : undefined,
-    tags:       raw.tags,
-    stay:       raw.stay?.map(resolveStay),
-    activities: resolveActivities(raw.activities),
-    info:       raw.info,
-    note:       raw.note,
+    type:     "place",
+    name:     raw.name,
+    arrives:  raw.arrives  != null ? resolveMoment(raw.arrives)  : undefined,
+    departs:  raw.departs  != null ? resolveMoment(raw.departs)  : undefined,
+    duration: raw.duration != null ? resolveDuration(raw.duration) : undefined,
+    location: raw.location != null ? resolveGeolocation(raw.location) : undefined,
+    tags:     raw.tags,
+    plan:     raw.plan.map(resolvePlanItem),
+    info:     raw.info,
+    note:     raw.note,
   }
 }
 
@@ -110,6 +109,7 @@ function resolveTransportLeg(raw: RawTransportLeg): TransportLeg {
 
 function resolveStay(raw: RawStay): Stay {
   return {
+    type:     "stay",
     name:     raw.name,
     arrives:  raw.arrives  != null ? resolveMoment(raw.arrives)   : undefined,
     departs:  raw.departs  != null ? resolveMoment(raw.departs)   : undefined,
@@ -121,31 +121,12 @@ function resolveStay(raw: RawStay): Stay {
   }
 }
 
-// ─── Activities ──────────────────────────────────────────────────────────────
+// ─── Plan items ──────────────────────────────────────────────────────────────
 
-function resolveActivities(items: RawActivityItem[]): ActivityItem[] {
-  // Pass 2 produces a flat list; Pass 3 will wrap ungrouped items.
-  // We cast ungrouped activities to a temporary representation.
-  // Actually the return type here needs to match what Pass 3 expects.
-  // We'll keep the raw structure as a "pre-pass3" list: groups resolved,
-  // standalone activities resolved but not yet wrapped.
-  // Since ActivityItem = UngroupedActivities | ActivityGroup, we'll
-  // temporarily treat each standalone activity as a single-item UngroupedActivities
-  // and let Pass 3 merge them.
-  const result: ActivityItem[] = []
-
-  for (const item of items) {
-    if (item.type === "activity") {
-      result.push({
-        type:  "ungrouped",
-        items: [resolveActivity(item)],
-      } as UngroupedActivities)
-    } else {
-      result.push(resolveActivityGroup(item))
-    }
-  }
-
-  return result
+function resolvePlanItem(item: RawPlanItem): PlanItem {
+  if (item.type === "stay")  return resolveStay(item)
+  if (item.type === "group") return resolveActivityGroup(item)
+  return resolveActivity(item)
 }
 
 function resolveActivity(raw: RawActivity): Activity {
@@ -169,7 +150,7 @@ function resolveActivityGroup(raw: RawActivityGroup): ActivityGroup {
     title:    raw.title,
     time:     raw.time     != null ? resolveMoment(raw.time)      : undefined,
     duration: raw.duration != null ? resolveDuration(raw.duration) : undefined,
-    items:    raw.items.map(resolveActivity),
+    plan:     raw.plan.map(resolveActivity),
   }
 }
 
@@ -460,17 +441,10 @@ export function resolveGeolocation(raw: RawGeolocation): ResolvedGeolocation {
   const lng = validCoords ? raw.lng : undefined
 
   const label =
-    raw.name ??
     raw.address ??
     (validCoords ? `${raw.lat}, ${raw.lng}` : "location")
 
-  return {
-    label,
-    name:    raw.name,
-    address: raw.address,
-    lat,
-    lng,
-  }
+  return { label, address: raw.address, lat, lng }
 }
 
 // ─── Fuzzy date parsing ──────────────────────────────────────────────────────
@@ -495,7 +469,7 @@ function parseFuzzyDate(s: string): DateRef | null {
   const lower = s.toLowerCase().trim().replace(/-/g, " ")
 
   // Seasons: "spring 2026", "summer 2026", "fall 2026", "autumn 2026", "winter 2026"
-  const season = lower.match(/^(spring|summer|fall|autumn|winter)\s+(\d{4})$/)
+  const season = lower.match(new RegExp(`^(${SEASONS.join("|")})\\s+(\\d{4})$`))
   if (season) {
     const year = parseInt(season[2], 10)
     const estimates: Record<string, [number, number, number]> = {

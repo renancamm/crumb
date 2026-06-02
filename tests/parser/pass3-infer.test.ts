@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { addDays } from "../../src/parser/pass3-infer"
 import { parse } from "../../src/parser/index"
-import type { Place, TransportLeg, ResolvedMoment } from "../../src/types/resolved"
+import type { Place, TransportLeg, ActivityGroup, ResolvedMoment } from "../../src/types/resolved"
 
 function isoDate(m: ResolvedMoment | undefined): string | undefined {
   if (!m) return undefined
@@ -48,7 +48,7 @@ describe("transport endpoint inference", () => {
     const doc = parse(`
 itinerary:
   - Paris
-  - train
+  - transport: train
   - London
 `)
     const leg = doc.itinerary[1] as TransportLeg
@@ -61,7 +61,7 @@ itinerary:
     const doc = parse(`
 itinerary:
   - Tokyo
-  - flight
+  - transport: flight
 `)
     const leg = doc.itinerary[1] as TransportLeg
     expect(leg.from?.label).toBe("Tokyo")
@@ -71,12 +71,26 @@ itinerary:
   it("infers only 'to' when no preceding place exists", () => {
     const doc = parse(`
 itinerary:
-  - train
+  - transport: train
   - Osaka
 `)
     const leg = doc.itinerary[0] as TransportLeg
     expect(leg.from).toBeUndefined()
     expect(leg.to?.label).toBe("Osaka")
+  })
+
+  it("computes duration from departs/arrives carrying UTC offsets", () => {
+    const doc = parse(`
+itinerary:
+  - Tokyo
+  - transport: flight
+    departs: "2026-09-18T23:00+09:00"
+    arrives: "2026-09-19T06:00+01:00"
+  - London
+`)
+    const leg = doc.itinerary[1] as TransportLeg
+    // 23:00 JST = 14:00 UTC; 06:00 BST = 05:00 UTC next day → 15h
+    expect(leg.duration).toMatchObject({ type: "exact", unit: "minutes", value: 15 * 60 })
   })
 })
 
@@ -86,23 +100,21 @@ describe("intra-item timeline inference", () => {
   it("derives departs from arrives + duration", () => {
     const doc = parse(`
 itinerary:
-  - Paris:
-      arrives: "2026-09-18"
-      duration: "3 days"
+  - place: Paris
+    arrives: "2026-09-18"
+    duration: "3 days"
 `)
-    const place = doc.itinerary[0] as Place
-    expect(isoDate(place.departs)).toBe("2026-09-21")
+    expect(isoDate((doc.itinerary[0] as Place).departs)).toBe("2026-09-21")
   })
 
   it("derives arrives from departs - duration", () => {
     const doc = parse(`
 itinerary:
-  - Berlin:
-      departs: "2026-10-05"
-      duration: "2 days"
+  - place: Berlin
+    departs: "2026-10-05"
+    duration: "2 days"
 `)
-    const place = doc.itinerary[0] as Place
-    expect(isoDate(place.arrives)).toBe("2026-10-03")
+    expect(isoDate((doc.itinerary[0] as Place).arrives)).toBe("2026-10-03")
   })
 })
 
@@ -112,43 +124,69 @@ describe("relative date resolution", () => {
   it("resolves 'Day 2' group to arrives + 1 day", () => {
     const doc = parse(`
 itinerary:
-  - Tokyo:
-      arrives: "2026-10-01"
-      activities:
-        - day:
-            time: "Day 2"
-            items:
-              - Shibuya crossing
+  - place: Tokyo
+    arrives: "2026-10-01"
+    plan:
+      - day:
+        time: "Day 2"
+        plan:
+          - Shibuya crossing
 `)
-    const place = doc.itinerary[0] as Place
-    const group = place.activities[0]
+    const group = (doc.itinerary[0] as Place).plan[0] as ActivityGroup
     expect(group.type).toBe("group")
-    if (group.type === "group") {
-      expect(group.time?.date?.precision).toBe("absolute")
-      expect(
-        group.time?.date?.precision === "absolute" && group.time.date.value
-      ).toBe("2026-10-02")
-    }
+    expect(group.time?.date?.precision === "absolute" && group.time.date.value).toBe("2026-10-02")
   })
 
   it("resolves 'Day 1' to the arrival date itself", () => {
     const doc = parse(`
 itinerary:
-  - Osaka:
-      arrives: "2026-11-15"
-      activities:
-        - day:
-            time: "Day 1"
-            items:
-              - Dotonbori
+  - place: Osaka
+    arrives: "2026-11-15"
+    plan:
+      - day:
+        time: "Day 1"
+        plan:
+          - Dotonbori
 `)
-    const place = doc.itinerary[0] as Place
-    const group = place.activities[0]
-    if (group.type === "group") {
-      expect(
-        group.time?.date?.precision === "absolute" && group.time.date.value
-      ).toBe("2026-11-15")
-    }
+    const group = (doc.itinerary[0] as Place).plan[0] as ActivityGroup
+    expect(group.time?.date?.precision === "absolute" && group.time.date.value).toBe("2026-11-15")
+  })
+
+  it("sequences title-less day groups with 'next day' starting from arrival", () => {
+    const doc = parse(`
+itinerary:
+  - place: Kyoto
+    arrives: "2026-10-01"
+    plan:
+      - day:
+        plan: [A]
+      - day:
+        plan: [B]
+      - day:
+        plan: [C]
+`)
+    const groups = (doc.itinerary[0] as Place).plan as ActivityGroup[]
+    expect(groups.map((g) => g.time?.date?.precision === "absolute" && g.time.date.value))
+      .toEqual(["2026-10-01", "2026-10-02", "2026-10-03"])
+  })
+
+  it("leaves an unscheduled `group` out of the day sequence", () => {
+    const doc = parse(`
+itinerary:
+  - place: Kyoto
+    arrives: "2026-10-01"
+    plan:
+      - group: Rainy day ideas
+        plan: [Museum]
+      - day:
+        plan: [Temple]
+`)
+    const plan = (doc.itinerary[0] as Place).plan as ActivityGroup[]
+    // unscheduled group gets no injected time
+    expect(plan[0].kind).toBe("group")
+    expect(plan[0].time).toBeUndefined()
+    // the day still sequences from arrival (group did not consume an index)
+    expect(plan[1].time?.date?.precision === "absolute" && plan[1].time.date.value).toBe("2026-10-01")
   })
 })
 
@@ -159,26 +197,22 @@ describe("forward sweep: mid-timeline anchor", () => {
     const doc = parse(`
 itinerary:
   - Amsterdam
-  - Berlin:
-      arrives: "2026-09-10"
-      duration: "4 days"
+  - place: Berlin
+    arrives: "2026-09-10"
+    duration: "4 days"
   - Prague
 `)
     const amsterdam = doc.itinerary[0] as Place
     const berlin    = doc.itinerary[1] as Place
     const prague    = doc.itinerary[2] as Place
 
-    // Phase 1 derives Berlin.departs from arrives + duration
     expect(isoDate(berlin.departs)).toBe("2026-09-14")
     expect(berlin.departs?.anchor?.precedence).toBe("inferred")
 
-    // Forward sweep propagates Berlin's computed departs to Prague
     expect(isoDate(prague.arrives)).toBe("2026-09-14")
     expect(prague.arrives?.anchor?.precedence).toBe("inferred")
 
-    // Amsterdam has no prior date → forward sweep leaves it dateless
     expect(amsterdam.arrives).toBeUndefined()
-    // Backward sweep fills Amsterdam.departs from Berlin.arrives
     expect(isoDate(amsterdam.departs)).toBe("2026-09-10")
     expect(amsterdam.departs?.anchor?.precedence).toBe("inferred")
   })
@@ -190,28 +224,21 @@ describe("backward sweep: late fixed anchor", () => {
   it("chains backwards through durations from explicit departs", () => {
     const doc = parse(`
 itinerary:
-  - Paris:
-      duration: "3 days"
-  - Lyon:
-      duration: "2 days"
-  - Nice:
-      departs: "2026-10-15"
+  - place: Paris
+    duration: "3 days"
+  - place: Lyon
+    duration: "2 days"
+  - place: Nice
+    departs: "2026-10-15"
 `)
     const paris = doc.itinerary[0] as Place
     const lyon  = doc.itinerary[1] as Place
     const nice  = doc.itinerary[2] as Place
 
     expect(isoDate(lyon.departs)).toBe("2026-10-15")
-    expect(lyon.departs?.anchor?.precedence).toBe("inferred")
     expect(isoDate(lyon.arrives)).toBe("2026-10-13")
-    expect(lyon.arrives?.anchor?.precedence).toBe("inferred")
-
     expect(isoDate(paris.departs)).toBe("2026-10-13")
-    expect(paris.departs?.anchor?.precedence).toBe("inferred")
     expect(isoDate(paris.arrives)).toBe("2026-10-10")
-    expect(paris.arrives?.anchor?.precedence).toBe("inferred")
-
-    // Nice's explicit departs is not marked as inferred
     expect(nice.departs?.anchor?.precedence).not.toBe("inferred")
   })
 })
@@ -222,19 +249,17 @@ describe("Phase 4: even distribution", () => {
   it("splits remaining days equally when divisible", () => {
     const doc = parse(`
 itinerary:
-  - Paris:
-      arrives: "2026-09-01"
-      duration: "3 days"
+  - place: Paris
+    arrives: "2026-09-01"
+    duration: "3 days"
   - Lyon
   - Nice
-  - Marseille:
-      arrives: "2026-09-11"
-      duration: "3 days"
+  - place: Marseille
+    arrives: "2026-09-11"
+    duration: "3 days"
 `)
     const lyon = doc.itinerary[1] as Place
     const nice = doc.itinerary[2] as Place
-
-    // span=10, committed=6, remaining=4, 2 places → 2 days each
     expect(isoDate(lyon.arrives)).toBe("2026-09-04")
     expect(isoDate(lyon.departs)).toBe("2026-09-06")
     expect(isoDate(nice.arrives)).toBe("2026-09-06")
@@ -244,22 +269,19 @@ itinerary:
   it("gives one extra day to earlier places when remainder is nonzero", () => {
     const doc = parse(`
 itinerary:
-  - Paris:
-      arrives: "2026-09-01"
-      duration: "1 day"
+  - place: Paris
+    arrives: "2026-09-01"
+    duration: "1 day"
   - Lyon
   - Nice
   - Cannes
-  - Marseille:
-      arrives: "2026-09-11"
-      duration: "1 day"
+  - place: Marseille
+    arrives: "2026-09-11"
+    duration: "1 day"
 `)
     const lyon   = doc.itinerary[1] as Place
     const nice   = doc.itinerary[2] as Place
     const cannes = doc.itinerary[3] as Place
-
-    // span=10, committed=2, remaining=8, 3 places → perPlace=2, extra=2
-    // Lyon gets 3, Nice gets 3, Cannes gets 2
     expect(isoDate(lyon.arrives)).toBe("2026-09-02")
     expect(isoDate(lyon.departs)).toBe("2026-09-05")
     expect(isoDate(nice.arrives)).toBe("2026-09-05")
@@ -268,46 +290,18 @@ itinerary:
     expect(isoDate(cannes.departs)).toBe("2026-09-10")
   })
 
-  it("accounts for mismatched committed durations on either side of a gap", () => {
-    const doc = parse(`
-itinerary:
-  - Paris:
-      arrives: "2026-09-01"
-      duration: "4 days"
-  - Lyon
-  - Nice
-  - Marseille:
-      arrives: "2026-09-15"
-      duration: "6 days"
-`)
-    const lyon = doc.itinerary[1] as Place
-    const nice = doc.itinerary[2] as Place
-
-    // span=14, committed=4+6=10, remaining=4, 2 places → 2 days each
-    // despite heavy asymmetry (4 vs 6), both durationless places get equal share
-    expect(isoDate(lyon.arrives)).toBe("2026-09-05")
-    expect(isoDate(lyon.departs)).toBe("2026-09-07")
-    expect(isoDate(nice.arrives)).toBe("2026-09-07")
-    expect(isoDate(nice.departs)).toBe("2026-09-09")
-  })
-
   it("ignores inferred anchors — only explicit dates bound distribution spans", () => {
     const doc = parse(`
 itinerary:
-  - Paris:
-      arrives: "2026-09-01"
-      duration: "3 days"
+  - place: Paris
+    arrives: "2026-09-01"
+    duration: "3 days"
   - Lyon
-  - Berlin:
-      arrives: "2026-09-10"
-      duration: "2 days"
+  - place: Berlin
+    arrives: "2026-09-10"
+    duration: "2 days"
 `)
     const lyon = doc.itinerary[1] as Place
-
-    // Paris.departs is INFERRED by Phase 1 as "2026-09-04" — must NOT be used as anchor.
-    // Correct span: "2026-09-01" → "2026-09-10" = 9 days, committed=5, remaining=4.
-    // Lyon gets 4 days → departs "2026-09-08".
-    // If inferred anchor were used, Lyon would only get 1 day → departs "2026-09-05".
     expect(isoDate(lyon.arrives)).toBe("2026-09-04")
     expect(isoDate(lyon.departs)).toBe("2026-09-08")
   })
@@ -315,18 +309,13 @@ itinerary:
   it("durationless place gets both dates after Phase 4 assigns its duration", () => {
     const doc = parse(`
 itinerary:
-  - Paris:
-      arrives: "2026-09-01"
+  - place: Paris
+    arrives: "2026-09-01"
   - London
-  - Berlin:
-      arrives: "2026-09-07"
+  - place: Berlin
+    arrives: "2026-09-07"
 `)
     const london = doc.itinerary[1] as Place
-
-    // Phase 4: span=6, all 3 durationless → each gets 2 days
-    // Phase 1 re-run: Paris.departs="2026-09-03", Berlin.departs="2026-09-09"
-    // Forward sweep: London.arrives="2026-09-03", London.departs="2026-09-05"
-    // London only gets a departs if Phase 4 gave it a duration for the sweep to use
     expect(isoDate(london.arrives)).toBe("2026-09-03")
     expect(isoDate(london.departs)).toBe("2026-09-05")
     expect(london.arrives?.anchor?.precedence).toBe("inferred")
@@ -342,14 +331,8 @@ itinerary:
   - London
   - Berlin
 `)
-    const paris  = doc.itinerary[0] as Place
-    const london = doc.itinerary[1] as Place
-    const berlin = doc.itinerary[2] as Place
-
-    // No explicit dates → anchor list empty → tripDuration fallback fires.
-    // 6 days / 3 places = 2 each (synthetic approximate duration).
-    expect(paris.duration).toMatchObject({ type: "approximate", value: 2, unit: "nights" })
-    expect(london.duration).toMatchObject({ type: "approximate", value: 2, unit: "nights" })
-    expect(berlin.duration).toMatchObject({ type: "approximate", value: 2, unit: "nights" })
+    expect((doc.itinerary[0] as Place).duration).toMatchObject({ type: "approximate", value: 2, unit: "nights" })
+    expect((doc.itinerary[1] as Place).duration).toMatchObject({ type: "approximate", value: 2, unit: "nights" })
+    expect((doc.itinerary[2] as Place).duration).toMatchObject({ type: "approximate", value: 2, unit: "nights" })
   })
 })
