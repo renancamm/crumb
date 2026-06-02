@@ -48,9 +48,7 @@ itinerary:
           - activity: Reffen street-food market
             time: evening
             priority: must
-            location:
-              lat: 55.6907
-              lng: 12.6095
+            location: Reffen, Copenhagen
             note: |
               Shipping-container food stalls on the old industrial waterfront in
               Refshaleøen, reachable by harbour bus or bike. Dozens of cuisines,
@@ -63,9 +61,7 @@ itinerary:
           - activity: Rosenborg Castle & the King's Garden
             time: 9am
             duration: 1h30m
-            location:
-              lat: 55.6857
-              lng: 12.5772
+            location: Rosenborg Castle, Copenhagen
             note: |
               A fairy-tale Renaissance castle built by Christian IV, Denmark's
               great builder-king, now guarding the crown jewels in its basement.
@@ -79,9 +75,7 @@ itinerary:
               tsar once rode up it on horseback. Fine rooftop view over the old town.
           - activity: Lunch at Torvehallerne
             time: midday
-            location:
-              lat: 55.6831
-              lng: 12.5712
+            location: Torvehallerne, Copenhagen
             note: A glass-and-steel food market by Nørreport — try smørrebrød, the open-faced rye sandwich that is Denmark's national lunch.
           - activity: Christiania & Christianshavn
             time: afternoon
@@ -105,10 +99,7 @@ itinerary:
           - activity: Louisiana Museum of Modern Art
             time: 10am
             duration: 3h
-            location:
-              address: Gl Strandvej 13, Humlebæk
-              lat: 55.9696
-              lng: 12.5429
+            location: Louisiana Museum, Humlebæk
             note: |
               Often called the world's most beautiful modern-art museum: low glass
               galleries threaded through a sculpture park on a cliff over the
@@ -117,9 +108,7 @@ itinerary:
           - activity: Harbour swim at Islands Brygge
             time: afternoon
             priority: maybe
-            location:
-              lat: 55.6679
-              lng: 12.5779
+            location: Islands Brygge, Copenhagen
             note: |
               Copenhagen cleaned its harbour so thoroughly that you can swim in the
               middle of the city. The Islands Brygge harbour bath is the local

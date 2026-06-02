@@ -18,9 +18,7 @@ itinerary:
       - Tsukiji Outer Market
       - activity: Day trip to Nikko
         priority: maybe
-        location:
-          lat: 36.7580
-          lng: 139.5988
+        location: Nikko, Tochigi
 
   - transport: train      # shinkansen to Kyoto
 
@@ -32,9 +30,7 @@ itinerary:
       - Arashiyama Bamboo Grove
       - Kinkaku-ji
       - activity: Gion in the evening
-        location:
-          lat: 35.0037
-          lng: 135.7745
+        location: Gion, Kyoto
 
   - transport: train
 
@@ -47,6 +43,4 @@ itinerary:
       - Kuromon Market
       - activity: Day trip to Nara
         priority: maybe
-        location:
-          lat: 34.6851
-          lng: 135.8431
+        location: Nara

@@ -201,12 +201,12 @@ function collectActivityGeoTargets(doc: CrumbDocument): ActivityGeoTarget[] {
         let actGroupIdx = 0
         for (const act of actItem.items) {
           if (!act.location?.geocodingDisabled) {
-            const hasCoords  = act.location?.lat != null && act.location?.lng != null
-            const queryLabel = act.location?.label && act.location.label !== "none" ? act.location.label : act.name
+            // Query is the activity's location label (or, failing that, its
+            // name) geocoded verbatim — the per-place parentCoords viewbox
+            // supplies the region, so no city is appended.
             targets.push({
               name:     act.name,
-              location: hasCoords ? (act.location ?? null) : null,
-              query:    hasCoords ? null : `${queryLabel}, ${item.name}`,
+              location: act.location ?? null,
               priority: act.priority ?? null,
               placeIdx,
               actLabel: activityLabel(actGroupIdx, groupNum),
@@ -218,12 +218,9 @@ function collectActivityGeoTargets(doc: CrumbDocument): ActivityGeoTarget[] {
         let localIdx = ungroupedIdx
         for (const act of actItem.items) {
           if (!act.location?.geocodingDisabled) {
-            const hasCoords  = act.location?.lat != null && act.location?.lng != null
-            const queryLabel = act.location?.label && act.location.label !== "none" ? act.location.label : act.name
             targets.push({
               name:     act.name,
-              location: hasCoords ? (act.location ?? null) : null,
-              query:    hasCoords ? null : `${queryLabel}, ${item.name}`,
+              location: act.location ?? null,
               priority: act.priority ?? null,
               placeIdx,
               actLabel: activityLabel(localIdx),
@@ -246,14 +243,11 @@ function collectStayGeoTargets(doc: CrumbDocument): StayGeoTarget[] {
     placeIdx++
     for (const stay of placeStays(item)) {
       if (stay.location?.geocodingDisabled) continue
-      const hasCoords  = stay.location?.lat != null && stay.location?.lng != null
-      const queryLabel = !hasCoords && stay.location?.label && stay.location.label !== "none"
-        ? stay.location.label
-        : stay.name
+      const hasCoords = stay.location?.lat != null && stay.location?.lng != null
       targets.push({
-        name:      hasCoords ? stay.name : `${queryLabel}, ${item.name}`,
+        name:      stay.name,
         stayName:  stay.name,
-        location:  hasCoords ? (stay.location ?? null) : null,
+        location:  stay.location ?? null,
         hasCoords,
         placeIdx,
       })

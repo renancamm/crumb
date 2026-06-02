@@ -44,7 +44,7 @@ export interface DetailPoint {
 
 // ─── Geocoding ────────────────────────────────────────────────────────────────
 
-const GEO_CACHE_VERSION = "v2"
+const GEO_CACHE_VERSION = "v3"
 const GEO_CACHE_PREFIX  = `crumb-geo-${GEO_CACHE_VERSION}:`
 const GEO_TIMEOUT_MS    = 8000
 const NEGATIVE_TTL_MS   = 7 * 24 * 60 * 60 * 1000
@@ -54,23 +54,23 @@ const VIEWBOX_PAD_LNG   = 3.0
 let geoQueue: Promise<void> = Promise.resolve()
 
 function migrateGeoCache(): void {
-  const OLD_PREFIX = "crumb-geo:"
+  const FAMILY = "crumb-geo"
   const now = Date.now()
   for (let i = localStorage.length - 1; i >= 0; i--) {
     const key = localStorage.key(i)
-    if (!key) continue
-    if (key.startsWith(OLD_PREFIX) && !key.startsWith(GEO_CACHE_PREFIX)) {
+    if (!key || !key.startsWith(FAMILY)) continue
+    // Drop any cache from a previous version (different prefix).
+    if (!key.startsWith(GEO_CACHE_PREFIX)) {
       localStorage.removeItem(key)
       continue
     }
-    if (key.startsWith(GEO_CACHE_PREFIX)) {
-      try {
-        const parsed = JSON.parse(localStorage.getItem(key) ?? "{}") as { miss?: true; ts?: number }
-        if (parsed.miss && parsed.ts && (now - parsed.ts) >= NEGATIVE_TTL_MS) {
-          localStorage.removeItem(key)
-        }
-      } catch { /* ignore */ }
-    }
+    // Expire stale negative entries in the current version.
+    try {
+      const parsed = JSON.parse(localStorage.getItem(key) ?? "{}") as { miss?: true; ts?: number }
+      if (parsed.miss && parsed.ts && (now - parsed.ts) >= NEGATIVE_TTL_MS) {
+        localStorage.removeItem(key)
+      }
+    } catch { /* ignore */ }
   }
 }
 
@@ -126,9 +126,17 @@ function fetchWithTimeout(url: string): Promise<Response> {
 
 type NominatimOutcome = { result: GeoResult } | { empty: true } | { error: true }
 
+function distSq(a: GeoResult, b: GeoResult): number {
+  const dLat = a.lat - b.lat, dLng = a.lng - b.lng
+  return dLat * dLat + dLng * dLng
+}
+
 function fetchNominatim(name: string, parentCoords?: GeoResult): Promise<NominatimOutcome> {
   const params: Record<string, string> = {
-    q: name, format: "json", limit: "1", "accept-language": "en", email: "crumb-geocoder",
+    // With a region hint, fetch several candidates so we can pick the nearest —
+    // Nominatim ranks by global importance, which can put a far match first for
+    // an ambiguous name ("Old Quarter"). The viewbox is only a soft bias.
+    q: name, format: "json", limit: parentCoords ? "5" : "1", "accept-language": "en", email: "crumb-geocoder",
   }
   if (parentCoords) {
     const { lat, lng } = parentCoords
@@ -138,9 +146,12 @@ function fetchNominatim(name: string, parentCoords?: GeoResult): Promise<Nominat
   return fetchWithTimeout(url)
     .then(r => r.json())
     .then((data: Array<{ lat: string; lon: string }>) => {
-      if (data?.length > 0)
-        return { result: { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) } }
-      return { empty: true } as NominatimOutcome
+      if (!data?.length) return { empty: true } as NominatimOutcome
+      const candidates = data.map(d => ({ lat: parseFloat(d.lat), lng: parseFloat(d.lon) }))
+      const best = parentCoords
+        ? candidates.reduce((a, b) => (distSq(b, parentCoords) < distSq(a, parentCoords) ? b : a))
+        : candidates[0]
+      return { result: best }
     })
     .catch(() => ({ error: true }) as NominatimOutcome)
 }

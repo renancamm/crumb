@@ -668,6 +668,8 @@ location: none
 
 A plain-string Geolocation carries the location's name or address directly; the surrounding item already supplies a name for display. The block form is for a precise address or coordinates.
 
+An item's name is a label, not a geographic reference: a descriptive name (`Dotonbori at night`) does not locate a place. Add a `location` — a plain place-name string is enough (`location: Dotonbori`) — to give the item a geographic reference; coordinates are for when an exact point is required.
+
 **`Geolocation` used on:** places, stays, activities.
 **`from` and `to` on transport legs** follow the same grammar.
 

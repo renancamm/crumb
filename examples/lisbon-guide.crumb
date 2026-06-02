@@ -27,9 +27,7 @@ itinerary:
               afternoon, when the light turns the whole hillside gold.
           - activity: Miradouro da Senhora do Monte
             priority: must
-            location:
-              lat: 38.7197
-              lng: -9.1336
+            location: Miradouro da Senhora do Monte, Lisbon
             note: |
               The highest viewpoint in the city, and the least crowded. Locals
               bring a bottle of wine and wait for the sunset.
@@ -56,9 +54,7 @@ itinerary:
               Lisbon's temple of seafood. Finish with a prego — a garlicky steak
               sandwich — exactly as the locals do, as dessert.
           - activity: Ginjinha bars near Largo de São Domingos
-            location:
-              lat: 38.7145
-              lng: -9.1390
+            location: Largo de São Domingos, Lisbon
             note: |
               Tiny standing-room bars pouring ginjinha, the local sour-cherry
               liqueur, into shot glasses. Ask for it "com elas" for the boozy cherries.

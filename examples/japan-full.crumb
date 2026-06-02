@@ -58,10 +58,7 @@ itinerary:
             time: 7pm
             duration: 2h
             priority: must
-            location:
-              address: teamLab Planets, Toyosu, Koto City, Tokyo
-              lat: 35.6493
-              lng: 139.7896
+            location: teamLab Planets, Tokyo
             note: |
               An immersive digital-art museum from teamLab, the Tokyo collective
               that turned light, water, and projection into walk-through worlds.
@@ -110,10 +107,7 @@ itinerary:
               traditional wedding procession on a weekend morning.
           - activity: Takeshita Street, Harajuku
             time: 10:30am
-            location:
-              address: Takeshita Street, Jingumae, Shibuya City, Tokyo
-              lat: 35.6716
-              lng: 139.7053
+            location: Takeshita Street, Harajuku, Tokyo
             note: The birthplace of Japan's street-fashion subcultures — loud, young, and packed with crêpe stands.
           - activity: Shibuya Crossing
             time: midday
@@ -138,16 +132,10 @@ itinerary:
               hear no evil, speak no evil" monkeys. Two hours by train from Tokyo.
           - activity: Kegon Falls
             duration: 1h
-            location:
-              address: Kegon Falls, Nikko, Tochigi
-              lat: 36.7396
-              lng: 139.5036
+            location: Kegon Falls, Nikko
             note: A 97m waterfall fed by Lake Chuzenji — spectacular when the surrounding maples turn red in late October.
           - activity: Lake Chuzenji
-            location:
-              address: Lake Chuzenji, Nikko, Tochigi
-              lat: 36.7290
-              lng: 139.4840
+            location: Lake Chuzenji, Nikko
             note: A serene crater lake at 1,270m, formed when Mt. Nantai erupted — the cool highland retreat above Nikko.
 
       - group: Rainy-day options
@@ -157,10 +145,7 @@ itinerary:
           - activity: Shibuya Sky
             note: Open-air rooftop deck over the world's busiest crossing — best an hour before sunset.
           - activity: Ginza department-store food halls
-            location:
-              address: Ginza, Chuo City, Tokyo
-              lat: 35.6719
-              lng: 139.7649
+            location: Ginza, Tokyo
             note: |
               Tokyo's most elegant shopping district. The basement food halls
               (*depachika*) of Mitsukoshi and Matsuya are a feast of free samples,
@@ -211,10 +196,7 @@ itinerary:
           - activity: Gion in the evening
             time: evening
             priority: must
-            location:
-              address: Gion, Higashiyama, Kyoto
-              lat: 35.0037
-              lng: 135.7745
+            location: Gion, Kyoto
             note: |
               Kyoto's historic geisha district. Wander the lantern-lit lane of
               Hanamikoji at dusk and you may glimpse a *geiko* or *maiko* (Kyoto's
@@ -268,10 +250,7 @@ itinerary:
           - activity: Kinkaku-ji (Golden Pavilion)
             time: midday
             duration: 1h
-            location:
-              address: Kinkaku-ji, Kita Ward, Kyoto
-              lat: 35.0394
-              lng: 135.7292
+            location: Kinkaku-ji, Kyoto
             note: |
               A Zen temple sheathed in gold leaf, mirrored in the pond before it.
               The current building is a 1955 reconstruction — a young monk burned
@@ -323,10 +302,7 @@ itinerary:
           - activity: Dotonbori at night
             time: evening
             priority: must
-            location:
-              address: Dotonbori, Chuo Ward, Osaka
-              lat: 34.6687
-              lng: 135.5013
+            location: Dotonbori, Osaka
             note: |
               Osaka's neon heart along a canal — the giant Glico running man, mechanical
               crab signs, and stalls of *takoyaki* (octopus dumplings) and
@@ -373,8 +349,5 @@ itinerary:
           - activity: Kasuga Taisha
             time: afternoon
             duration: 1h
-            location:
-              address: Kasuga Taisha, Nara
-              lat: 34.6818
-              lng: 135.8483
+            location: Kasuga Taisha, Nara
             note: A shrine lined with 3,000 bronze and stone lanterns, lit only twice a year — moss-covered and atmospheric in the woods.

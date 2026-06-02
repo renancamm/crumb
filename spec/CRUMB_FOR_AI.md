@@ -139,6 +139,8 @@ location:
   lng: 135.7727
 ```
 
+An item's **name is a label, not a place to look up** — a descriptive name like "Dotonbori at night" or "Lunch at Nishiki Market" won't resolve to a spot. To give such an item a location, add a `location:` with the clean place name (`location: Dotonbori`). Prefer a plain place-name string; reach for `lat`/`lng` only when an exact point matters. For a day-trip outside the main place, include the region (`location: Kegon Falls, Nikko`).
+
 ---
 
 ## A complete example
