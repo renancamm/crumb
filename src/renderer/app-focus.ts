@@ -4,7 +4,7 @@ export function clearFocus(): void {
   state.focusedPlaceIdx  = -1
   state.focusedActName   = null
   state.focusedStayName  = null
-  state.focusedHubName   = null
+  state.focusedTransportName   = null
   document.querySelectorAll(".place.--focused, .activity-item.--focused, .stay.--focused")
     .forEach(el => el.classList.remove("--focused"))
   state.placeMarkers.forEach(m => m.getElement().classList.remove("--focused"))
@@ -28,7 +28,7 @@ export function focusMarker(type: FocusType, id: string | number, coords?: { lat
     const name = id as string
     if (type === "activity") state.focusedActName  = name
     if (type === "stay")     state.focusedStayName = name
-    if (type === "hub")      state.focusedHubName  = name
+    if (type === "transport")      state.focusedTransportName  = name
 
     const selector = type === "activity" ? `.activity-item[data-act-name="${name}"]`
                    : type === "stay"     ? `.stay[data-stay-name="${name}"]`
@@ -43,8 +43,14 @@ export function focusMarker(type: FocusType, id: string | number, coords?: { lat
       if (m.getElement().dataset.name === name) { m.getElement().classList.add("--focused"); break }
     }
 
-    const zoom = type === "hub" ? ZOOM_DETAIL_FLY : ZOOM_DETAIL_FLY
-    if (coords) state.map.flyTo({ center: [coords.lng, coords.lat], zoom: Math.max(state.map.getZoom(), zoom), duration: FLY_DURATION })
+    if (coords) {
+      const target = { center: [coords.lng, coords.lat] as [number, number], zoom: Math.max(state.map.getZoom(), ZOOM_DETAIL_FLY), duration: FLY_DURATION }
+      // Transport endpoints can be far apart — flyTo's arc reads better over distance.
+      // Activities/stays are short hops where flyTo's mid-flight zoom-out would dip
+      // below ZOOM_DETAIL and flash the detail markers, so they use the linear easeTo.
+      if (type === "transport") state.map.flyTo(target)
+      else                      state.map.easeTo(target)
+    }
   }
 }
 
@@ -59,7 +65,7 @@ export function setupListClickHandler(): void {
     const stay = link.closest<HTMLElement>("[data-stay-name]")
     if (act)  { focusMarker("activity", act.dataset.actName!,  state.geoIndex.activities.get(act.dataset.actName!)  ?? undefined); return }
     if (stay) { focusMarker("stay",     stay.dataset.stayName!, state.geoIndex.stays.get(stay.dataset.stayName!)    ?? undefined); return }
-    if (link.dataset.hubName) { focusMarker("hub", link.dataset.hubName, state.geoIndex.hubs.get(link.dataset.hubName) ?? undefined); return }
+    if (link.dataset.transportName) { focusMarker("transport", link.dataset.transportName, state.geoIndex.transports.get(link.dataset.transportName) ?? undefined); return }
     const place = link.closest<HTMLElement>("[data-place-index]")
     if (place) {
       const idx = parseInt(place.dataset.placeIndex!, 10)

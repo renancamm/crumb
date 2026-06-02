@@ -16,7 +16,7 @@
  */
 
 import { setupListClickHandler, clearFocus } from "./app-focus"
-import { updateMap, fitAllPlaces, applyDetailMarkerFilter, fitTransportHubs, mapPadding, applyGeoState } from "./app-map"
+import { updateMap, fitAllPlaces, applyDetailMarkerFilter, fitTransportPoints, mapPadding, applyGeoState } from "./app-map"
 import { state, ZOOM_PLACE_FLY, ZOOM_DETAIL_FLY, MOBILE_MAX_W, FLY_DURATION } from "./app-state"
 import { initSheet, exitSheet, goMedium } from "./app-sheet"
 import { ICON_PIN_OFF } from "./icons"
@@ -268,7 +268,9 @@ function focusDetailMarker(modal: ModalRef): void {
 
   if (geo) {
     state.map.setPadding(mapPadding())
-    state.map.flyTo({ center: [geo.lng, geo.lat], zoom: Math.max(state.map.getZoom(), ZOOM_DETAIL_FLY), duration: FLY_DURATION })
+    // easeTo (not flyTo): linear zoom avoids the mid-flight zoom-out that would
+    // dip below ZOOM_DETAIL and flash the detail markers between activities.
+    state.map.easeTo({ center: [geo.lng, geo.lat], zoom: Math.max(state.map.getZoom(), ZOOM_DETAIL_FLY), duration: FLY_DURATION })
   }
 }
 
@@ -284,6 +286,7 @@ function openTransportPanel(transportIdx: number): void {
   panelContent.scrollTop = 0
   setupStickyTitle()
   updatePanelFooter()
+  decorateTransportWaypoints()
 
   const legs = state.DATA.itinerary.filter(i => i.type === "transport") as any[]
   const leg  = legs[transportIdx]
@@ -300,9 +303,73 @@ function openTransportPanel(transportIdx: number): void {
         if (state.DATA.itinerary[i].type === "place") { nextPlaceIdx = pc + 1; break }
       }
     }
-    fitTransportHubs(leg.from?.label ?? null, leg.to?.label ?? null, prevPlaceIdx, nextPlaceIdx)
+    fitTransportPoints(leg.from?.label ?? null, leg.to?.label ?? null, prevPlaceIdx, nextPlaceIdx)
   }
 }
+
+/**
+ * Decorate the open transport panel's two from/to names by geocoding state:
+ *   solved   → clickable to its transport point
+ *   inferred → clickable to the neighbouring Place (label === place name)
+ *   failed / map-disabled → no-pin icon
+ *   pending  → small spinner
+ * Safe to re-run (e.g. on crumb:geo-updated) — it first strips prior decoration.
+ */
+function decorateTransportWaypoints(): void {
+  if (state.activeDetail?.type !== "transport") return
+  const legs = state.DATA.itinerary.filter(i => i.type === "transport") as any[]
+  const leg  = legs[state.activeDetail.itemIdx]
+  if (!leg) return
+
+  // Neighbouring place indices (1-based) for inferred-endpoint → Place links.
+  const itinIdx = currentItinIdx()
+  let prevPlaceIdx: number | null = null
+  let nextPlaceIdx: number | null = null
+  if (itinIdx >= 0) {
+    let pc = 0
+    for (let i = 0; i < itinIdx; i++) if (state.DATA.itinerary[i].type === "place") pc++
+    if (pc > 0) prevPlaceIdx = pc
+    for (let i = itinIdx + 1; i < state.DATA.itinerary.length; i++) {
+      if (state.DATA.itinerary[i].type === "place") { nextPlaceIdx = pc + 1; break }
+    }
+  }
+  const places = state.DATA.itinerary.filter(i => i.type === "place") as any[]
+  const sides = [{ ep: leg.from, placeIdx: prevPlaceIdx }, { ep: leg.to, placeIdx: nextPlaceIdx }]
+
+  const spans = panelContent.querySelectorAll<HTMLElement>(".transport-route-block .waypoint-name")
+  spans.forEach((el, i) => {
+    const side = sides[i]
+    // Strip any prior decoration so re-runs don't stack.
+    el.removeAttribute("data-map-link")
+    el.removeAttribute("data-transport-name")
+    el.removeAttribute("data-place-index")
+    el.querySelector(".geo-no-loc")?.remove()
+    el.querySelector(".waypoint-spinner")?.remove()
+    const ep = side?.ep
+    if (!ep || !ep.label) return
+
+    if (ep.lat != null && ep.lng != null) {
+      el.setAttribute("data-map-link", "")
+      el.setAttribute("data-transport-name", ep.label)
+      state.geoIndex.transports.set(ep.label, { lat: ep.lat, lng: ep.lng })
+      return
+    }
+    if (ep.geocodingDisabled || state.geoIndex.transportsFailed.has(ep.label)) {
+      el.insertAdjacentHTML("beforeend", ` <span class="geo-no-loc">${ICON_PIN_OFF}</span>`)
+      return
+    }
+    const place = side?.placeIdx != null ? places[side.placeIdx - 1] : undefined
+    if (place && ep.label === place.name) {
+      el.setAttribute("data-map-link", "")
+      el.setAttribute("data-place-index", String(side!.placeIdx))
+      return
+    }
+    el.insertAdjacentHTML("beforeend", ` <span class="waypoint-spinner"></span>`)
+  })
+}
+
+// Re-decorate the open transport panel when geocoding settles (spinner → link/icon).
+document.addEventListener("crumb:geo-updated", () => decorateTransportWaypoints())
 
 // ─── Event delegation ─────────────────────────────────────────────────────────
 
@@ -455,7 +522,7 @@ document.addEventListener("crumb:marker", (e: Event) => {
     return
   }
 
-  if (type === "hub" && transportIdx != null) {
+  if (type === "transport" && transportIdx != null) {
     openTransportPanel(transportIdx)
     return
   }

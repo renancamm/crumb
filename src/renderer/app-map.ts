@@ -6,14 +6,14 @@ import {
   resolveGeo,
   isKnownMiss,
   writeBackGeo,
-  geocodeTransportHubs,
+  geocodeTransportPoints,
   type GeoResult,
   type GeoTarget,
   type DetailPoint,
 } from "./geocoder"
 import {
   ICON_STAY, ICON_PLANE, ICON_TRAIN, ICON_BUS, ICON_CAR, ICON_SHIP,
-  ICON_WALK, ICON_BIKE, ICON_ROUTE, ICON_PIN_OFF, ICON_ARRIVES, ICON_DEPARTS, ICON_CLOCK,
+  ICON_WALK, ICON_BIKE, ICON_ROUTE, ICON_PIN_OFF,
 } from "./icons"
 import { escape, activityLabel } from "./format"
 import { placeStays, placeActivityItems } from "./plan-view"
@@ -32,10 +32,6 @@ const ICONS: Record<string, string> = {
   walk:      ICON_WALK,
   bike:      ICON_BIKE,
   transport: ICON_ROUTE,
-  globe_off: ICON_PIN_OFF,
-  arrives:   ICON_ARRIVES,
-  departs:   ICON_DEPARTS,
-  clock:     ICON_CLOCK,
 }
 const GEO_FAIL_ICON  = `<span class="geo-no-loc">${ICON_PIN_OFF}</span>`
 const GEO_NO_MAP_TAG = `<span class="tag tag--icon">${ICON_PIN_OFF} No map</span>`
@@ -84,10 +80,7 @@ state.map.on("load", () => {
 // ─── Popup HTML ───────────────────────────────────────────────────────────────
 
 function popupHtml(p: { name: string }): string {
-  const meta = state.POPUP_META[p.name]
-  return meta
-    ? `<span class="popup-title">${escape(p.name)}</span><br><span class="popup-sub">${escape(meta)}</span>`
-    : `<span class="popup-title">${escape(p.name)}</span>`
+  return `<span class="popup-title">${escape(p.name)}</span>`
 }
 
 // ─── Spinner helpers ──────────────────────────────────────────────────────────
@@ -413,10 +406,11 @@ export async function updateMap(doc: CrumbDocument | null): Promise<void> {
   state.geoIndex.places       = [null]
   state.geoIndex.activities   = new Map()
   state.geoIndex.stays        = new Map()
-  state.geoIndex.hubs         = new Map()
+  state.geoIndex.transports         = new Map()
   state.geoIndex.placesFailed = new Set()
   state.geoIndex.actsFailed   = new Set()
   state.geoIndex.staysFailed  = new Set()
+  state.geoIndex.transportsFailed = new Set()
 
   const places = doc.itinerary.filter(item => item.type === "place")
   if (!places.length) {
@@ -436,15 +430,20 @@ export async function updateMap(doc: CrumbDocument | null): Promise<void> {
   drawPlaceMarkers(resolved)
   setMapStatus("")
 
-  let detailPoints = await geocodeTransportHubs(doc, resolvedCoords, () => epoch !== state.geocodeEpoch)
-  for (const p of detailPoints) {
-    if (p.pinType !== "hub") continue
-    state.geoIndex.hubs.set(p.name, { lat: p.lat, lng: p.lng })
-    document.querySelectorAll<HTMLElement>(".waypoint-name[data-hub-name]").forEach(el => {
-      if (el.dataset.hubName === p.name) el.setAttribute("data-map-link", "")
-    })
+  const { points: transportPoints, failed: transportFailed } = await geocodeTransportPoints(doc, resolvedCoords, () => epoch !== state.geocodeEpoch)
+  let detailPoints = transportPoints
+  state.geoIndex.transportsFailed = new Set(transportFailed)
+  // Register every solved endpoint (including ones near a place that get no marker)
+  // so a from/to click always has coords to fly to.
+  for (const item of doc.itinerary) {
+    if (item.type !== "transport") continue
+    for (const ep of [item.from, item.to]) {
+      if (ep?.lat != null && ep?.lng != null) state.geoIndex.transports.set(ep.label, { lat: ep.lat, lng: ep.lng })
+    }
   }
   setDetailSource(detailPoints)
+  // Let an open transport panel re-decorate its from/to names now that geocoding settled.
+  document.dispatchEvent(new CustomEvent("crumb:geo-updated"))
 
   let placeIdx = 0
   for (const item of doc.itinerary) {
@@ -531,15 +530,15 @@ export function setDetailSource(points: DetailPoint[]): void {
     const el = document.createElement("div")
     el.className = `detail-marker detail-marker--${p.pinType ?? "activity"}`
     if (p.pinType === "stay")     el.innerHTML = ICONS["stay"]
-    else if (p.pinType === "hub") el.innerHTML = ICONS[p.mode ?? ""] ?? ICONS["transport"]
+    else if (p.pinType === "transport") el.innerHTML = ICONS[p.mode ?? ""] ?? ICONS["transport"]
     else if (p.actLabel)          el.innerHTML = `<span class="detail-marker-label">${escape(p.actLabel)}</span>`
     const popup = new maplibregl.Popup({ closeButton: false, offset: 14, className: "detail-popup" })
       .setHTML(popupHtml(p))
     el.addEventListener("mouseenter", () => popup.setLngLat([p.lng, p.lat]).addTo(state.map))
     el.addEventListener("mouseleave", () => popup.remove())
     el.dataset.name = p.name
-    if (p.placeIdx !== undefined) el.dataset.placeIdx = String(p.placeIdx)
-    const type = p.pinType === "stay" ? "stay" : p.pinType === "hub" ? "hub" : "activity"
+    if (p.placeIdx != null) el.dataset.placeIdx = String(p.placeIdx)
+    const type = p.pinType === "stay" ? "stay" : p.pinType === "transport" ? "transport" : "activity"
     el.addEventListener("click", evt => {
       evt.stopPropagation()
       document.dispatchEvent(new CustomEvent("crumb:marker", {
@@ -553,7 +552,7 @@ export function setDetailSource(points: DetailPoint[]): void {
 
   applyDetailMarkerFilter()
 
-  const focusedDetailName = state.focusedActName ?? state.focusedStayName ?? state.focusedHubName
+  const focusedDetailName = state.focusedActName ?? state.focusedStayName ?? state.focusedTransportName
   if (focusedDetailName !== null) {
     for (const m of state.detailMarkers) {
       if (m.getElement().dataset.name === focusedDetailName) { m.getElement().classList.add("--focused"); break }
@@ -563,19 +562,21 @@ export function setDetailSource(points: DetailPoint[]): void {
 
 /**
  * Show/hide detail markers based on the current navigation level:
- *   - trip level (activePlaceIndex === null): show transport hub markers only
- *   - place level (activePlaceIndex = N):     show activity/stay markers for that place only
+ *   - trip level (activePlaceIndex === null): all markers (activity + stay + transport)
+ *   - place level (activePlaceIndex = N):     that place's activity/stay markers + transport markers
+ * Transport markers show at both levels (the place-detail zoom keeps only nearby ones in view).
+ * Zoom thresholds (CSS) gate the actual rendering; this layer only narrows by focus.
  */
 export function applyDetailMarkerFilter(): void {
   const placeIdx = state.activePlaceIndex
   for (const m of state.detailMarkers) {
     const el = m.getElement()
-    const isHub = el.classList.contains("detail-marker--hub")
     if (placeIdx === null) {
-      el.style.display = isHub ? "" : "none"
+      el.style.display = ""
     } else {
+      const isTransport = el.classList.contains("detail-marker--transport")
       const mp = el.dataset.placeIdx !== undefined ? parseInt(el.dataset.placeIdx) : null
-      el.style.display = !isHub && mp === placeIdx ? "" : "none"
+      el.style.display = isTransport || mp === placeIdx ? "" : "none"
     }
   }
 }
@@ -590,7 +591,7 @@ export function fitAllPlaces(): void {
   state.map.fitBounds(bounds, { maxZoom: 10 })
 }
 
-export function fitTransportHubs(
+export function fitTransportPoints(
   fromName: string | null,
   toName: string | null,
   prevPlaceIdx: number | null = null,
@@ -605,19 +606,19 @@ export function fitTransportHubs(
   const fromPlace = prevPlaceIdx !== null ? state.geoIndex.places[prevPlaceIdx] ?? undefined : undefined
   const toPlace   = nextPlaceIdx !== null ? state.geoIndex.places[nextPlaceIdx] ?? undefined : undefined
 
-  // Reject a hub geocode if it's implausibly far from its neighbouring place
+  // Reject a transport geocode if it's implausibly far from its neighbouring place
   // (~500km tolerance — catches Nominatim returning a wrong city/country).
   function sanityCheck(
-    hub: { lat: number; lng: number } | undefined,
+    cand: { lat: number; lng: number } | undefined,
     ref: { lat: number; lng: number } | undefined,
   ): { lat: number; lng: number } | undefined {
-    if (!hub) return undefined
-    if (!ref)  return hub
-    return (Math.abs(hub.lat - ref.lat) < 5 && Math.abs(hub.lng - ref.lng) < 7) ? hub : undefined
+    if (!cand) return undefined
+    if (!ref)  return cand
+    return (Math.abs(cand.lat - ref.lat) < 5 && Math.abs(cand.lng - ref.lng) < 7) ? cand : undefined
   }
 
-  const fromGeo = sanityCheck(fromName ? state.geoIndex.hubs.get(fromName) : undefined, fromPlace) ?? fromPlace
-  const toGeo   = sanityCheck(toName   ? state.geoIndex.hubs.get(toName)   : undefined, toPlace)   ?? toPlace
+  const fromGeo = sanityCheck(fromName ? state.geoIndex.transports.get(fromName) : undefined, fromPlace) ?? fromPlace
+  const toGeo   = sanityCheck(toName   ? state.geoIndex.transports.get(toName)   : undefined, toPlace)   ?? toPlace
 
   if (fromGeo && toGeo) {
     const bounds = new maplibregl.LngLatBounds()

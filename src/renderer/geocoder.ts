@@ -34,9 +34,8 @@ export interface DetailPoint {
   name: string
   lat: number
   lng: number
-  pinType: "hub" | "stay" | "must" | "maybe" | "activity"
+  pinType: "transport" | "stay" | "must" | "maybe" | "activity"
   mode?: string
-  subtitle?: string
   placeIdx: number | null
   actLabel?: string
   transportIdx?: number
@@ -44,7 +43,7 @@ export interface DetailPoint {
 
 // ─── Geocoding ────────────────────────────────────────────────────────────────
 
-const GEO_CACHE_VERSION = "v3"
+const GEO_CACHE_VERSION = "v4"
 const GEO_CACHE_PREFIX  = `crumb-geo-${GEO_CACHE_VERSION}:`
 const GEO_TIMEOUT_MS    = 8000
 const NEGATIVE_TTL_MS   = 7 * 24 * 60 * 60 * 1000
@@ -212,14 +211,9 @@ export function writeBackEndpointGeo(endpoint: ResolvedGeolocation, geo: GeoResu
   endpoint.lng = geo.lng
 }
 
-// ─── Transport hub geocoding ──────────────────────────────────────────────────
+// ─── Transport endpoint geocoding ──────────────────────────────────────────────────
 
-function nearPlace(pt: GeoResult, name: string, coords: Map<string, GeoResult>): boolean {
-  const g = coords.get(name)
-  return !!(g && Math.abs(pt.lat - g.lat) < 0.8 && Math.abs(pt.lng - g.lng) < 1.2)
-}
-
-const TRANSPORT_HUBS = new Set(["flight", "train", "ferry", "bus"])
+const GEOCODED_TRANSPORT_MODES = new Set(["flight", "train", "ferry", "bus"])
 
 export function shouldGeocodeTransport(leg: TransportLeg): boolean {
   if (leg.mode === "walk" || leg.mode === "bike") {
@@ -227,20 +221,21 @@ export function shouldGeocodeTransport(leg: TransportLeg): boolean {
     const hasTo   = leg.to?.lat   != null || !!(leg.to?.label   && leg.to.label   !== "none")
     return hasFrom || hasTo
   }
-  if (!TRANSPORT_HUBS.has(leg.mode)) {
+  if (!GEOCODED_TRANSPORT_MODES.has(leg.mode)) {
     return !!(leg.from?.label && leg.from.label !== "none") ||
            !!(leg.to?.label   && leg.to.label   !== "none")
   }
   return true
 }
 
-export async function geocodeTransportHubs(
+export async function geocodeTransportPoints(
   doc: CrumbDocument,
   resolvedPlaceCoords: Map<string, GeoResult>,
   isStale: () => boolean,
-): Promise<DetailPoint[]> {
+): Promise<{ points: DetailPoint[]; failed: string[] }> {
   const items = doc.itinerary
   const points: DetailPoint[] = []
+  const failed: string[] = []
   let transportIdx = -1
 
   for (let i = 0; i < items.length; i++) {
@@ -249,7 +244,7 @@ export async function geocodeTransportHubs(
     transportIdx++
     const leg = item
     if (!shouldGeocodeTransport(leg)) continue
-    if (isStale()) return points
+    if (isStale()) return { points, failed }
 
     const prev     = [...items.slice(0, i)].reverse().find((x): x is Place => x.type === "place")
     const next     = items.slice(i + 1).find((x): x is Place => x.type === "place")
@@ -268,10 +263,7 @@ export async function geocodeTransportHubs(
       if (!endpoint || endpoint.geocodingDisabled) continue
 
       if (endpoint.lat != null && endpoint.lng != null) {
-        const pt = { lat: endpoint.lat, lng: endpoint.lng }
-        if (!nearPlace(pt, prevName, resolvedPlaceCoords) && !nearPlace(pt, nextName, resolvedPlaceCoords)) {
-          points.push({ name: endpoint.label, lat: pt.lat, lng: pt.lng, pinType: "hub", mode: leg.mode, subtitle: leg.mode + " hub", placeIdx: null, transportIdx })
-        }
+        points.push({ name: endpoint.label, lat: endpoint.lat, lng: endpoint.lng, pinType: "transport", mode: leg.mode, placeIdx: null, transportIdx })
         continue
       }
 
@@ -280,21 +272,23 @@ export async function geocodeTransportHubs(
 
       const contextName = side === "from" ? prevName : nextName
       // When the endpoint label matches the neighboring place name, this is an
-      // inferred endpoint (pass3 sets label = placeName) — skip hub geocoding
-      // and let fitTransportHubs fall back to the already-resolved place coords.
+      // inferred endpoint (pass3 sets label = placeName) — skip endpoint geocoding
+      // and let fitTransportPoints fall back to the already-resolved place coords.
       if (label === contextName) continue
-      const q = suffix
-        ? label + " " + suffix + (contextName ? ", " + contextName : "")
-        : contextName ? label + ", " + contextName : label
+      // Bias the search by the neighbouring place's region (viewbox) rather than
+      // appending the city to the query — same strategy as activity geocoding.
+      // Only add the mode suffix when the label doesn't already name the facility
+      // (otherwise "Kyoto Station" + "train station" is unresolvable).
+      const ctxCoords = resolvedPlaceCoords.get(contextName)
+      const labelNamesFacility = /\b(station|airport|terminal|hbf|bahnhof|gare|aeroport|aeropuerto)\b/i.test(label)
+      const q = labelNamesFacility || !suffix ? label : `${label} ${suffix}`
 
-      const geo = cachedGeo(q) ?? await fetchGeo(q)
-      if (!geo) continue
+      const geo = cachedGeo(q) ?? await fetchGeo(q, ctxCoords)
+      if (!geo) { failed.push(label); continue }
 
       writeBackEndpointGeo(endpoint, geo)
-      if (!nearPlace(geo, prevName, resolvedPlaceCoords) && !nearPlace(geo, nextName, resolvedPlaceCoords)) {
-        points.push({ name: label, lat: geo.lat, lng: geo.lng, pinType: "hub", mode: leg.mode, subtitle: leg.mode + " hub", placeIdx: null, transportIdx })
-      }
+      points.push({ name: label, lat: geo.lat, lng: geo.lng, pinType: "transport", mode: leg.mode, placeIdx: null, transportIdx })
     }
   }
-  return points
+  return { points, failed }
 }

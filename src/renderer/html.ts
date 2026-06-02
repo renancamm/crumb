@@ -1,17 +1,12 @@
 /**
  * HTML Renderer
  *
- * Two exports for different use cases:
- *
- *   renderItineraryBody(doc) — pure content HTML, no shell, no CSS, no JS.
- *     Used by the browser bundle for live re-rendering after edits.
- *
  *   renderHtml(doc, options) — complete self-contained mini-app HTML.
  *     Split layout: editor panel (left, toggled) | sidebar list | map.
  *     Used by the CLI to produce the final output file.
  *
- * HtmlRenderer is the reference implementation of the CrumbRenderer plugin
- * interface — it shows third-party renderer authors what the contract looks like.
+ *   The panel renderers (renderTripPanel, renderPlacePanel, renderTransportPanel,
+ *   renderModalContent, …) produce the live panel content the browser bundle injects.
  */
 
 import type { MetadataItem } from "../types/primitives"
@@ -21,18 +16,15 @@ import type {
   Place,
   ResolvedDuration,
   ResolvedMoment,
-  ResolvedTripMeta,
   Stay,
   TransportLeg,
 } from "../types/resolved"
 import {
   placeStays,
   placeActivityItems,
-  type UngroupedActivities,
-  type RenderActivityGroup,
 } from "./plan-view"
 import { CSS } from "./css"
-import { ICON_STAY, ICON_ARRIVES, ICON_DEPARTS, ICON_CLOCK, ICON_CORNER_DOWN_RIGHT, ICON_CORNER_UP_RIGHT, ICON_PLANE, ICON_TRAIN, ICON_BUS, ICON_CAR, ICON_SHIP, ICON_WALK, ICON_BIKE, ICON_ROUTE, ICON_PIN_OFF, ICON_PRIORITY_MUST, ICON_PRIORITY_MAYBE, modeIconSvg } from "./icons"
+import { ICON_STAY, ICON_ARRIVES, ICON_DEPARTS, ICON_CLOCK, ICON_PIN_OFF, ICON_PRIORITY_MUST, ICON_PRIORITY_MAYBE, modeIconSvg } from "./icons"
 import {
   escape,
   formatDuration,
@@ -47,7 +39,6 @@ import {
   isInferredMoment,
   activityLabel,
 } from "./format"
-import type { CrumbRenderer, RenderContext } from "./types"
 
 // ─── AppOptions ───────────────────────────────────────────────────────────────
 
@@ -68,185 +59,6 @@ export interface AppOptions {
   specContent?: string
   /** CRUMB_FOR_AI.md content — the compact authoring guide used by the "Generate with AI" prompt. Only used when includeEditor is true. */
   aiGuideContent?: string
-}
-
-// ─── Pure content render ──────────────────────────────────────────────────────
-
-/**
- * Render only the itinerary HTML body — no wrapping shell, no CSS, no JS.
- * Injected into #list by the browser JS when live re-rendering.
- */
-export function renderItineraryBody(doc: CrumbDocument): string {
-  const parts: string[] = []
-
-  if (doc.trip) {
-    parts.push(renderTripHeader(doc.trip))
-  }
-
-  parts.push('<div class="itinerary">')
-  let placeIndex = 0
-  for (const item of doc.itinerary) {
-    if (item.type === "place") {
-      parts.push(renderPlace(item, ++placeIndex))
-    } else {
-      parts.push(renderTransportLeg(item))
-    }
-  }
-  parts.push("</div>")
-
-  return parts.join("\n")
-}
-
-// ─── Overview render (compact, no place body) ────────────────────────────────
-
-/**
- * Render itinerary as compact place cards — no activities, stays, or notes.
- * Used as the default view when the app loads and after live re-renders.
- */
-export function renderOverview(doc: CrumbDocument): string {
-  const parts: string[] = []
-  if (doc.trip) parts.push(renderTripHeader(doc.trip))
-  parts.push('<div class="itinerary">')
-  let placeIndex = 0
-  for (const item of doc.itinerary) {
-    if (item.type === "place") {
-      parts.push(renderPlaceCard(item, ++placeIndex))
-    } else {
-      parts.push(renderTransportLeg(item))
-    }
-  }
-  parts.push("</div>")
-  return parts.join("\n")
-}
-
-function renderPlaceCard(place: Place, index: number): string {
-  const { icon: placeGeoIcon } = renderGeoAttrs(place.location)
-  const durHtml   = renderPlaceDuration(resolvePlaceDisplayDuration(place))
-  const datesHtml = renderPlaceDates(place)
-  const sep = (durHtml && datesHtml) ? `<span class="place-meta-sep">•</span>` : ""
-  const metaHtml = (durHtml || datesHtml) ? `<div class="place-meta">${durHtml}${sep}${datesHtml}</div>` : ""
-  return `<div class="place place--card" data-place-index="${index}">
-  <div class="place-header">
-    <span class="place-num">${index}</span>
-    <div class="place-heading">
-      <span class="place-name-text">${escape(place.name)}${placeGeoIcon}</span>
-      ${metaHtml}
-    </div>
-    <span class="place-card-chevron">›</span>
-  </div>
-</div>`
-}
-
-// ─── Place detail render (full content, accordion days) ───────────────────────
-
-/**
- * Render a single place with full detail: nav header, transport in/out, and
- * accordion day sections (first day open by default).
- */
-export function renderPlaceDetail(doc: CrumbDocument, placeIdx: number): string {
-  const places = doc.itinerary.filter(item => item.type === "place") as Place[]
-  const place  = places[placeIdx - 1]
-  if (!place) return renderOverview(doc)
-
-  const totalPlaces = places.length
-  let placePos = -1, pCount = 0
-  for (let i = 0; i < doc.itinerary.length; i++) {
-    if (doc.itinerary[i].type === "place") {
-      pCount++
-      if (pCount === placeIdx) { placePos = i; break }
-    }
-  }
-
-  const transportIn  = placePos > 0 && doc.itinerary[placePos - 1].type !== "place"
-    ? doc.itinerary[placePos - 1] as TransportLeg : null
-  const transportOut = placePos >= 0 && placePos < doc.itinerary.length - 1 && doc.itinerary[placePos + 1].type !== "place"
-    ? doc.itinerary[placePos + 1] as TransportLeg : null
-
-  const prevAttr = placeIdx <= 1           ? " disabled" : ""
-  const nextAttr = placeIdx >= totalPlaces ? " disabled" : ""
-
-  const parts: string[] = []
-
-  parts.push(`<button class="place-back-link" id="nav-back">
-  <svg class="crumb-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="15 18 9 12 15 6"/></svg>
-  All places
-</button>`)
-
-  if (transportIn) {
-    parts.push(`<div class="transport-in">${renderTransportLeg(transportIn)}</div>`)
-  }
-
-  parts.push('<div class="itinerary">')
-  parts.push(renderPlaceFullDetail(place, placeIdx, totalPlaces, prevAttr, nextAttr))
-  parts.push("</div>")
-
-  if (transportOut) {
-    parts.push(`<div class="transport-out">${renderTransportLeg(transportOut)}</div>`)
-  }
-
-  return parts.join("\n")
-}
-
-function renderPlaceFullDetail(place: Place, index: number, totalPlaces: number, prevAttr: string, nextAttr: string): string {
-  const parts: string[] = []
-  parts.push(`<div class="place" data-place-index="${index}">`)
-
-  const { icon: placeGeoIcon, mapLink: placeMapLink } = renderGeoAttrs(place.location)
-  const durHtml   = renderPlaceDuration(resolvePlaceDisplayDuration(place))
-  const datesHtml = renderPlaceDates(place)
-  parts.push(`  <div class="place-header place-header--detail">`)
-  parts.push(`    <span class="place-num">${index}</span>`)
-  parts.push(`    <div class="place-heading">`)
-  parts.push(`      <span class="place-name-text"${placeMapLink}>${escape(place.name)}${placeGeoIcon}</span>`)
-  if (durHtml || datesHtml) {
-    const sep = (durHtml && datesHtml) ? `<span class="place-meta-sep">•</span>` : ""
-    parts.push(`      <div class="place-meta">${durHtml}${sep}${datesHtml}</div>`)
-  }
-  parts.push(`    </div>`)
-  parts.push(`    <div class="place-nav-controls">`)
-  parts.push(`      <span class="place-nav-counter">${index} / ${totalPlaces}</span>`)
-  parts.push(`      <button class="place-nav-arrow" id="nav-prev"${prevAttr}><svg class="crumb-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="15 18 9 12 15 6"/></svg></button>`)
-  parts.push(`      <button class="place-nav-arrow" id="nav-next"${nextAttr}><svg class="crumb-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="9 18 15 12 9 6"/></svg></button>`)
-  parts.push(`    </div>`)
-  parts.push(`  </div>`)
-
-  const bodyParts: string[] = []
-  if (place.tags?.length)
-    bodyParts.push(`<div class="tags">${place.tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>`)
-  if (place.note)
-    bodyParts.push(`<div class="note place-note">${renderMarkdown(place.note)}</div>`)
-  const stays = placeStays(place)
-  if (stays.length)
-    bodyParts.push(renderStays(stays))
-  if (place.info?.length)
-    bodyParts.push(renderInfoList(place.info, ""))
-  const activityItems = placeActivityItems(place)
-  if (activityItems.length > 0) {
-    const actParts: string[] = [`<div class="activities">`]
-    const counter = { n: 0 }
-    let dayIdx = 0, weekIdx = 0
-    for (const actItem of activityItems) {
-      if (actItem.type === "ungrouped") {
-        actParts.push(renderUngrouped(actItem, counter))
-      } else {
-        const gIdx = actItem.kind === "day"  ? ++dayIdx
-                   : actItem.kind === "week" ? ++weekIdx
-                   : 0
-        actParts.push(renderActivityGroup(actItem, counter, gIdx))
-      }
-    }
-    actParts.push(`</div>`)
-    bodyParts.push(actParts.join("\n"))
-  }
-
-  if (bodyParts.length) {
-    parts.push(`  <div class="place-body">`)
-    parts.push(bodyParts.map(p => `    ${p}`).join("\n"))
-    parts.push(`  </div>`)
-  }
-
-  parts.push(`</div>`)
-  return parts.join("\n")
 }
 
 
@@ -392,11 +204,15 @@ function renderPlaceActivities(place: Place): string {
       } else {
         const kind    = actItem.kind === "week" ? "Week" : "Day"
         const ordinal = gIdx > 0 ? formatOrdinal(gIdx, actItem.kind as "day" | "week") : kind
-        const calDate = actItem.time ? formatGroupCalendarDate(actItem.time) : ""
-        const metaHtml = calDate ? `<span class="list-item-meta">${calDate}</span>` : ""
+        const calDate = actItem.time ? formatGroupCalendarDate(actItem.time, true) : ""
+        // Ordinal + optional name share the left (wrapping as needed); date sits on the right.
+        const leftText = actItem.title ? `${ordinal}, ${escape(actItem.title)}` : ordinal
+        const dateHtml = calDate ? `<span class="day-divider-date">${calDate}</span>` : ""
         parts.push(
           `  <li class="list-divider list-divider--day">` +
-          `<span class="list-item-body"><span class="list-item-label">${ordinal}</span>${metaHtml}</span></li>`
+          `<span class="day-divider-main">${leftText}</span>` +
+          dateHtml +
+          `</li>`
         )
       }
       let actGroupIdx = 0
@@ -547,7 +363,7 @@ export function renderSinglePlacePanel(doc: CrumbDocument): string {
   const { icon: geoIcon } = renderGeoAttrs(place.location)
   const metaLine = [renderPlaceDuration(resolvePlaceDisplayDuration(place)), renderPlaceDates(place)]
     .filter(Boolean).join(`<span class="place-meta-sep"> · </span>`)
-  parts.push(`<div class="panel-header">`)
+  parts.push(`<div class="panel-header panel-header--flat">`)
   parts.push(`  <div class="panel-header-body">`)
   parts.push(`    <div class="panel-title-row">`)
   parts.push(`      <span class="place-num place-num--sm">1</span>`)
@@ -656,12 +472,6 @@ function findActivityByFlatIndex(
 export function renderModalContent(doc: CrumbDocument, modal: ModalRef): string {
   if (modal.type === "trip") {
     return renderTripPanel(doc)
-  }
-
-  if (modal.type === "transport") {
-    const legs = doc.itinerary.filter(i => i.type === "transport") as TransportLeg[]
-    const leg  = legs[modal.itemIdx]
-    return leg ? `<div class="modal-transport">${renderTransportLeg(leg)}</div>` : ""
   }
 
   if (modal.type === "stay") {
@@ -920,10 +730,10 @@ function resolvePlaceDisplayDuration(place: Place): Place["duration"] {
   return undefined
 }
 
-function formatGroupCalendarDate(m: ResolvedMoment): string {
-  if (m.date?.precision === "absolute") return formatSmartDate(m.date.value)
-  if (m.anchor?.date)                   return formatSmartDate(m.anchor.date)
-  if (m.date?.precision === "approximate") return formatSmartDate(m.date.estimate)
+function formatGroupCalendarDate(m: ResolvedMoment, shortWeekday = false): string {
+  if (m.date?.precision === "absolute") return formatSmartDate(m.date.value, shortWeekday)
+  if (m.anchor?.date)                   return formatSmartDate(m.anchor.date, shortWeekday)
+  if (m.date?.precision === "approximate") return formatSmartDate(m.date.estimate, shortWeekday)
   return ""
 }
 
@@ -937,31 +747,6 @@ function formatOrdinal(n: number, kind: "day" | "week"): string {
   return `${n}${suffix} ${kind}`
 }
 
-function renderTripHeader(meta: ResolvedTripMeta): string {
-  const parts: string[] = [`<header class="trip-header">`]
-  parts.push(`  <h1>${escape(meta.name ?? "Itinerary")}</h1>`)
-
-  const metaItems: string[] = []
-  if (meta.duration) {
-    if (meta.duration.type === "approximate") {
-      const rawStr = formatDurValue(meta.duration.value, meta.duration.unit)
-      metaItems.push(`<span class="trip-duration date-inferred">${escape(rawStr)}</span>`)
-    } else if (meta.duration.type === "unknown") {
-      metaItems.push(`<span class="trip-duration value-unknown">${escape(meta.duration.label)}</span>`)
-    } else {
-      metaItems.push(`<span class="trip-duration">${escape(formatDuration(meta.duration))}</span>`)
-    }
-  }
-  if (meta.author) metaItems.push(`<span class="trip-author">by ${escape(meta.author)}</span>`)
-  if (metaItems.length) parts.push(`  <div class="trip-meta">${metaItems.join('<span class="trip-sep">•</span>')}</div>`)
-
-  if (meta.tags?.length) parts.push(`  <div class="tags">${meta.tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>`)
-  if (meta.note)   parts.push(`  <p class="note">${renderMarkdown(meta.note)}</p>`)
-  if (meta.info?.length) parts.push(renderInfoList(meta.info, "  "))
-
-  parts.push("</header>")
-  return parts.join("\n")
-}
 
 function renderGeoAttrs(location?: { geocodingDisabled?: boolean }): { icon: string; mapLink: string } {
   const disabled = location?.geocodingDisabled ?? false
@@ -971,64 +756,6 @@ function renderGeoAttrs(location?: { geocodingDisabled?: boolean }): { icon: str
   }
 }
 
-function renderPlace(place: Place, index = 0): string {
-  const parts: string[] = []
-  parts.push(`<div class="place" data-place-index="${index}">`)
-
-  // Header: large number + place name/dates stacked
-  parts.push(`  <div class="place-header">`)
-  if (index > 0) parts.push(`    <span class="place-num">${index}</span>`)
-  parts.push(`    <div class="place-heading">`)
-  const { icon: placeGeoIcon, mapLink: placeMapLink } = renderGeoAttrs(place.location)
-  const durHtml   = renderPlaceDuration(resolvePlaceDisplayDuration(place))
-  const datesHtml = renderPlaceDates(place)
-  parts.push(`      <span class="place-name-text"${placeMapLink}>${escape(place.name)}${placeGeoIcon}</span>`)
-  if (durHtml || datesHtml) {
-    const sep = (durHtml && datesHtml) ? `<span class="place-meta-sep">•</span>` : ""
-    parts.push(`      <div class="place-meta">${durHtml}${sep}${datesHtml}</div>`)
-  }
-  parts.push(`    </div>`)
-  parts.push(`  </div>`)
-
-  // Body — indented content
-  const bodyParts: string[] = []
-  if (place.tags?.length)
-    bodyParts.push(`<div class="tags">${place.tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>`)
-  if (place.note)
-    bodyParts.push(`<div class="note place-note">${renderMarkdown(place.note)}</div>`)
-  const stays = placeStays(place)
-  if (stays.length)
-    bodyParts.push(renderStays(stays))
-  if (place.info?.length)
-    bodyParts.push(renderInfoList(place.info, ""))
-  const activityItems = placeActivityItems(place)
-  if (activityItems.length > 0) {
-    const actParts: string[] = [`<div class="activities">`]
-    const counter = { n: 0 }
-    let dayIdx = 0, weekIdx = 0
-    for (const actItem of activityItems) {
-      if (actItem.type === "ungrouped") {
-        actParts.push(renderUngrouped(actItem, counter))
-      } else {
-        const gIdx = actItem.kind === "day"  ? ++dayIdx
-                   : actItem.kind === "week" ? ++weekIdx
-                   : 0
-        actParts.push(renderActivityGroup(actItem, counter, gIdx))
-      }
-    }
-    actParts.push(`</div>`)
-    bodyParts.push(actParts.join("\n"))
-  }
-
-  if (bodyParts.length) {
-    parts.push(`  <div class="place-body">`)
-    parts.push(bodyParts.map(p => `    ${p}`).join("\n"))
-    parts.push(`  </div>`)
-  }
-
-  parts.push(`</div>`)
-  return parts.join("\n")
-}
 
 function renderPlaceDuration(dur: Place["duration"]): string {
   if (!dur) return ""
@@ -1124,49 +851,18 @@ function formatDateRange(a: ResolvedMoment, d: ResolvedMoment): string {
   return ""
 }
 
-function renderTransportLeg(leg: TransportLeg): string {
-  const icon        = modeIconSvg(leg.mode)
-  const hasContent  = !!(leg.departs || leg.arrives || leg.duration || leg.info?.length || leg.note)
-
-  if (!hasContent) {
-    return `<div class="transport transport-simple">
-  <span class="transport-icon">${icon}</span>
-  <div class="transport-body"><span class="transport-mode">${escape(formatMode(leg.mode))}</span></div>
-</div>`
-  }
-
-  const from         = leg.from?.label ?? null
-  const to           = leg.to?.label   ?? null
-  const departsHtml  = leg.departs  ? wrapInferred(momentOrUnknown(leg.departs),  leg.departs)  : null
-  const arrivesHtml  = leg.arrives  ? wrapInferred(momentOrUnknown(leg.arrives),  leg.arrives)  : null
-  const durationText = leg.duration ? durOrUnknown(leg.duration) : null
-  const noteHtml     = leg.note ? `<div class="note transport-note panel-note">${renderMarkdown(leg.note)}</div>` : ""
-  const infoHtml     = leg.info?.length
-    ? `<div class="transport-info">${leg.info.map(renderInfoItem).join("")}</div>`
-    : ""
-
-  const hasBoth  = !!(from || departsHtml) && !!(to || arrivesHtml)
-  const routeHtml = hasBoth
-    ? renderDetailedRoute(from, to, departsHtml, arrivesHtml, durationText)
-    : renderSimpleRoute(from, to, departsHtml, arrivesHtml, durationText)
-
-  return `<div class="transport">
-  <span class="transport-icon">${icon}</span>
-  <div class="transport-body">
-    ${routeHtml}${noteHtml}${infoHtml}
-  </div>
-</div>`
-}
 
 function renderDetailedRoute(
   from: string | null, to: string | null,
   departsHtml: string | null, arrivesHtml: string | null,
   durationText: string | null,
 ): string {
+  // The two .waypoint-name spans (origin, then destination) are decorated by
+  // decorateTransportWaypoints() in browser-app — it owns link/icon/spinner state.
   return `<div class="transport-route-block">
       <div class="tl-row">
         <div class="tl-marker"><div class="tl-dot"></div></div>
-        <span class="waypoint-name"${from ? ` data-hub-name="${escape(from)}"` : ""}>${from ? escape(from) : ""}</span>
+        <span class="waypoint-name">${from ? escape(from) : ""}</span>
       </div>
       <div class="tl-row">
         <div class="tl-marker tl-marker-line"><div class="tl-line"></div></div>
@@ -1177,24 +873,12 @@ function renderDetailedRoute(
       </div>
       <div class="tl-row">
         <div class="tl-marker"><div class="tl-dot"></div></div>
-        <span class="waypoint-name"${to ? ` data-hub-name="${escape(to)}"` : ""}>${to ? escape(to) : ""}</span>
+        <span class="waypoint-name">${to ? escape(to) : ""}</span>
       </div>
       ${arrivesHtml ? `<div class="tl-indent"><span class="waypoint-time">${ICON_ARRIVES}${arrivesHtml}</span></div>` : ""}
     </div>`
 }
 
-function renderSimpleRoute(
-  from: string | null, to: string | null,
-  departsHtml: string | null, arrivesHtml: string | null,
-  durationText: string | null,
-): string {
-  const parts: string[] = []
-  if (from || to) parts.push([from, to].filter(Boolean).map(s => escape(s!)).join(" → "))
-  if (departsHtml)  parts.push(`${ICON_DEPARTS}${departsHtml}`)
-  if (arrivesHtml)  parts.push(`${ICON_ARRIVES}${arrivesHtml}`)
-  if (durationText) parts.push(`<span class="waypoint-time">${ICON_CLOCK}${durationText}</span>`)
-  return parts.length ? `<div class="transport-simple">${parts.join(" · ")}</div>` : ""
-}
 
 function renderStayPanel(stay: Stay): string {
   const { mapLink: stayMapLink } = renderGeoAttrs(stay.location)
@@ -1220,10 +904,15 @@ function renderStayPanel(stay: Stay): string {
     // No meta in stay header — arrive/depart details are in the body
   }))
 
+  const aMoment = stay.arrives ? momentOrUnknown(stay.arrives) : ""
+  const dMoment = stay.departs ? momentOrUnknown(stay.departs) : ""
+  const arrivesHtml = aMoment ? wrapInferred(aMoment, stay.arrives!) : null
+  const departsHtml = dMoment ? wrapInferred(dMoment, stay.departs!) : null
+
   parts.push(`<div class="panel-stay-body">`)
   if (allStayTagsHtml) parts.push(`  <div class="tags">${allStayTagsHtml}</div>`)
-  if (stay.arrives) { const a = momentOrUnknown(stay.arrives); if (a) parts.push(`  <span class="stay-date">${ICON_CORNER_DOWN_RIGHT}${wrapInferred(a, stay.arrives)}</span>`) }
-  if (stay.departs) { const d = momentOrUnknown(stay.departs); if (d) parts.push(`  <span class="stay-date">${ICON_CORNER_UP_RIGHT}${wrapInferred(d, stay.departs)}</span>`) }
+  const timeline = renderStayTimeline(arrivesHtml, departsHtml)
+  if (timeline) parts.push(timeline)
   if (stay.note)       parts.push(`  <div class="note stay-note panel-note">${renderMarkdown(stay.note)}</div>`)
   if (stay.info?.length) parts.push(`  <div class="stay-info">${stay.info.map(renderInfoItem).join("")}</div>`)
   parts.push(`</div>`)
@@ -1231,65 +920,45 @@ function renderStayPanel(stay: Stay): string {
   return parts.join("\n")
 }
 
-function renderStays(stays: Stay[]): string {
-  const parts = [`  <div class="stays">`]
-  for (const stay of stays) {
-    const stayGeoAttr = !stay.location?.geocodingDisabled ? ` data-stay-name="${escape(stay.name)}"` : ""
-    const { icon: stayGeoIcon, mapLink: stayMapLink } = renderGeoAttrs(stay.location)
+/** Arrives/Departs dashed timeline for the stay panel — mirrors renderDetailedRoute(). */
+function renderStayTimeline(arrivesHtml: string | null, departsHtml: string | null): string {
+  if (!arrivesHtml && !departsHtml) return ""
 
-    const dateLines: string[] = []
-    if (stay.arrives) { const a = momentOrUnknown(stay.arrives); if (a) dateLines.push(`<span class="stay-date">${ICON_CORNER_DOWN_RIGHT}${wrapInferred(a, stay.arrives)}</span>`) }
-    if (stay.departs) { const d = momentOrUnknown(stay.departs); if (d) dateLines.push(`<span class="stay-date">${ICON_CORNER_UP_RIGHT}${wrapInferred(d, stay.departs)}</span>`) }
-
-    const infoStr = stay.info?.length
-      ? `<div class="stay-info">${stay.info.map(renderInfoItem).join("")}</div>`
-      : ""
-    const noteStr = stay.note ? `<div class="note stay-note">${renderMarkdown(stay.note)}</div>` : ""
-
-    const content = [`<span class="stay-name"${stayMapLink}>${escape(stay.name)}${stayGeoIcon}</span>`, ...dateLines, infoStr, noteStr].filter(Boolean).join("")
-    parts.push(`    <div class="stay"${stayGeoAttr}><span class="stay-icon">${ICON_STAY}</span><div class="stay-content">${content}</div></div>`)
-  }
-  parts.push(`  </div>`)
-  return parts.join("\n")
-}
-
-/** Shared counter type — threads across groups so letters are unique per place. */
-interface ActCounter { n: number }
-
-function renderUngrouped(container: UngroupedActivities, counter: ActCounter): string {
-  return `    <ul class="activity-list ungrouped">${container.items.map(a => renderActivityItem(a, counter.n++)).join("\n")}</ul>`
-}
-
-function renderActivityGroup(group: RenderActivityGroup, counter: ActCounter, groupIndex = 0): string {
-  const isPlan = group.kind === "group"
-  const cls    = isPlan ? "activity-group plan-group" : "activity-group"
-  const kind   = isPlan ? "Group" : group.kind === "week" ? "Week" : "Day"
-
-  let header: string
-  if (isPlan && group.title) {
-    header = `<div class="group-header plan-header">${escape(group.title)}</div>`
-  } else {
-    const titleText   = escape(group.title ?? kind)
-    const calDate     = !isPlan && group.time
-      ? (formatGroupCalendarDate(group.time) || ((!group.time.date && !group.time.time) ? `<span class="value-unknown">${escape(group.time.label)}</span>` : ""))
-      : ""
-    const ordinalText = !isPlan && groupIndex > 0 ? formatOrdinal(groupIndex, group.kind as "day" | "week") : ""
-    const dateLine    = [ordinalText, calDate].filter(Boolean).join(" • ")
-    const dateHtml    = dateLine
-      ? (group.time && isInferredMoment(group.time)
-          ? `<span class="group-date date-inferred">${escape(dateLine)}</span>`
-          : `<span class="group-date">${escape(dateLine)}</span>`)
-      : ""
-    header = `<div class="group-header">${titleText}${dateHtml}</div>`
+  // Single endpoint: dot + label + indented date, no connector line.
+  if (!arrivesHtml || !departsHtml) {
+    const label = arrivesHtml ? "Arrives" : "Departs"
+    const date  = arrivesHtml ?? departsHtml
+    return `<div class="transport-route-block">
+      <div class="tl-row">
+        <div class="tl-marker"><div class="tl-dot"></div></div>
+        <span class="waypoint-name">${label}</span>
+      </div>
+      <div class="tl-indent"><span class="waypoint-time">${date}</span></div>
+    </div>`
   }
 
-  const groupNum = isPlan ? undefined : (groupIndex > 0 ? groupIndex : undefined)
-  const items = group.items.length
-    ? `<ul class="activity-list">${group.items.map(a => renderActivityItem(a, counter.n++, groupNum)).join("\n")}</ul>`
-    : ""
-
-  return `    <div class="${cls}">\n      ${header}\n      ${items}\n    </div>`
+  return `<div class="transport-route-block">
+      <div class="tl-row">
+        <div class="tl-marker"><div class="tl-dot"></div></div>
+        <span class="waypoint-name">Arrives</span>
+      </div>
+      <div class="tl-row">
+        <div class="tl-marker tl-marker-line"><div class="tl-line"></div></div>
+        <div class="tl-meta">
+          <span class="waypoint-time">${arrivesHtml}</span>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-marker"><div class="tl-dot"></div></div>
+        <span class="waypoint-name">Departs</span>
+      </div>
+      <div class="tl-indent"><span class="waypoint-time">${departsHtml}</span></div>
+    </div>`
 }
+
+
+
+
 
 function renderActivityPanel(act: Activity, actIndex: number, groupLabel?: string, groupNum?: number): string {
   const letter = activityLabel(actIndex, groupNum)
@@ -1325,58 +994,11 @@ function renderActivityPanel(act: Activity, actIndex: number, groupLabel?: strin
   return parts.join("\n")
 }
 
-function renderActivityItem(act: Activity, actIndex?: number, groupNum?: number): string {
-  // Letter label (A, B, C…) as map reference — shown only when index is provided
-  const label = actIndex !== undefined
-    ? `<span class="act-label">${activityLabel(actIndex, groupNum)}</span>`
-    : ""
-
-  const { icon: actGeoIcon, mapLink: actMapLink } = renderGeoAttrs(act.location)
-
-  const priorityIcon = act.priority === "must"  ? `<span class="act-priority act-priority-must">${ICON_PRIORITY_MUST}</span>`
-                     : act.priority === "maybe" ? `<span class="act-priority act-priority-maybe">${ICON_PRIORITY_MAYBE}</span>`
-                     : ""
-  const nameHtml = `<span class="act-name"${actMapLink}>${escape(act.name)}${priorityIcon}${actGeoIcon}</span>`
-  const titleRow = `<div class="act-title-row">${nameHtml}</div>`
-
-  let timeHtml = ""
-  if (act.time) {
-    const t = formatMomentTime(act.time)
-    if (t) {
-      const cls = isInferredMoment(act.time) ? `act-time date-inferred` : `act-time`
-      timeHtml = `<span class="${cls}">${escape(t)}</span>`
-    } else if (!act.time.date && !act.time.time) {
-      timeHtml = `<span class="act-time value-unknown">${escape(act.time.label)}</span>`
-    }
-  }
-  const durHtml = act.duration ? `<span class="act-duration">${durOrUnknown(act.duration)}</span>` : ""
-  const sep = (timeHtml && durHtml) ? `<span class="act-meta-sep">•</span>` : ""
-  const metaRow = (timeHtml || durHtml) ? `<div class="act-meta">${timeHtml}${sep}${durHtml}</div>` : ""
-
-  const tags: string[] = []
-  if (act.tags?.length) act.tags.forEach(t => tags.push(`<span class="tag">${escape(t)}</span>`))
-
-  const contentParts: string[] = [titleRow]
-  if (metaRow)         contentParts.push(metaRow)
-  if (tags.length)     contentParts.push(`<div class="act-tags">${tags.join("")}</div>`)
-  if (act.note)        contentParts.push(`<div class="note act-note">${renderInlineNote(act.note)}</div>`)
-  if (act.info?.length) contentParts.push(`<div class="act-info">${act.info.map(renderInfoItem).join("")}</div>`)
-
-  const geoAttr = !act.location?.geocodingDisabled
-    ? ` data-act-name="${escape(act.name)}"`
-    : ""
-
-  return `<li class="activity-item"${geoAttr}>${label ? label + " " : ""}<div class="act-content">${contentParts.join("")}</div></li>`
-}
 
 function renderInfoItem(i: MetadataItem): string {
   return `<div class="info-item"><span class="info-key">${escape(String(i.key))}</span><span class="info-val">${escape(String(i.value))}</span></div>`
 }
 
-function renderInfoList(info: MetadataItem[], indent: string): string {
-  const items = info.map(i => `${indent}  ${renderInfoItem(i)}`).join("\n")
-  return `${indent}<div class="info-list">\n${items}\n${indent}</div>`
-}
 
 function renderMarkdown(text: string): string {
   const inline = (s: string): string =>
@@ -1451,15 +1073,3 @@ export function buildPopupMeta(doc: CrumbDocument): Record<string, string> {
   return meta
 }
 
-// ─── HtmlRenderer — reference implementation of CrumbRenderer ────────────────
-
-/**
- * Reference implementation of the CrumbRenderer plugin interface.
- * Produces the itinerary body only (no app shell).
- * For the full mini-app output, use renderHtml() directly.
- */
-export class HtmlRenderer implements CrumbRenderer {
-  render(doc: CrumbDocument, _context: RenderContext): string {
-    return renderItineraryBody(doc)
-  }
-}

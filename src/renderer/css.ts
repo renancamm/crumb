@@ -534,6 +534,13 @@ const mapCSS = `
 .map-status-chip:empty { opacity: 0; }
 
 /* ── MapLibre popup overrides ────────────────────────────────────────── */
+/* drop-shadow on the wrapper wraps content + tip as one outline, so the tip
+   has no border line crossing its base (a content border would do that) */
+.place-popup,
+.detail-popup { filter: drop-shadow(0 2px 12px rgba(0,0,0,.12)); }
+/* detail (activity/stay/transport) popups sit above place popups/markers */
+.place-popup  { z-index: 4; }
+.detail-popup { z-index: 5; }
 .place-popup .maplibregl-popup-content,
 .detail-popup .maplibregl-popup-content {
   padding: 8px 12px;
@@ -541,13 +548,14 @@ const mapCSS = `
   font-family: var(--font);
   font-size: var(--text-sm);
   background: var(--bg);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-map-popup);
+  border: none;
+  box-shadow: none;
 }
-.place-popup .maplibregl-popup-tip  { border-top-color: var(--bg); }
-.detail-popup .maplibregl-popup-tip { border-top-color: var(--bg); }
+/* Shrink the tip triangle via border-width (default 10px) — keeps its base flush
+   against the content, unlike transform:scale which lifts it off and leaves a gap */
+.place-popup .maplibregl-popup-tip,
+.detail-popup .maplibregl-popup-tip { border-top-color: var(--bg); border-width: 7px; }
 .popup-title { color: var(--text); font-weight: 500; }
-.popup-sub { color: var(--muted); font-size: var(--text-xs); }
 
 /* ── Place markers ───────────────────────────────────────────────────── */
 .place-marker {
@@ -571,7 +579,7 @@ const mapCSS = `
 }
 body.map-zoom-close .place-marker { display: none; }
 
-/* ── Detail markers (activities, stays, hubs) ────────────────────────── */
+/* ── Detail markers (activities, stays, transport) ────────────────────────── */
 .detail-marker {
   border-radius: 50%;
   border: 1.5px solid #fff;
@@ -584,15 +592,17 @@ body.map-zoom-close .place-marker { display: none; }
 .detail-marker--activity { background: var(--activity); border-radius: var(--radius-md); }
 .detail-marker--maybe    { background: var(--activity); border-radius: var(--radius-md); opacity: 0.5; }
 .detail-marker--stay     { background: var(--primary); }
-.detail-marker--hub      { background: var(--primary); }
+.detail-marker--transport      { background: var(--primary); }
 
-/* zoom medium (8–11): activity dots only, small */
+/* zoom medium (8–11): activity + stay + transport dots, small */
 body.map-zoom-medium .detail-marker--must,
 body.map-zoom-medium .detail-marker--activity,
-body.map-zoom-medium .detail-marker--maybe { display: flex; width: 12px; height: 12px; }
+body.map-zoom-medium .detail-marker--maybe,
+body.map-zoom-medium .detail-marker--stay,
+body.map-zoom-medium .detail-marker--transport { display: flex; width: 12px; height: 12px; }
 
 /* zoom close (12+): all markers, full size */
-body.map-zoom-close .detail-marker { display: flex; width: 28px; height: 28px; border-width: 3px; }
+body.map-zoom-close .detail-marker { display: flex; width: 28px; height: 28px; border-width: 2px; }
 
 /* Labels (activities) */
 .detail-marker-label {
@@ -601,7 +611,7 @@ body.map-zoom-close .detail-marker { display: flex; width: 28px; height: 28px; b
 }
 body.map-zoom-close .detail-marker-label { display: block; }
 
-/* Icons (stays + hubs) */
+/* Icons (stays + transport) */
 .detail-marker .crumb-icon {
   display: none;
   width: 13px; height: 13px;
@@ -609,7 +619,7 @@ body.map-zoom-close .detail-marker-label { display: block; }
   stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
 }
 body.map-zoom-close .detail-marker--stay .crumb-icon,
-body.map-zoom-close .detail-marker--hub  .crumb-icon { display: block; }
+body.map-zoom-close .detail-marker--transport  .crumb-icon { display: block; }
 
 /* ── Map click targets ───────────────────────────────────────────────── */
 [data-map-link]       { cursor: pointer; }
@@ -634,6 +644,13 @@ body.map-zoom-close .detail-marker--hub  .crumb-icon { display: block; }
 .act-badge.--loading::after {
   content: ""; position: absolute; inset: 3px; border-radius: 50%;
   border: 1.5px solid rgba(249,115,22,.15); border-top-color: var(--activity);
+  animation: geo-spin 700ms linear infinite;
+}
+/* Inline spinner shown to the right of a transport from/to name while geocoding */
+.waypoint-spinner {
+  display: inline-block; width: 11px; height: 11px;
+  margin-left: 6px; border-radius: 50%; vertical-align: -1px;
+  border: 1.5px solid var(--border); border-top-color: var(--muted);
   animation: geo-spin 700ms linear infinite;
 }
 `
@@ -684,7 +701,12 @@ const itineraryCSS = `
 .place-name-text { display: block; font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.01em; line-height: 1.3; }
 .place-meta { display: flex; flex-wrap: wrap; align-items: baseline; margin-top: 3px; }
 .place-meta-sep { opacity: 0.5; margin: 0 3px; font-size: var(--text-xs); }
-.place-duration, .place-dates { font-size: var(--text-sm); color: var(--muted); }.date-inferred { font-style: italic; opacity: 0.75; }
+.place-duration, .place-dates { font-size: var(--text-sm); color: var(--muted); }.date-inferred {
+  text-decoration: underline dotted;
+  text-decoration-color: var(--muted);
+  text-underline-offset: 2px;
+  opacity: 0.85;
+}
 .value-unknown { text-decoration: line-through; opacity: 0.5; }
 
 .place-body { padding-left: 38px; }
@@ -721,7 +743,7 @@ const itineraryCSS = `
 .tl-marker-line { align-self: stretch; }
 .tl-dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; border: 1.5px solid var(--text); flex-shrink: 0; }
 .tl-line {
-  flex: 1; width: 1.5px; min-height: 8px;
+  flex: 1; width: 1.5px; min-height: 14px;
   background: repeating-linear-gradient(to bottom, var(--text) 0px, var(--text) 2px, transparent 2px, transparent 4px);
 }
 
@@ -746,7 +768,7 @@ const itineraryCSS = `
   background: var(--surface);
   border-radius: var(--radius-md);
   padding: 8px 10px;
-  margin-top: 8px;
+  margin-top: 14px;
 }
 
 /* ── Stays ───────────────────────────────────────────────────────────── */
@@ -971,6 +993,9 @@ const itineraryCSS = `
   justify-content: space-between;
   padding: 16px 16px 14px;
 }
+/* single-place flat view: more air above the place title, tighter below */
+.panel-header--flat { padding: 28px 16px 2px; }
+.panel-header--flat .panel-title-row { margin-bottom: 4px; }
 .panel-header-body { flex: 1; min-width: 0; }
 .panel-close {
   flex-shrink: 0;
@@ -1228,12 +1253,15 @@ const itineraryCSS = `
   pointer-events: none;
 }
 .list-divider .list-item-body { flex-direction: row; align-items: baseline; gap: 5px; }
-.list-divider--day .list-item-label,
 .list-divider--plan .list-item-label {
   font-size: var(--text-xs);
   font-weight: 400;
   color: var(--text);
 }
+/* Day divider: ordinal + name on the left (wraps), date on the right */
+.list-divider--day { justify-content: space-between; align-items: flex-start; padding-top: 15px; padding-bottom: 1px; }
+.day-divider-main { font-size: var(--text-xs); font-weight: 400; color: var(--text); }
+.day-divider-date { font-size: var(--text-xs); color: var(--muted); white-space: nowrap; flex-shrink: 0; }
 
 /* Small place-num variant used in ToC list items */
 .place-num--sm { width: 24px; height: 24px; font-size: var(--text-2xs); flex-shrink: 0; box-shadow: 0 0 0 4px var(--bg); }
@@ -1250,11 +1278,14 @@ const itineraryCSS = `
 .note-trunc.--expanded { display: block; -webkit-line-clamp: unset; line-clamp: unset; }
 .note-more {
   cursor: pointer;
-  color: var(--text);
+  color: var(--primary);
   font-size: var(--text-xs);
+  font-weight: 500;
   font-style: normal;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
-.note-more:hover { text-decoration: underline; }
+.note-more:hover { color: var(--primary-muted); }
 
 /* ── Menu section label ──────────────────────────────────────────────── */
 .menu-section-label {

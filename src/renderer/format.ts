@@ -64,10 +64,12 @@ export function formatShortDate(iso: string): string {
   return `${months[m - 1]} ${d}`
 }
 
-export function formatSmartDate(iso: string): string {
+export function formatSmartDate(iso: string, shortWeekday = false): string {
   const [y, m, d] = iso.split("-").map(Number)
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-  const days   = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
+  const days   = shortWeekday
+    ? ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
+    : ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
   const weekday = days[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]
   return `${weekday}, ${months[m - 1]} ${d}`
 }

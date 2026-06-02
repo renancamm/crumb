@@ -21,7 +21,6 @@ declare global {
     __CRUMB_POPUPS:   Record<string, string>
     Crumb: {
       parse:               (src: string) => CrumbDocument
-      renderItineraryBody: (doc: CrumbDocument) => string
       renderTripPanel:        (doc: CrumbDocument) => string
       renderPlacePanel:       (doc: CrumbDocument, placeIdx: number) => string
       renderSinglePlacePanel: (doc: CrumbDocument) => string
@@ -46,7 +45,7 @@ export const FLY_DURATION    = 800         // ms — map camera animation on foc
 
 // ─── Focus type ───────────────────────────────────────────────────────────────
 
-export type FocusType = "place" | "activity" | "stay" | "hub"
+export type FocusType = "place" | "activity" | "stay" | "transport"
 
 // ─── Shared mutable state ─────────────────────────────────────────────────────
 // All modules import this object and mutate fields directly.
@@ -62,7 +61,7 @@ export const state = {
   focusedPlaceIdx:  -1 as number,
   focusedActName:   null as string | null,
   focusedStayName:  null as string | null,
-  focusedHubName:   null as string | null,
+  focusedTransportName:   null as string | null,
 
   activePlaceIndex: null as number | null, // null = trip level, N = place level (1-based)
   activeModal:      null as ModalRef | null,
@@ -75,9 +74,10 @@ export const state = {
     places:       [null] as Array<GeoResult | null>,
     activities:   new Map<string, GeoResult>(),
     stays:        new Map<string, GeoResult>(),
-    hubs:         new Map<string, GeoResult>(),
+    transports:         new Map<string, GeoResult>(),
     placesFailed: new Set<number>(),
     actsFailed:   new Set<string>(),
     staysFailed:  new Set<string>(),
+    transportsFailed: new Set<string>(),
   },
 }
