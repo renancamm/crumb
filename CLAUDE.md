@@ -11,7 +11,7 @@ Crumb is a **spec-first** open format for travel itineraries. The format is the 
 | Raw types | `src/types/raw.ts` | Pass 1 internal representation — never imported outside `src/parser/` |
 | Public types | `src/types/resolved.ts` | The only output contract. Renderer, browser, and tests import from here |
 | Parser | `src/parser/` | Three sequential passes: classify → resolve → infer |
-| Renderer (CLI) | `src/renderer/html.ts` | `renderHtml()` (full app shell) + `renderItineraryBody()` (content-only, used for live re-render) |
+| Renderer | `src/renderer/html.ts` | `renderHtml()` (full self-contained app shell, used by the CLI) + the panel renderers (`renderTripPanel`, `renderPlacePanel`, `renderSinglePlacePanel`, `renderTransportPanel`, `renderModalContent`) the viewer calls for live re-render |
 | Viewer bundle | `src/viewer-entry.ts` → `src/renderer/browser-app.ts` + `app-map.ts` + `app-focus.ts` + `app-sheet.ts` | Standalone map + panel UI. No editor dependency. Listens for `crumb:doc-updated` event. |
 | Editor bundle | `src/editor-entry.ts` → `src/renderer/app-editor.ts` + `app-menus.ts` | YAML editor overlay, menus, dialogs. Fires `crumb:doc-updated` after re-parse. |
 | Format helpers | `src/renderer/format.ts` | Pure functions, no HTML — reusable by any renderer |
@@ -39,7 +39,7 @@ src/parser/
 
 2. **`parse()` is synchronous and does no I/O.** Geocoding is entirely browser-side and lazy. The CLI never makes network requests.
 
-3. **Pass 3 runs 5 phases in a fixed order** (`inferTimeline()` in `pass3-infer.ts:158`):
+3. **Pass 3 runs 5 phases in a fixed order** (`inferTimeline()` in `pass3-infer.ts:149`):
    - Phase 1: intra-item (given 2 of {arrives, departs, duration}, derive the 3rd)
    - Phase 4: even distribution (split remaining time across duration-less places)
    - Phase 1 again: re-run with newly distributed durations
@@ -52,14 +52,14 @@ src/parser/
 
 5. **The browser bundles read initial state via globals** set by `html.ts` before the bundles run. The viewer bundle always gets:
    - `window.__CRUMB_DATA` — parsed `CrumbDocument`
-   - `window.__CRUMB_POPUPS` — pre-computed popup metadata
 
    The editor bundle additionally gets (only injected in editor mode):
    - `window.__CRUMB_SOURCE` — original YAML string (pre-fills the editor textarea)
    - `window.__CRUMB_EXAMPLES` — example file contents
    - `window.__CRUMB_SPEC` — `CRUMB_SPEC.md` text (embedded for AI use)
+   - `window.__CRUMB_FOR_AI` — `CRUMB_FOR_AI.md` authoring guide (for the "Generate with AI" prompt)
 
-   The two bundles communicate via a `crumb:doc-updated` CustomEvent: the editor writes new values to `window.__CRUMB_DATA` and `window.__CRUMB_POPUPS`, then fires the event; the viewer re-renders in response.
+   The two bundles communicate via a `crumb:doc-updated` CustomEvent: the editor writes the new value to `window.__CRUMB_DATA`, then fires the event; the viewer re-renders in response.
 
 6. **Geocoding requests are strictly sequential with a 1100ms gap** (Nominatim ToS: ≤1 req/sec). The `geoQueue` promise chain in `geocoder.ts` enforces this. Never parallelize these fetches.
 
@@ -67,15 +67,13 @@ src/parser/
 
 8. **`renderMarkdown()` in `html.ts` is intentionally minimal** — it handles bold, italic, code, links, and bullet lists only. It is not CommonMark-compliant by design. Do not replace it with a library.
 
-9. **Geocoding cache uses versioned localStorage keys** (`"crumb-geo-v2:"`). If geocoding query logic changes in a way that would produce different results for the same place name, bump `GEO_CACHE_VERSION` in `geocoder.ts` and update `migrateGeoCache()`.
+9. **Geocoding cache uses versioned localStorage keys** (`"crumb-geo-v4:"`). If geocoding query logic changes in a way that would produce different results for the same place name, bump `GEO_CACHE_VERSION` in `geocoder.ts` and update `migrateGeoCache()`.
 
 ## Where to put things
 
 **New transport mode** (e.g. "subway"):
-- Add to `TransportMode` union in `src/types/primitives.ts`
-- Add to `TRANSPORT_KEYWORDS` set in `src/parser/pass1-classify.ts`
-- Add SVG icon in `src/renderer/icons.ts`
-- Handle in `modeIconSvg()` in `src/renderer/html.ts`
+- Add to the `TRANSPORT_MODES` tuple in `src/types/primitives.ts` (the `TransportMode` union and pass 1's `TRANSPORT_MODE_SET` both derive from it)
+- Add the SVG icon and its `modeIconSvg()` mapping in `src/renderer/icons.ts`
 
 **New date expression format** (e.g. "next month"):
 - Add a match branch in `resolveMoment()` in `src/parser/pass2-resolve.ts`
@@ -103,12 +101,13 @@ src/parser/
 ## Dev commands
 
 ```bash
-npm run build          # render japan-2026.crumb → dist/index.html (with editor shell)
+npm run build          # render examples/japan-full.crumb → dist/index.html (with editor shell)
+npm run build:viewer   # render examples/japan-full.crumb → dist/viewer.html (viewer only)
 npm run typecheck      # tsc --noEmit (zero errors required)
 npm run test           # vitest run (single pass, used in CI)
 npm run test:watch     # vitest (watch mode for development)
-npm run render -- examples/japan-2026.crumb /tmp/out.html            # viewer-only (default)
-npm run render -- examples/japan-2026.crumb /tmp/out.html --editor   # with editor shell
+npm run render -- examples/japan-full.crumb /tmp/out.html            # viewer-only (default)
+npm run render -- examples/japan-full.crumb /tmp/out.html --editor   # with editor shell
 ```
 
 ## Test targets
@@ -121,11 +120,15 @@ Test files live in `tests/` mirroring `src/` structure:
 ```
 tests/
   parser/
-    pass2-resolve.test.ts   # resolveMoment, resolveDuration
-    pass3-infer.test.ts     # addDays + timeline inference
+    pass1-classify.test.ts    # structure detection
+    pass2-resolve.test.ts     # resolveMoment, resolveDuration
+    pass3-infer.test.ts       # addDays + timeline inference
     parse-integration.test.ts
+    examples.test.ts          # every examples/*.crumb parses
+    regression.test.ts        # determinism / regression cases
   renderer/
     format.test.ts
+  spec-sync.test.ts           # code constants ↔ CRUMB_FOR_AI.md vocab stay in sync
 ```
 
 ## Before touching pass3-infer.ts
@@ -133,4 +136,4 @@ tests/
 The 5-phase timeline algorithm is the most complex part of the codebase. Before changing it:
 1. Read `spec/reference/parser.md` section 3.4 for the full algorithm description
 2. Run `npm run test` to establish a baseline
-3. After your change, render `examples/japan-2026.crumb` and `examples/europe-backpacking.crumb` and verify that dates are correct in the output
+3. After your change, render `examples/japan-full.crumb` and `examples/southeast-asia.crumb` and verify that dates are correct in the output
