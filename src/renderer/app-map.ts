@@ -17,8 +17,7 @@ import {
 } from "./icons"
 import { escape, activityLabel } from "./format"
 import { placeStays, placeActivityItems } from "./plan-view"
-import { state, ZOOM_OVERVIEW, ZOOM_DETAIL, ZOOM_PLACE_FLY, ROUTE_COLOR, MOBILE_MAX_W } from "./app-state"
-import { focusMarker } from "./app-focus"
+import { state, ZOOM_OVERVIEW, ZOOM_DETAIL, ROUTE_COLOR, MOBILE_MAX_W } from "./app-state"
 
 declare const maplibregl: any
 

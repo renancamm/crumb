@@ -84,10 +84,6 @@ export function expandFull(): void {
   animate(fullH())
 }
 
-export function isExpanded(): boolean {
-  return snapState === "full"
-}
-
 export function initSheet(): void {
   sheet   = document.getElementById("sidebar")!
   content = document.getElementById("panel-content")!

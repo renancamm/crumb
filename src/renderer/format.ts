@@ -3,12 +3,9 @@
  *
  * Pure functions for displaying Crumb data types as human-readable strings.
  * No HTML-specific logic — reusable by any renderer.
- * Use createRenderContext() to get a pre-assembled RenderContext for use
- * with the CrumbRenderer interface.
  */
 
 import type { DateRef, ResolvedDuration, ResolvedMoment, TimeOfDay } from "../types/resolved"
-import type { RenderContext } from "./types"
 
 // ─── Moment ──────────────────────────────────────────────────────────────────
 
@@ -19,31 +16,9 @@ export function formatMoment(m: ResolvedMoment): string {
   return parts.join(" • ")
 }
 
-export function formatMomentDate(m: ResolvedMoment): string {
-  if (!m.date) return ""
-  if (m.date.precision === "approximate") return formatSmartDate(m.date.estimate)
-  return formatDateRef(m.date)
-}
-
 export function formatMomentTime(m: ResolvedMoment): string {
   if (!m.time) return ""
   return formatTime(m.time)
-}
-
-/** For activity group headers: prefer authored relative label ("Day 3", weekday) over calendar date. */
-export function formatGroupDate(m: ResolvedMoment): string {
-  if (m.date?.precision === "relative") {
-    const v = m.date.value
-    if (/^(day\s+\d+|first day|last day)$/i.test(v)) return v
-    if (/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/i.test(v)) {
-      return v.charAt(0).toUpperCase() + v.slice(1)
-    }
-  }
-  if (m.date?.precision === "absolute") return formatSmartDate(m.date.value)
-  if (m.anchor?.date)                   return formatSmartDate(m.anchor.date)
-  if (m.date?.precision === "approximate") return formatSmartDate(m.date.estimate)
-  if (m.date)                           return m.date.value
-  return ""
 }
 
 export function formatDateRef(d: DateRef): string {
@@ -183,16 +158,3 @@ export function formatPlainDateRange(
   return ""
 }
 
-// ─── RenderContext factory ────────────────────────────────────────────────────
-
-/** Create a RenderContext backed by the standard formatting helpers above. */
-export function createRenderContext(): RenderContext {
-  return {
-    formatMoment,
-    formatMomentDate,
-    formatMomentTime,
-    formatGroupDate,
-    formatDuration,
-    escape,
-  }
-}

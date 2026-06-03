@@ -1,4 +1,4 @@
-import type { CrumbDocument, Place } from "../types/resolved"
+import type { CrumbDocument } from "../types/resolved"
 import type { GeoResult } from "./geocoder"
 
 export interface ModalRef {
@@ -18,7 +18,6 @@ declare global {
     __CRUMB_EXAMPLES?: Record<string, string>
     // Always present:
     __CRUMB_DATA:     CrumbDocument | null
-    __CRUMB_POPUPS:   Record<string, string>
     Crumb: {
       parse:               (src: string) => CrumbDocument
       renderTripPanel:        (doc: CrumbDocument) => string
@@ -26,7 +25,6 @@ declare global {
       renderSinglePlacePanel: (doc: CrumbDocument) => string
       renderTransportPanel:   (doc: CrumbDocument, transportIdx: number) => string
       renderModalContent:  (doc: CrumbDocument, modal: ModalRef) => string
-      buildPopupMeta:      (doc: CrumbDocument) => Record<string, string>
     }
   }
 }
@@ -68,7 +66,6 @@ export const state = {
   activeDetail:     null as ModalRef | null, // desktop sidebar detail view
 
   DATA:       window.__CRUMB_DATA as CrumbDocument,
-  POPUP_META: window.__CRUMB_POPUPS,
 
   geoIndex: {
     places:       [null] as Array<GeoResult | null>,

@@ -82,21 +82,6 @@ export const ICON_STAY = icon(
   `<path d="M6 8v9"/>`
 )
 
-export const ICON_INFO = icon(
-  `<circle cx="12" cy="12" r="10"/>` +
-  `<path d="M12 16v-4"/>` +
-  `<path d="M12 8h.01"/>`
-)
-
-export const ICON_NOTE = icon(
-  `<path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/>` +
-  `<path d="M2 6h4"/>` +
-  `<path d="M2 10h4"/>` +
-  `<path d="M2 14h4"/>` +
-  `<path d="M2 18h4"/>` +
-  `<path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/>`
-)
-
 export const ICON_PIN_OFF = icon(
   `<path d="M12.75 7.09a3 3 0 0 1 2.16 2.16"/>` +
   `<path d="M17.072 17.072c-1.634 2.17-3.527 3.912-4.471 4.727a1 1 0 0 1-1.202 0C9.539 20.193 4 14.235 4 10a8 8 0 0 1 1.432-4.568"/>` +
@@ -114,16 +99,6 @@ export const ICON_ARRIVES = icon(
 export const ICON_DEPARTS = icon(
   `<polyline points="10 9 15 4 20 9"/>` +
   `<path d="M4 20h7a4 4 0 0 0 4-4V4"/>`
-)
-
-export const ICON_CORNER_DOWN_RIGHT = icon(
-  `<polyline points="15 10 20 15 15 20"/>` +
-  `<path d="M4 4v7a4 4 0 0 0 4 4h12"/>`
-)
-
-export const ICON_CORNER_UP_RIGHT = icon(
-  `<polyline points="15 14 20 9 15 4"/>` +
-  `<path d="M4 20v-7a4 4 0 0 1 4-4h12"/>`
 )
 
 // ─── Duration ─────────────────────────────────────────────────────────────────

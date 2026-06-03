@@ -13,14 +13,12 @@ export function render(): void {
   setEditorError("")
   if (!src) {
     window.__CRUMB_DATA   = null
-    window.__CRUMB_POPUPS = {}
     window.dispatchEvent(new CustomEvent("crumb:doc-updated"))
     return
   }
   try {
     const doc = window.Crumb.parse(src)
     window.__CRUMB_DATA   = doc
-    window.__CRUMB_POPUPS = window.Crumb.buildPopupMeta(doc)
     document.title        = "Crumb" + (doc.trip?.name ? " — " + doc.trip.name : "")
     window.dispatchEvent(new CustomEvent("crumb:doc-updated"))
   } catch (e) {

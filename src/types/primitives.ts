@@ -34,7 +34,6 @@ export const NAMED_PERIODS = [
 export type LoosePeriod = typeof NAMED_PERIODS[number]
 
 export const SEASONS = ["spring", "summer", "fall", "autumn", "winter"] as const
-export type Season = typeof SEASONS[number]
 
 export interface MetadataItem {
   key:   string

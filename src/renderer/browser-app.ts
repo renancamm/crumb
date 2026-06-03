@@ -9,13 +9,12 @@
  *   window.__CRUMB_SPEC     — CRUMB_SPEC.md content for "Download spec"
  *   window.__CRUMB_EXAMPLES — example crumb files keyed by filename
  *   window.__CRUMB_DATA     — parsed CrumbDocument (initial render)
- *   window.__CRUMB_POPUPS   — pre-computed popup metadata
  *
  * The Crumb parser/renderer bundle (window.Crumb) is injected by a separate
  * <script> tag before this one and handles live re-parsing on editor edits.
  */
 
-import { setupListClickHandler, clearFocus } from "./app-focus"
+import { setupListClickHandler, clearFocus, highlightMarker } from "./app-focus"
 import { updateMap, fitAllPlaces, applyDetailMarkerFilter, fitTransportPoints, mapPadding, applyGeoState } from "./app-map"
 import { state, ZOOM_PLACE_FLY, ZOOM_DETAIL_FLY, MOBILE_MAX_W, FLY_DURATION } from "./app-state"
 import { initSheet, exitSheet, goMedium } from "./app-sheet"
@@ -168,6 +167,7 @@ export function setActivePlace(placeIdx: number | null): void {
     panelContent.scrollTop = scrollMemory.get("trip") ?? 0
     setupStickyTitle()
     applyGeoState(doc)
+    clearFocus()
     goMedium()
     fitAllPlaces()
   } else {
@@ -177,6 +177,7 @@ export function setActivePlace(placeIdx: number | null): void {
     panelContent.scrollTop = scrollMemory.get(`place-${placeIdx}`) ?? 0
     setupStickyTitle()
     applyGeoState(doc)
+    highlightMarker("place", placeIdx)
 
     const geo = state.geoIndex.places[placeIdx]
     if (geo && state.mapReady) {
@@ -252,19 +253,22 @@ function focusDetailMarker(modal: ModalRef): void {
   if (!place) return
 
   let geo: { lat: number; lng: number } | undefined
+  let name: string | undefined
 
   if (modal.type === "activity") {
     let flatIdx = 0
     outer: for (const actItem of placeActivityItems(place)) {
       for (const act of actItem.items) {
-        if (flatIdx === modal.itemIdx) { geo = state.geoIndex.activities.get(act.name) ?? undefined; break outer }
+        if (flatIdx === modal.itemIdx) { name = act.name; geo = state.geoIndex.activities.get(act.name) ?? undefined; break outer }
         flatIdx++
       }
     }
   } else if (modal.type === "stay") {
     const stay = placeStays(place)[modal.itemIdx]
-    if (stay) geo = state.geoIndex.stays.get(stay.name) ?? undefined
+    if (stay) { name = stay.name; geo = state.geoIndex.stays.get(stay.name) ?? undefined }
   }
+
+  if (name && (modal.type === "activity" || modal.type === "stay")) highlightMarker(modal.type, name)
 
   if (geo) {
     state.map.setPadding(mapPadding())
@@ -281,6 +285,7 @@ function openTransportPanel(transportIdx: number): void {
   if (state.activePlaceIndex === null && state.activeDetail === null) goMedium()
   state.activeDetail = { type: "transport", placeIdx: null, itemIdx: transportIdx }
   applyDetailMarkerFilter()
+  clearFocus()
   panelNav.innerHTML     = ""
   panelContent.innerHTML = window.Crumb.renderTransportPanel(state.DATA, transportIdx)
   panelContent.scrollTop = 0
@@ -408,7 +413,7 @@ document.addEventListener("click", e => {
         goMedium()
         const placeIdx = state.activePlaceIndex!
         const doc = state.DATA
-        clearFocus()
+        highlightMarker("place", placeIdx)
         applyDetailMarkerFilter()
         const geo = state.geoIndex.places[placeIdx]
         if (geo && state.mapReady) {
@@ -568,7 +573,6 @@ window.addEventListener("crumb:doc-updated", () => {
   const doc = window.__CRUMB_DATA
   if (!doc) {
     state.DATA       = null as any
-    state.POPUP_META = {}
     panelNav.innerHTML     = ""
     panelContent.innerHTML = EMPTY_STATE_HTML
     panelFooter.innerHTML  = ""
@@ -581,7 +585,6 @@ window.addEventListener("crumb:doc-updated", () => {
     return
   }
   state.DATA         = doc
-  state.POPUP_META   = window.__CRUMB_POPUPS
   state.activeDetail = null
   panelNav.innerHTML = ""
   if (isSinglePlace(doc)) {

@@ -104,7 +104,7 @@ export function renderTripPanel(doc: CrumbDocument): string {
     const item = itin[ii]
     if (item.type === "place") {
       const idx = ++pIdx
-      const { icon: geoIcon } = renderGeoAttrs(item.location)
+      const geoIcon = renderGeoIcon(item.location)
       const durStr  = item.duration && item.duration.type !== "unknown" ? formatDuration(item.duration) : ""
       const dateStr = item.arrives && item.departs ? formatPlainDateRange(item.arrives, item.departs)
                     : item.arrives ? formatMoment(item.arrives)
@@ -291,7 +291,7 @@ export function renderPlacePanel(doc: CrumbDocument, placeIdx: number): string {
   const place  = places[placeIdx - 1]
   if (!place) return ""
 
-  const { icon: geoIcon } = renderGeoAttrs(place.location)
+  const geoIcon = renderGeoIcon(place.location)
   // Rich HTML for the panel header (carries date-inferred spans, icons, etc.)
   const metaLine = [renderPlaceDuration(resolvePlaceDisplayDuration(place)), renderPlaceDates(place)]
     .filter(Boolean).join(`<span class="place-meta-sep"> · </span>`)
@@ -360,7 +360,7 @@ export function renderSinglePlacePanel(doc: CrumbDocument): string {
   }
   parts.push(`</div>`)
 
-  const { icon: geoIcon } = renderGeoAttrs(place.location)
+  const geoIcon = renderGeoIcon(place.location)
   const metaLine = [renderPlaceDuration(resolvePlaceDisplayDuration(place)), renderPlaceDates(place)]
     .filter(Boolean).join(`<span class="place-meta-sep"> · </span>`)
   parts.push(`<div class="panel-header panel-header--flat">`)
@@ -505,7 +505,6 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
   const title          = "Crumb" + (doc.trip?.name ? " — " + escape(doc.trip.name) : "")
   const panelBody      = includeEditor ? "" : renderTripPanel(doc)
   const docJson        = includeEditor ? "null" : JSON.stringify(doc)
-  const popupMetaJson  = includeEditor ? "{}"   : JSON.stringify(buildPopupMeta(doc))
 
   const editorDom = includeEditor ? `
     <!-- Editor panel (left split, hidden by default) -->
@@ -697,8 +696,7 @@ ${modalsDom}
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <script>${options.parserBundle}</script>
   <script>
-    window.__CRUMB_DATA   = ${docJson};
-    window.__CRUMB_POPUPS = ${popupMetaJson};${editorGlobals}
+    window.__CRUMB_DATA   = ${docJson};${editorGlobals}
   </script>
   <script>${options.viewerBundle}</script>${editorScript}
 </body>
@@ -748,12 +746,9 @@ function formatOrdinal(n: number, kind: "day" | "week"): string {
 }
 
 
-function renderGeoAttrs(location?: { geocodingDisabled?: boolean }): { icon: string; mapLink: string } {
-  const disabled = location?.geocodingDisabled ?? false
-  return {
-    icon:    disabled ? `<span class="geo-no-loc">${ICON_PIN_OFF}</span>` : "",
-    mapLink: disabled ? "" : ` data-map-link=""`,
-  }
+/** Geocoding indicator for a name: the "no map" pin icon when geocoding is disabled. */
+function renderGeoIcon(location?: { geocodingDisabled?: boolean }): string {
+  return location?.geocodingDisabled ? `<span class="geo-no-loc">${ICON_PIN_OFF}</span>` : ""
 }
 
 
@@ -881,8 +876,6 @@ function renderDetailedRoute(
 
 
 function renderStayPanel(stay: Stay): string {
-  const { mapLink: stayMapLink } = renderGeoAttrs(stay.location)
-
   const dateStr = stay.arrives && stay.departs ? formatPlainDateRange(stay.arrives, stay.departs)
                 : stay.arrives ? formatMoment(stay.arrives)
                 : stay.departs ? formatMoment(stay.departs) : ""
@@ -900,7 +893,7 @@ function renderStayPanel(stay: Stay): string {
       dateStr ? escape(dateStr) : undefined,
     ),
     badge: `<span class="stay-icon-wrap panel-stay-icon">${ICON_STAY}</span>`,
-    title: `<h1 class="panel-stay-name"${stayMapLink}>${escape(stay.name)}</h1>`,
+    title: `<h1 class="panel-stay-name">${escape(stay.name)}</h1>`,
     // No meta in stay header — arrive/depart details are in the body
   }))
 
@@ -1036,40 +1029,3 @@ function renderMarkdown(text: string): string {
   if (blocks.length === 1 && !blocks[0].startsWith("<ul>")) return blocks[0]
   return blocks.map(b => b.startsWith("<ul>") ? b : `<p>${b}</p>`).join("")
 }
-
-// ─── Popup meta ───────────────────────────────────────────────────────────────
-
-export function buildPopupMeta(doc: CrumbDocument): Record<string, string> {
-  const meta: Record<string, string> = {}
-
-  for (const item of doc.itinerary) {
-    if (item.type !== "place") continue
-
-    const parts: string[] = []
-    const dur = resolvePlaceDisplayDuration(item)
-    if (dur && dur.type !== "unknown") parts.push(formatDuration(dur))
-    const range = formatPlainDateRange(item.arrives, item.departs)
-    if (range) parts.push(range)
-    if (parts.length) meta[item.name] = parts.join(" • ")
-
-    for (const stay of placeStays(item)) {
-      const r = formatPlainDateRange(stay.arrives, stay.departs)
-      if (r) meta[stay.name] = r
-    }
-
-    for (const group of placeActivityItems(item)) {
-      for (const act of group.items) {
-        const ap: string[] = []
-        if (act.time) {
-          const t = formatMomentTime(act.time)
-          if (t) ap.push(t)
-        }
-        if (act.duration && act.duration.type !== "unknown") ap.push(formatDuration(act.duration))
-        if (ap.length) meta[act.name] = ap.join(" • ")
-      }
-    }
-  }
-
-  return meta
-}
-
