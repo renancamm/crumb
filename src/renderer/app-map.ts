@@ -17,7 +17,7 @@ import {
 } from "./icons"
 import { escape, activityLabel } from "./format"
 import { placeStays, placeActivityItems } from "./plan-view"
-import { state, ZOOM_OVERVIEW, ZOOM_DETAIL, ROUTE_COLOR, MOBILE_MAX_W } from "./app-state"
+import { state, ZOOM_OVERVIEW, ZOOM_DETAIL, ROUTE_COLOR, MOBILE_MAX_W, SHEET_MEDIUM_RATIO } from "./app-state"
 
 declare const maplibregl: any
 
@@ -476,7 +476,7 @@ export async function updateMap(doc: CrumbDocument | null): Promise<void> {
 export function mapPadding(inner = 60) {
   if (window.innerWidth < MOBILE_MAX_W) {
     const raw    = document.documentElement.style.getPropertyValue("--sheet-h")
-    const sheetH = raw ? parseFloat(raw) : window.innerHeight * 0.5
+    const sheetH = raw ? parseFloat(raw) : window.innerHeight * SHEET_MEDIUM_RATIO
     return { top: inner, right: inner, bottom: sheetH + inner, left: inner }
   }
   return { top: inner, right: inner, bottom: inner, left: 332 + inner }

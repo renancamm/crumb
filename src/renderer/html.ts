@@ -77,7 +77,7 @@ export function renderTripPanel(doc: CrumbDocument): string {
   if (doc.trip) {
     const { name, duration } = doc.trip
     const stickyDur = duration && duration.type !== "unknown" ? `<span class="sticky-bar-meta">${escape(formatDuration(duration))}</span>` : ""
-    parts.push(`<div class="panel-sticky-bar"><span class="sticky-bar-name">${escape(name ?? "Itinerary")}</span>${stickyDur}</div>`)
+    parts.push(`<div class="panel-sticky-bar"><div class="panel-sticky-inner"><span class="sticky-bar-name">${escape(name ?? "Itinerary")}</span>${stickyDur}</div></div>`)
   }
 
   const dur = doc.trip?.duration
@@ -243,11 +243,11 @@ const STICKY_CLOSE_BTN =
 function renderStickyBar(badge: string, name: string, meta?: string): string {
   const metaHtml = meta ? `<span class="sticky-bar-meta">${meta}</span>` : ""
   return (
-    `<div class="panel-sticky-bar">` +
+    `<div class="panel-sticky-bar"><div class="panel-sticky-inner">` +
     badge +
     `<span class="sticky-bar-body"><span class="sticky-bar-name">${name}</span>${metaHtml}</span>` +
     STICKY_CLOSE_BTN +
-    `</div>`
+    `</div></div>`
   )
 }
 
@@ -340,7 +340,7 @@ export function renderSinglePlacePanel(doc: CrumbDocument): string {
     const { name, duration } = doc.trip
     const stickyDur = duration && duration.type !== "unknown"
       ? `<span class="sticky-bar-meta">${escape(formatDuration(duration))}</span>` : ""
-    parts.push(`<div class="panel-sticky-bar"><span class="sticky-bar-name">${escape(name ?? "Itinerary")}</span>${stickyDur}</div>`)
+    parts.push(`<div class="panel-sticky-bar"><div class="panel-sticky-inner"><span class="sticky-bar-name">${escape(name ?? "Itinerary")}</span>${stickyDur}</div></div>`)
   }
 
   const dur2 = doc.trip?.duration

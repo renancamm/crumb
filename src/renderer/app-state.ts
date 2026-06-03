@@ -41,6 +41,13 @@ export const MOBILE_MAX_W    = 768
 export const ROUTE_COLOR     = "#18181b"   // intentionally matches --primary in css.ts
 export const FLY_DURATION    = 800         // ms — map camera animation on focus/navigation
 
+// Bottom-sheet snap geometry (single source of truth for app-sheet.ts + app-map.ts).
+// CSS in css.ts mirrors these as pre-JS first-paint placeholders (90vh / 40vh) — keep
+// them in sync by hand.
+export const SHEET_PEEK_H      = 156   // px — handle + title + a hint of the first row
+export const SHEET_MEDIUM_RATIO = 0.5  // fraction of viewport height
+export const SHEET_FULL_RATIO   = 0.9
+
 // ─── Focus type ───────────────────────────────────────────────────────────────
 
 export type FocusType = "place" | "activity" | "stay" | "transport"

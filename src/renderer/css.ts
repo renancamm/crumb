@@ -95,7 +95,6 @@ const tokensCSS = `
 
   /* ── Extended motion ─────────────────────────────────────────────── */
   --duration-sheet:  300ms;   /* bottom sheet snap */
-  --duration-sticky: 200ms;   /* sticky bar max-height/padding */
 
   /* ── Extended type scale ──────────────────────────────────────────── */
   --text-2xl:   22px;   /* panel place/transport name */
@@ -348,28 +347,32 @@ const listCSS = `
 #panel-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
 /* ── Sticky title bar (appears when trip title scrolls out of view) ──── */
+/* The outer bar is a zero-height sticky anchor; the inner element is an absolute
+   overlay that paints OVER the content below. Because the outer never occupies flow
+   height, toggling the bar never reflows the scroll container — that reflow is what
+   used to push the observed title back into view and flicker the bar on/off. */
 .panel-sticky-bar {
   position: sticky;
   top: 0;
+  height: 0;
   z-index: 10;
+}
+.panel-sticky-inner {
+  position: absolute;
+  top: 0; left: 0; right: 0;
   background: var(--bg);
-  padding: 0 16px;
-  max-height: 0;
-  overflow: hidden;
+  padding: 10px 16px;
   display: flex;
   flex-direction: column;
   gap: 1px;
   border-bottom: 1px solid transparent;
   opacity: 0;
   pointer-events: none;
-  /* Reveal is compositor-only (opacity + transform); max-height snaps instantly so
-     the sheet's scroll container never animates layout (avoids sticky flicker). */
+  /* Compositor-only reveal (opacity + transform); layout is never animated. */
   transform: translateY(-6px);
   transition: opacity var(--duration), transform var(--duration), border-color var(--duration);
 }
-.panel-sticky-bar.--visible {
-  max-height: 56px;
-  padding: 10px 16px;
+.panel-sticky-bar.--visible .panel-sticky-inner {
   opacity: 1;
   transform: translateY(0);
   border-bottom-color: var(--border);
@@ -385,7 +388,7 @@ const listCSS = `
   text-overflow: ellipsis;
 }
 .sticky-bar-badge { flex-shrink: 0; }
-.panel-sticky-bar:has(.sticky-bar-badge) {
+.panel-sticky-inner:has(.sticky-bar-badge) {
   flex-direction: row;
   align-items: center;
   gap: 8px;
@@ -1159,7 +1162,9 @@ const mobileCSS = `
 
   /* Sidebar becomes a bottom sheet. Fixed full height; JS slides it between
      snap states with transform: translateY (GPU-composited — no per-frame reflow).
-     The pre-JS transform shows roughly the medium state until initSheet() runs. */
+     The pre-JS transform shows roughly the medium state until initSheet() runs.
+     90vh / 40vh mirror SHEET_FULL_RATIO (0.9) and full−medium (0.9−0.5) in
+     app-state.ts — keep them in sync by hand (CSS can't read the JS constant). */
   #sidebar {
     position: fixed;
     left: 0; right: 0; bottom: 0;
@@ -1174,13 +1179,18 @@ const mobileCSS = `
     z-index: 200;
   }
 
-  /* Sheet handle: a visual grabber only — expansion is scroll-driven, not draggable */
+  /* Sheet handle: a visual grabber only — expansion is scroll-driven, not draggable.
+     Floated out of flow (over the sheet top) so it adds no row: #panel-content reaches
+     the sheet's top edge — removing the flow seam where content used to peek through —
+     and the grabber sits integrated over the heading's top padding. */
   #sheet-handle {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 11;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 8px 0 4px;
-    flex-shrink: 0;
+    padding: 5px 0 1px;
     cursor: default;
     pointer-events: none;
   }
@@ -1191,13 +1201,32 @@ const mobileCSS = `
     background: var(--border);
   }
 
+  /* Heading sits just beneath the floating grabber (no handle row to clear). */
+  .panel-header      { padding-top: 14px; }
+  .panel-header--flat { padding-top: 18px; }
+
   /* Content scrolls natively; drives sheet expansion via the touch handler in
-     app-sheet.ts. Reserve space for the fixed pager bar so the last item clears it. */
+     app-sheet.ts. Reserve space for the fixed pager bar so the last item clears it
+     (must track the pager height set by the larger mobile .panel-nav-btn below). */
   #panel-content {
     touch-action: pan-y;
     overscroll-behavior: contain;
-    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
   }
+
+  /* Sticky header is pinned to the sheet (#sidebar is the containing block via its
+     transform), not to the scroll container — so the content can still rubber-band
+     while the close action stays rock-steady. */
+  .panel-sticky-bar {
+    position: fixed;
+    left: 0; right: 0;
+  }
+
+  /* Bigger tap targets on touch screens (these read fine at desktop density). All three
+     icon buttons share one size and radius so equal sizes look identical. */
+  .panel-nav-btn,
+  .panel-close,
+  .sticky-bar-close { width: 44px; height: 44px; border-radius: var(--radius-lg); }
 
   /* Pager: persistent bar fixed to the viewport bottom (reparented out of #sidebar
      by initSheet so it isn't dragged by the sheet's transform). */
@@ -1208,6 +1237,8 @@ const mobileCSS = `
     background: var(--bg);
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+  /* Match the header's 16px insets so the pager buttons align with the header close. */
+  .panel-footer-nav { padding-left: 16px; padding-right: 16px; }
 
   /* MapLibre controls + status chip: track the live sheet height via --sheet-h.
      --sheet-anim is 0ms during drag (instant) and the spring curve on snap. */
