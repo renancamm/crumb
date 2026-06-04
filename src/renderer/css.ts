@@ -883,6 +883,8 @@ const itineraryCSS = `
 }
 .panel-nav-btn:hover:not(:disabled) { background: var(--border); }
 .panel-nav-btn:disabled { opacity: 0.35; cursor: default; }
+/* Match the close icon's stroke (2) — the 1.75 .crumb-icon default reads light beside it */
+.panel-nav-btn .crumb-icon { stroke-width: 2; }
 .panel-nav-counter {
   font-size: var(--text-sm);
   font-weight: 500;
@@ -1227,6 +1229,10 @@ const mobileCSS = `
   .panel-nav-btn,
   .panel-close,
   .sticky-bar-close { width: 44px; height: 44px; border-radius: var(--radius-lg); }
+  /* In the larger 44px buttons, bump the pager arrows and close X to one shared size so
+     all three read identically (desktop keeps its smaller defaults; stroke 2 is global). */
+  .panel-nav-btn .crumb-icon,
+  .panel-close svg { width: 18px; height: 18px; }
 
   /* Pager: persistent bar fixed to the viewport bottom (reparented out of #sidebar
      by initSheet so it isn't dragged by the sheet's transform). */
