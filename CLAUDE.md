@@ -12,6 +12,8 @@ Crumb is a **spec-first** open format for travel itineraries. The format is the 
 | Public types | `src/types/resolved.ts` | The only output contract. Renderer, browser, and tests import from here |
 | Parser | `src/parser/` | Three sequential passes: classify → resolve → infer |
 | Renderer | `src/renderer/html.ts` | `renderHtml()` (full self-contained app shell, used by the CLI) + the panel renderers (`renderTripPanel`, `renderPlacePanel`, `renderSinglePlacePanel`, `renderTransportPanel`, `renderModalContent`) the viewer calls for live re-render |
+| Styles | `src/renderer/css.ts` | All CSS, as concatenated string constants → one `<style>` block. `:root` is split into **theme tokens** (colours/shadows that flip in dark mode) and **static tokens** (radius/type/motion/layout/z-index). See invariant 10. |
+| Icons | `src/renderer/icons.ts` | Every UI icon is a Lucide SVG built by the `icon()` factory (`class="crumb-icon"`, styled only by CSS). Never hand-roll inline `<svg>` in renderers — add an `ICON_*` here. |
 | Viewer bundle | `src/viewer-entry.ts` → `src/renderer/browser-app.ts` + `app-map.ts` + `app-focus.ts` + `app-sheet.ts` | Standalone map + panel UI. No editor dependency. Listens for `crumb:doc-updated` event. |
 | Editor bundle | `src/editor-entry.ts` → `src/renderer/app-editor.ts` + `app-menus.ts` | YAML editor overlay, menus, dialogs. Fires `crumb:doc-updated` after re-parse. |
 | Format helpers | `src/renderer/format.ts` | Pure functions, no HTML — reusable by any renderer |
@@ -68,6 +70,8 @@ src/parser/
 8. **`renderMarkdown()` in `html.ts` is intentionally minimal** — it handles bold, italic, code, links, and bullet lists only. It is not CommonMark-compliant by design. Do not replace it with a library.
 
 9. **Geocoding cache uses versioned localStorage keys** (`"crumb-geo-v4:"`). If geocoding query logic changes in a way that would produce different results for the same place name, bump `GEO_CACHE_VERSION` in `geocoder.ts` and update `migrateGeoCache()`.
+
+10. **Every colour goes through a token; the `:root` theme/static split is the dark-theme seam.** No raw hex/rgb in component CSS — use a `var(--…)` token. Colours and shadows that invert in dark mode live in the **theme-token** group at the top of `tokensCSS`; radius, type scale, fonts, motion, layout, and z-index live in the **static-token** group and must not be duplicated per-theme. Dark mode is a single `@media (prefers-color-scheme: dark) { :root { … } }` block (right after `tokensCSS`) that re-declares **only** the theme group — system-preference driven, no toggle. So a new themed colour means: add the token to the theme group **and** its dark value to that `@media` block. Three deliberate exceptions stay fixed in both themes: the `--marker-*` (fill/ring/fg, dark-on-light over the always-light map — `--marker-bg` matches `ROUTE_COLOR` in `app-state.ts`) and `--chip-*` map-overlay tokens, and the `--ed-*` editor surface (self-contained Catppuccin Mocha).
 
 ## Where to put things
 

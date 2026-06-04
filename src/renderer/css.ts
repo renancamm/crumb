@@ -14,25 +14,128 @@ const resetCSS = `
 html, body { height: 100%; overflow: hidden; }
 `
 
-/* CSS custom properties: palette, editor theme, radius, shadows, motion, layout, typography */
+/*
+ * Design tokens, split into two groups:
+ *
+ *   THEME TOKENS  — every colour/shadow that should flip between light and dark.
+ *                   A future dark theme re-declares ONLY this group (see the
+ *                   commented @media block at the end). Nothing else changes.
+ *   STATIC TOKENS — radius, type scale, fonts, motion, layout, z-index. These
+ *                   are theme-independent and must NOT be duplicated in dark.
+ *
+ * The editor (--ed-*) is a self-contained Catppuccin Mocha surface, not part of
+ * the light/dark flip — it stays dark in both themes.
+ */
 const tokensCSS = `
 :root {
-  /* ── Light theme ─────────────────────────────────────────────────── */
+  /* ===================== THEME TOKENS (flip in dark) ===================== */
+
+  /* Surfaces */
   --bg:            #ffffff;
   --surface:       #fafafa;
-  --border:        #e4e4e7;
-  --text:          #09090b;
-  --muted:         #71717a;
   --muted-bg:      #f4f4f5;
-  --primary:       #18181b;
-  --primary-fg:    #fafafa;
-  --primary-hover: #27272a;
-  --danger:        #dc2626;
-  --danger-bg:     #fef2f2;
-  --danger-bd:     #fca5a5;
-  --overlay:       rgba(0,0,0,.8);
+  --border:        #e4e4e7;
 
-  /* ── Editor theme (Catppuccin Mocha) ────────────────────────────── */
+  /* Text */
+  --text:           #09090b;
+  --text-secondary: #52525b;   /* zinc-700 — prose / secondary, between --text and --muted */
+  --muted:          #71717a;
+
+  /* Brand / action */
+  --primary:        #18181b;
+  --primary-fg:     #fafafa;
+  --primary-hover:  #27272a;
+  --primary-muted:  #3f3f46;   /* zinc-700 — marker hover, "more" link hover */
+
+  /* Semantic */
+  --danger:    #dc2626;
+  --danger-bg: #fef2f2;
+  --danger-bd: #fca5a5;
+
+  /* Activity */
+  --activity:       #f97316;   /* orange-500 */
+  --activity-fg:    #ffffff;
+  --activity-bg:    #fff7ed;   /* orange-50 */
+  --activity-bd:    #fed7aa;   /* orange-200 */
+  --priority-muted: #a1a1aa;   /* zinc-400 — "maybe" priority label */
+
+  /* Overlay */
+  --overlay: rgba(0,0,0,.8);
+
+  /* Shadows */
+  --shadow-sm:            0 1px 4px rgba(0,0,0,.08);
+  --shadow-md:            0 4px 6px -1px rgba(0,0,0,.08), 0 2px 4px -2px rgba(0,0,0,.06);
+  --shadow-lg:            0 25px 50px -12px rgba(0,0,0,.25);
+  --shadow-sidebar:       0 4px 24px rgba(0,0,0,.12), 0 1px 4px rgba(0,0,0,.08);
+  --shadow-sheet:         0 -4px 24px rgba(0,0,0,.12), 0 -1px 4px rgba(0,0,0,.08);
+  --shadow-map-popup:     0 2px 12px rgba(0,0,0,.1);
+  --shadow-marker:        0 2px 8px rgba(0,0,0,.3);
+  --shadow-marker-active: 0 4px 14px rgba(0,0,0,.45);
+  --shadow-marker-sm:     0 1px 4px rgba(0,0,0,.25);
+
+  /* Map overlay — sits on (always-light) map tiles, so it stays fixed in BOTH
+     themes (do NOT flip). Marker fills stay dark-on-light even when the panel UI
+     inverts; --marker-bg matches ROUTE_COLOR in app-state.ts. */
+  --marker-bg:       #18181b;   /* place + stay/transport marker fill */
+  --marker-bg-hover: #3f3f46;
+  --marker-activity: #f97316;   /* activity/must/maybe marker fill (orange-500) */
+  --marker-ring:     #fff;
+  --marker-fg:       #fff;
+  --chip-bg:         rgba(0,0,0,.6);
+  --chip-fg:         #fff;
+  --spinner-track:   var(--border);
+
+  /* ===================== STATIC TOKENS (theme-independent) ============== */
+
+  /* Radius scale */
+  --radius-xs:   4px;      /* menu items, micro badges, tags */
+  --radius-sm:   6px;      /* buttons, inputs, dropdowns */
+  --radius-md:   8px;      /* modals, cards, info/note blocks */
+  --radius-lg:   16px;     /* close button, map popups */
+  --radius-xl:   24px;     /* sidebar panel */
+  --radius-full: 9999px;   /* pills, fully-rounded bars */
+
+  /* Type scale */
+  --text-3xs:   10px;   /* dense component labels */
+  --text-2xs:   11px;   /* small badges, marker numbers, editor error */
+  --text-xs:    12px;   /* labels, tags, badges */
+  --text-sm:    13px;   /* supporting info: dates, times, notes */
+  --text-base:  14px;   /* primary content */
+  --text-lg:    15px;   /* place name headings */
+  --text-panel: 18px;   /* panel activity/stay name, modal title */
+  --text-2xl:   22px;   /* panel place/transport name */
+  --text-xl:    30px;   /* trip title */
+
+  /* Fonts */
+  --font: "Geist", system-ui, -apple-system, sans-serif;
+  --mono: "Geist Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  /* Motion */
+  --duration:       150ms;
+  --duration-sheet: 300ms;   /* bottom sheet snap */
+
+  /* Layout */
+  --sidebar-w: 360px;
+  --appbar-h:  36px;
+
+  /* Z-index scale — the app-chrome layer ladder, in stacking order.
+     (MapLibre popups z:4-5 and a couple of local stacking contexts stay as
+     documented literals — they are library/component-internal, not chrome.) */
+  --z-marker:  2;
+  --z-focused: 5;
+  --z-sticky:  10;    /* panel sticky title bar */
+  --z-handle:  11;    /* mobile sheet grabber */
+  --z-sidebar: 100;
+  --z-sheet:   200;   /* mobile bottom sheet */
+  --z-pager:   250;   /* mobile fixed pager bar */
+  --z-appbar:  300;
+  --z-editor:  400;
+  --z-menu:    500;
+  --z-chip:    1000;
+  --z-modal:   3000;
+
+  /* ===================== EDITOR (always-dark, not themed) =============== */
+  /* Catppuccin Mocha — a self-contained dark surface, the same in both themes. */
   --ed-bg:          #1e1e2e;
   --ed-text:        #cdd6f4;
   --ed-muted:       #6c7086;
@@ -42,77 +145,46 @@ const tokensCSS = `
   --ed-error-bg:    #3b0f0f;
   --ed-error-bd:    #6b2020;
   --ed-error-text:  #f38ba8;
+}
 
-  /* ── Radius scale ────────────────────────────────────────────────── */
-  --radius-xs:   4px;      /* menu items, micro badges, tags */
-  --radius-sm:   6px;      /* buttons, inputs, dropdowns */
-  --radius-md:   8px;      /* modals */
-  --radius-lg:   16px;     /* transport cards, map popups */
-  --radius-xl:   24px;     /* sidebar panel */
-  --radius-full: 9999px;   /* pill */
+/* System-preference dark theme. Re-declares ONLY the theme-token group above
+   (zinc dark palette). Map-overlay (markers/chip), editor, and every static
+   token are inherited unchanged — markers stay dark-on-light over the map. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Surfaces — soft near-black base, lifting in steps for elevation.
+       --muted-bg sits just above bg so list hovers stay gentle, leaving a clear
+       gap up to --border for the icon-button (nav/close) hover. */
+    --bg:            #141417;   /* soft black */
+    --surface:       #1e1e22;   /* elevated note/info/modal */
+    --muted-bg:      #202024;   /* hover */
+    --border:        #313139;
 
-  /* ── Shadows ─────────────────────────────────────────────────────── */
-  --shadow-sm: 0 1px 4px rgba(0,0,0,.08);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,.08), 0 2px 4px -2px rgba(0,0,0,.06);
-  --shadow-lg: 0 25px 50px -12px rgba(0,0,0,.25);
+    /* Text — soft off-white, not pure, easier on the eyes on dark */
+    --text:           #e8e8ea;
+    --text-secondary: #c8c8cd;
+    --muted:          #9a9aa2;
 
-  /* ── Motion ──────────────────────────────────────────────────────── */
-  --duration: 150ms;
+    /* Brand / action (inverts: light chip on dark UI) */
+    --primary:        #fafafa;
+    --primary-fg:     #18181b;
+    --primary-hover:  #e4e4e7;  /* zinc-200 */
+    --primary-muted:  #d4d4d8;  /* zinc-300 — "more" link hover */
 
-  /* ── Layout ──────────────────────────────────────────────────────── */
-  --sidebar-w: 360px;
+    /* Semantic */
+    --danger:    #f87171;       /* red-400 */
+    --danger-bg: #2a1212;
+    --danger-bd: #7f1d1d;       /* red-900 */
 
-  /* ── Typography ──────────────────────────────────────────────────── */
-  --font: "Geist", system-ui, -apple-system, sans-serif;
-  --mono: "Geist Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    /* Activity — dark orange chip */
+    --activity:       #fb923c;  /* orange-400 */
+    --activity-bg:    #4a3119;  /* brighter orange wash */
+    --activity-bd:    #7c4a1e;
+    --priority-muted: #71717a;  /* zinc-500 */
 
-  /* ── Type scale ──────────────────────────────────────────────────── */
-  --text-xl:   30px;   /* trip title */
-  --text-lg:   15px;   /* place name headings */
-  --text-base: 14px;   /* primary content */
-  --text-sm:   13px;   /* supporting info: dates, times, notes */
-  --text-xs:   12px;   /* labels, tags, badges */
-  --text-2xs:  11px;   /* small badges, marker numbers, editor error */
-  --text-3xs:  10px;   /* dense component labels */
-
-  /* ── Activity palette ────────────────────────────────────────────── */
-  --activity:    #f97316;   /* orange-500 */
-  --activity-fg: #ffffff;
-  --activity-bg: #fff7ed;   /* orange-50 */
-  --activity-bd: #fed7aa;   /* orange-200 */
-
-  /* ── Extended palette ───────────────────────────────────────────── */
-  --primary-muted:  #3f3f46;   /* zinc-700 — marker hover */
-  --priority-muted: #a1a1aa;   /* zinc-400 — "maybe" priority label */
-
-  /* ── Extended shadows ─────────────────────────────────────────────── */
-  --shadow-sidebar:       0 4px 24px rgba(0,0,0,.12), 0 1px 4px rgba(0,0,0,.08);
-  --shadow-sheet:         0 -4px 24px rgba(0,0,0,.12), 0 -1px 4px rgba(0,0,0,.08);
-  --shadow-map-popup:     0 2px 12px rgba(0,0,0,.1);
-  --shadow-marker:        0 2px 8px rgba(0,0,0,.3);
-  --shadow-marker-active: 0 4px 14px rgba(0,0,0,.45);
-  --shadow-marker-sm:     0 1px 4px rgba(0,0,0,.25);
-
-  /* ── Extended motion ─────────────────────────────────────────────── */
-  --duration-sheet:  300ms;   /* bottom sheet snap */
-
-  /* ── Extended type scale ──────────────────────────────────────────── */
-  --text-2xl:   22px;   /* panel place/transport name */
-  --text-panel: 18px;   /* panel activity/stay name, modal title */
-
-  /* ── Z-index scale ────────────────────────────────────────────────── */
-  --z-marker:  2;
-  --z-focused: 5;
-  --z-sidebar: 100;
-  --z-menu:    500;
-  --z-chip:    1000;
-  --z-modal:   3000;
-
-  /* ── Content ─────────────────────────────────────────────────────── */
-  --text-secondary: #52525b;   /* zinc-700 — prose and secondary content, between --text and --muted */
-
-  /* ── App bar ─────────────────────────────────────────────────────── */
-  --appbar-h: 36px;
+    /* Overlay */
+    --overlay: rgba(0,0,0,.7);
+  }
 }
 
 body { font-family: var(--font); font-size: var(--text-base); color: var(--text); background: var(--bg); display: flex; flex-direction: column; }
@@ -180,7 +252,7 @@ const menuCSS = `
 
 .app-bar-brand {
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--text);
@@ -210,11 +282,8 @@ const menuCSS = `
 .app-bar-item:hover { background: var(--muted-bg); }
 .app-bar-item.open  { background: var(--muted-bg); }
 
-.app-bar-chevron {
-  width: 11px; height: 11px;
-  stroke: var(--muted); stroke-width: 2.5;
-  fill: none; stroke-linecap: round; stroke-linejoin: round;
-}
+.app-bar-chevron { display: inline-flex; color: var(--muted); }
+.app-bar-chevron .crumb-icon { width: 11px; height: 11px; stroke-width: 2; }
 
 /* ── Examples dropdown ───────────────────────────────────────────────── */
 .app-bar-submenu {
@@ -284,11 +353,7 @@ const editorCSS = `
 }
 .editor-close-btn:hover { background: var(--ed-border); color: var(--ed-text); }
 
-.editor-close-icon {
-  width: 14px; height: 14px;
-  stroke: currentColor; stroke-width: 2;
-  fill: none; stroke-linecap: round; stroke-linejoin: round;
-}
+.editor-close-btn .crumb-icon { stroke-width: 2; }
 
 .editor-error-bar {
   flex-shrink: 0;
@@ -344,7 +409,7 @@ const listCSS = `
 }
 #panel-content::-webkit-scrollbar { width: 4px; }
 #panel-content::-webkit-scrollbar-track { background: transparent; }
-#panel-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+#panel-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--radius-full); }
 
 /* ── Sticky title bar (appears when trip title scrolls out of view) ──── */
 /* The outer bar is a zero-height sticky anchor; the inner element is an absolute
@@ -355,7 +420,7 @@ const listCSS = `
   position: sticky;
   top: 0;
   height: 0;
-  z-index: 10;
+  z-index: var(--z-sticky);
 }
 .panel-sticky-inner {
   position: absolute;
@@ -404,7 +469,6 @@ const listCSS = `
 .sticky-bar-close {
   margin-top: 0;
   width: 26px; height: 26px;
-  font-size: 17px;
 }
 .sticky-bar-meta {
   font-size: var(--text-xs);
@@ -462,9 +526,9 @@ const modalCSS = `
   width: 24px; height: 24px;
   display: flex; align-items: center; justify-content: center;
   border-radius: var(--radius-xs);
-  font-size: 18px; line-height: 1;
   transition: background var(--duration), color var(--duration);
 }
+.modal-x .crumb-icon { width: 16px; height: 16px; stroke-width: 2; }
 .modal-x:hover { background: var(--muted-bg); color: var(--text); }
 
 .modal-header { display: flex; flex-direction: column; gap: 4px; }
@@ -506,7 +570,7 @@ const modalCSS = `
   background: var(--surface);
   color: var(--text);
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--text-xs);
   line-height: 1.7;
   padding: 10px 12px;
   outline: none;
@@ -524,8 +588,8 @@ const mapCSS = `
   position: fixed;
   bottom: 16px; right: 16px;
   z-index: var(--z-chip);
-  background: rgba(0,0,0,.6);
-  color: #fff;
+  background: var(--chip-bg);
+  color: var(--chip-fg);
   font-size: var(--text-xs); font-weight: 500;
   padding: 4px 10px;
   border-radius: var(--radius-full);
@@ -562,20 +626,20 @@ const mapCSS = `
 .place-marker {
   width: 28px; height: 28px;
   border-radius: 50%;
-  background: var(--primary);
-  border: 3px solid #fff;
+  background: var(--marker-bg);
+  border: 3px solid var(--marker-ring);
   box-shadow: var(--shadow-marker);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   z-index: var(--z-marker);
   transition: background var(--duration), box-shadow var(--duration);
 }
-.place-marker:hover { background: var(--primary-muted); }
+.place-marker:hover { background: var(--marker-bg-hover); }
 .place-marker.--focused {
   box-shadow: var(--shadow-marker-active);
 }
 .place-marker-num {
-  color: #fff; font-size: var(--text-2xs); font-weight: 600;
+  color: var(--marker-fg); font-size: var(--text-2xs); font-weight: 600;
   font-family: var(--font); line-height: 1; user-select: none;
 }
 body.map-zoom-close .place-marker { display: none; }
@@ -583,17 +647,17 @@ body.map-zoom-close .place-marker { display: none; }
 /* ── Detail markers (activities, stays, transport) ────────────────────────── */
 .detail-marker {
   border-radius: 50%;
-  border: 1.5px solid #fff;
+  border: 1.5px solid var(--marker-ring);
   box-shadow: var(--shadow-marker-sm);
   cursor: pointer;
   display: none;
   align-items: center; justify-content: center;
 }
 .detail-marker--must,
-.detail-marker--activity { background: var(--activity); border-radius: var(--radius-md); }
-.detail-marker--maybe    { background: var(--activity); border-radius: var(--radius-md); opacity: 0.5; }
-.detail-marker--stay     { background: var(--primary); }
-.detail-marker--transport      { background: var(--primary); }
+.detail-marker--activity { background: var(--marker-activity); border-radius: var(--radius-md); }
+.detail-marker--maybe    { background: var(--marker-activity); border-radius: var(--radius-md); opacity: 0.5; }
+.detail-marker--stay     { background: var(--marker-bg); }
+.detail-marker--transport      { background: var(--marker-bg); }
 
 /* zoom medium (8–11): activity + stay + transport dots, small */
 body.map-zoom-medium .detail-marker--must,
@@ -607,7 +671,7 @@ body.map-zoom-close .detail-marker { display: flex; width: 28px; height: 28px; b
 
 /* Labels (activities) */
 .detail-marker-label {
-  display: none; color: #fff; font-size: 9px; font-weight: 600;
+  display: none; color: var(--marker-fg); font-size: var(--text-3xs); font-weight: 600;
   font-family: var(--font); line-height: 1; user-select: none;
 }
 body.map-zoom-close .detail-marker-label { display: block; }
@@ -616,7 +680,7 @@ body.map-zoom-close .detail-marker-label { display: block; }
 .detail-marker .crumb-icon {
   display: none;
   width: 13px; height: 13px;
-  stroke: #fff; fill: none;
+  stroke: var(--marker-fg); fill: none;
   stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
 }
 body.map-zoom-close .detail-marker--stay .crumb-icon,
@@ -638,13 +702,13 @@ body.map-zoom-close .detail-marker--transport  .crumb-icon { display: block; }
 .place-num.--loading { color: transparent; }
 .place-num.--loading::after {
   content: ""; position: absolute; inset: 4px; border-radius: 50%;
-  border: 2px solid rgba(255,255,255,.25); border-top-color: #fff;
+  border: 2px solid color-mix(in srgb, var(--primary-fg) 25%, transparent); border-top-color: var(--primary-fg);
   animation: geo-spin 700ms linear infinite;
 }
 .act-badge.--loading { color: transparent; }
 .act-badge.--loading::after {
   content: ""; position: absolute; inset: 3px; border-radius: 50%;
-  border: 1.5px solid rgba(249,115,22,.15); border-top-color: var(--activity);
+  border: 1.5px solid color-mix(in srgb, var(--activity) 15%, transparent); border-top-color: var(--activity);
   animation: geo-spin 700ms linear infinite;
 }
 /* Inline spinner shown to the right of a transport from/to name while geocoding */
@@ -693,7 +757,7 @@ const itineraryCSS = `
 .tl-row { display: flex; gap: 10px; align-items: center; }
 .tl-marker { width: 8px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; }
 .tl-marker-line { align-self: stretch; }
-.tl-dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; border: 1.5px solid var(--text); flex-shrink: 0; }
+.tl-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--bg); border: 1.5px solid var(--text); flex-shrink: 0; }
 .tl-line {
   flex: 1; width: 1.5px; min-height: 14px;
   background: repeating-linear-gradient(to bottom, var(--text) 0px, var(--text) 2px, transparent 2px, transparent 4px);
@@ -706,36 +770,26 @@ const itineraryCSS = `
 .waypoint-time { font-size: var(--text-xs); color: var(--muted); display: inline-flex; align-items: center; gap: 4px; }
 .waypoint-time .crumb-icon { width: 11px; height: 11px; }
 .segment-duration { font-size: var(--text-xs); color: var(--muted); }
-.transport-note { margin-top: 5px; margin-bottom: 8px; }
-.transport-info { margin-top: 6px; }
-.panel-transport-body .transport-info,
-.panel-activity-body .act-info,
-.panel-stay-body .stay-info {
+
+/* Boxed note + info blocks beneath transport/stay/activity headers share one
+   surface treatment and one canonical top margin (replaces the old per-type
+   .transport-/.stay-/.act- margin rules). */
+.panel-note,
+.panel-info {
   background: var(--surface);
   border-radius: var(--radius-md);
   padding: 8px 10px;
-  gap: 4px;
+  margin-top: 10px;
 }
-.panel-note {
-  background: var(--surface);
-  border-radius: var(--radius-md);
-  padding: 8px 10px;
-  margin-top: 14px;
-}
+.panel-info { display: flex; flex-direction: column; gap: 4px; }
 
 /* ── Stays ───────────────────────────────────────────────────────────── */
 .stay-icon-wrap.--loading svg { visibility: hidden; }
 .stay-icon-wrap.--loading::after {
   content: ""; position: absolute; inset: 2px; border-radius: 50%;
-  border: 1.5px solid rgba(0,0,0,.1); border-top-color: var(--muted);
+  border: 1.5px solid var(--spinner-track); border-top-color: var(--muted);
   animation: geo-spin 700ms linear infinite;
 }
-.stay-note { margin-top: 3px; }
-.stay-info { margin-top: 3px; }
-
-/* ── Activities ──────────────────────────────────────────────────────── */
-.act-note { margin-top: 5px; margin-bottom: 8px; }
-.act-info { margin-top: 5px; }
 
 /* ── Tags ────────────────────────────────────────────────────────────── */
 .tags { margin: 4px 0 8px; display: flex; flex-wrap: wrap; gap: 4px; }
@@ -772,7 +826,6 @@ const itineraryCSS = `
 }
 
 /* ── Info lists ──────────────────────────────────────────────────────── */
-.act-info, .stay-info, .transport-info { display: flex; flex-direction: column; gap: 2px; }
 .info-item { display: flex; gap: 8px; font-size: var(--text-sm); }
 .info-item .info-key { color: var(--text-secondary); min-width: 64px; flex-shrink: 0; }
 .info-item .info-val { color: var(--text-secondary); }
@@ -860,6 +913,7 @@ const itineraryCSS = `
   transition: background var(--duration), color var(--duration);
 }
 .panel-close:hover { background: var(--border); }
+.panel-close .crumb-icon { width: 16px; height: 16px; stroke-width: 2; }
 
 /* ── Panel footer navigation ─────────────────────────────────────────── */
 #panel-footer { flex-shrink: 0; }
@@ -876,7 +930,7 @@ const itineraryCSS = `
   width: 32px; height: 32px;
   display: flex; align-items: center; justify-content: center;
   border: 1px solid var(--border);
-  border-radius: 11px;
+  border-radius: var(--radius-md);
   background: var(--muted-bg);
   cursor: pointer;
   color: var(--text);
@@ -926,10 +980,9 @@ const itineraryCSS = `
 .panel-act-badge {
   width: 40px;
   height: 40px;
-  font-size: 14px;
+  font-size: var(--text-base);
   flex-shrink: 0;
 }
-.panel-activity-body .act-info { margin-top: 8px; }
 
 /* ── Stay panel ──────────────────────────────────────────────────────── */
 .panel-stay-name {
@@ -945,12 +998,6 @@ const itineraryCSS = `
   border-radius: 0;
 }
 .panel-stay-icon .crumb-icon { width: 18px; height: 18px; }
-.panel-stay-body {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.panel-stay-body .stay-info { margin-top: 4px; }
 
 /* ── Panel list ──────────────────────────────────────────────────────── */
 .panel-list { list-style: none; padding: 6px 0; position: relative; }
@@ -964,32 +1011,26 @@ const itineraryCSS = `
   pointer-events: none;
 }
 
+/* Every .list-item is a tappable card (dividers use .list-divider instead), so
+   the card geometry lives on the base; the --type modifiers only carry what is
+   unique to each (transport's muted text, badge nudges, icon-wrap hovers). */
 .list-item {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 16px;
+  margin: 2px 8px;
+  width: calc(100% - 16px);
+  min-height: 52px;
+  padding: 7px 10px;
   cursor: pointer;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   font-size: var(--text-sm);
   transition: background var(--duration);
 }
 .list-item:hover { background: var(--muted-bg); }
-
-.list-item--place {
-  align-items: center;
-  margin: 2px 8px;
-  padding: 7px 10px;
-  border-radius: var(--radius-md);
-  width: calc(100% - 16px);
-  min-height: 52px;
-}
-.list-item--place:has(.list-item-meta) { align-items: flex-start; }
-.list-item--place:hover { background: var(--muted-bg); }
-
-.list-item--place .place-num--sm { margin-top: 0; }
-.list-item--place:has(.list-item-meta) .place-num--sm { margin-top: 1px; }
-.list-item--place .list-item-label { font-size: var(--text-base); font-weight: 500; }
+/* Top-align the badge with the first line once a meta row makes the card taller. */
+.list-item:has(.list-item-meta) { align-items: flex-start; }
+.list-item .list-item-label { font-size: var(--text-base); font-weight: 500; }
 
 .list-item-body {
   display: flex;
@@ -999,19 +1040,11 @@ const itineraryCSS = `
   min-width: 0;
 }
 
-.list-item--transport {
-  position: relative;
-  align-items: center;
-  margin: 2px 8px;
-  padding: 7px 10px;
-  border-radius: var(--radius-md);
-  width: calc(100% - 16px);
-  min-height: 52px;
-  color: var(--muted);
-  cursor: pointer;
-}
-.list-item--transport:has(.list-item-meta) { align-items: flex-start; }
-.list-item--transport:hover { background: var(--muted-bg); }
+/* ── Place cards ─────────────────────────────────────────────────────── */
+.list-item--place:has(.list-item-meta) .place-num--sm { margin-top: 1px; }
+
+/* ── Transport cards ─────────────────────────────────────────────────── */
+.list-item--transport { position: relative; color: var(--muted); }
 .list-item--transport:hover .transport-icon-wrap { background: var(--muted-bg); }
 .list-item--transport:has(.list-item-meta) .transport-icon-wrap { margin-top: 1px; }
 
@@ -1028,21 +1061,11 @@ const itineraryCSS = `
   border-radius: 50%;
 }
 
-.transport-label { font-size: var(--text-base); font-weight: 500; color: var(--text); }
+.transport-label { color: var(--text); }
 
 /* ── Stay cards ──────────────────────────────────────────────────────── */
-.list-item--stay {
-  align-items: center;
-  margin: 2px 8px;
-  padding: 7px 10px;
-  border-radius: var(--radius-md);
-  width: calc(100% - 16px);
-  min-height: 52px;
-  cursor: pointer;
-}
-.list-item--stay:has(.list-item-meta) { align-items: flex-start; }
-.list-item--stay:hover { background: var(--muted-bg); }
 .list-item--stay:hover .stay-icon-wrap { background: var(--muted-bg); }
+.list-item--stay:has(.list-item-meta) .stay-icon-wrap { margin-top: 1px; }
 
 .stay-icon-wrap {
   width: 24px; height: 24px;
@@ -1055,24 +1078,10 @@ const itineraryCSS = `
   border-radius: 50%;
   position: relative;
 }
-.list-item--stay:has(.list-item-meta) .stay-icon-wrap { margin-top: 1px; }
 
 /* ── Activity cards ──────────────────────────────────────────────────── */
-.list-item--activity {
-  align-items: center;
-  margin: 2px 8px;
-  padding: 7px 10px;
-  border-radius: var(--radius-md);
-  width: calc(100% - 16px);
-  min-height: 52px;
-  cursor: pointer;
-}
-.list-item--activity:has(.list-item-meta) { align-items: flex-start; }
 .list-item--activity:has(.list-item-meta) .act-badge { margin-top: 1px; }
-.list-item--activity:hover { background: var(--muted-bg); }
 .list-item--activity:hover .act-badge { background: var(--activity-bg); }
-.list-item--stay     .list-item-label { font-size: var(--text-base); font-weight: 500; }
-.list-item--activity .list-item-label { font-size: var(--text-base); font-weight: 500; }
 
 .act-badge {
   width: 26px; height: 26px;
@@ -1161,7 +1170,7 @@ const mobileCSS = `
   #map { position: fixed; inset: 0; z-index: 0; }
 
   /* Editor: full-screen overlay */
-  #editor-panel { position: fixed; inset: 0; width: 100%; z-index: 400; }
+  #editor-panel { position: fixed; inset: 0; width: 100%; z-index: var(--z-editor); }
 
   /* Sidebar becomes a bottom sheet. Fixed full height; JS slides it between
      snap states with transform: translateY (GPU-composited — no per-frame reflow).
@@ -1179,7 +1188,7 @@ const mobileCSS = `
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     box-shadow: var(--shadow-sheet);
     overflow: hidden;
-    z-index: 200;
+    z-index: var(--z-sheet);
   }
 
   /* Sheet handle: a visual grabber only — expansion is scroll-driven, not draggable.
@@ -1189,7 +1198,7 @@ const mobileCSS = `
   #sheet-handle {
     position: absolute;
     top: 0; left: 0; right: 0;
-    z-index: 11;
+    z-index: var(--z-handle);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1200,7 +1209,7 @@ const mobileCSS = `
   .sheet-handle-bar {
     width: 36px;
     height: 4px;
-    border-radius: 2px;
+    border-radius: var(--radius-full);
     background: var(--border);
   }
 
@@ -1233,14 +1242,14 @@ const mobileCSS = `
   /* In the larger 44px buttons, bump the pager arrows and close X to one shared size so
      all three read identically (desktop keeps its smaller defaults; stroke 2 is global). */
   .panel-nav-btn .crumb-icon,
-  .panel-close svg { width: 18px; height: 18px; }
+  .panel-close .crumb-icon { width: 18px; height: 18px; }
 
   /* Pager: persistent bar fixed to the viewport bottom (reparented out of #sidebar
      by initSheet so it isn't dragged by the sheet's transform). */
   #panel-footer {
     position: fixed;
     left: 0; right: 0; bottom: 0;
-    z-index: 250;
+    z-index: var(--z-pager);
     background: var(--bg);
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
@@ -1258,7 +1267,7 @@ const mobileCSS = `
   .map-status-chip { right: 12px; }
 
   /* App bar: pin to top and push map down so it doesn't slide under the bar */
-  body:has(#app-bar) #app-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 300; }
+  body:has(#app-bar) #app-bar { position: fixed; top: 0; left: 0; right: 0; z-index: var(--z-appbar); }
   body:has(#app-bar) #map { top: var(--appbar-h); }
 }
 `

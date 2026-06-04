@@ -18,7 +18,7 @@ import { setupListClickHandler, clearFocus, highlightMarker } from "./app-focus"
 import { updateMap, fitAllPlaces, applyDetailMarkerFilter, fitTransportPoints, mapPadding, applyGeoState } from "./app-map"
 import { state, ZOOM_PLACE_FLY, ZOOM_DETAIL_FLY, MOBILE_MAX_W, FLY_DURATION } from "./app-state"
 import { initSheet, exitSheet, goMedium } from "./app-sheet"
-import { ICON_PIN_OFF } from "./icons"
+import { ICON_PIN_OFF, ICON_CHEVRON_LEFT, ICON_CHEVRON_RIGHT } from "./icons"
 import { placeStays, placeActivityItems } from "./plan-view"
 import type { ModalRef } from "./app-state"
 
@@ -38,8 +38,8 @@ const panelFooter  = document.getElementById("panel-footer")!
 
 // ─── Footer nav ───────────────────────────────────────────────────────────────
 
-const CHEVRON_L = `<svg class="crumb-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="15 18 9 12 15 6"/></svg>`
-const CHEVRON_R = `<svg class="crumb-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="9 18 15 12 9 6"/></svg>`
+const CHEVRON_L = ICON_CHEVRON_LEFT
+const CHEVRON_R = ICON_CHEVRON_RIGHT
 
 // ── Trip-level stack (places + transports) ────────────────────────────────────
 

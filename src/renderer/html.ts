@@ -24,7 +24,7 @@ import {
   placeActivityItems,
 } from "./plan-view"
 import { CSS } from "./css"
-import { ICON_STAY, ICON_ARRIVES, ICON_DEPARTS, ICON_CLOCK, ICON_PIN_OFF, ICON_PRIORITY_MUST, ICON_PRIORITY_MAYBE, modeIconSvg } from "./icons"
+import { ICON_STAY, ICON_ARRIVES, ICON_DEPARTS, ICON_CLOCK, ICON_PIN_OFF, ICON_PRIORITY_MUST, ICON_PRIORITY_MAYBE, ICON_CLOSE, ICON_CHEVRON_DOWN, modeIconSvg } from "./icons"
 import {
   escape,
   formatDuration,
@@ -68,10 +68,30 @@ function renderInlineNote(text: string): string {
   return `<span class="note-trunc">${html}</span><span class="note-more"> more</span>`
 }
 
+/**
+ * Tag row. `leadingIcons` are pre-built icon chips (priority, "no map") that sort
+ * before the plain text tags. Returns "" when there is nothing to show.
+ */
+function renderTags(tags?: string[], leadingIcons: string[] = []): string {
+  const chips = [...leadingIcons, ...(tags ?? []).map(t => `<span class="tag">${escape(t)}</span>`)]
+  return chips.length ? `<div class="tags">${chips.join("")}</div>` : ""
+}
+
+/**
+ * Note block. Trip/place notes are inline truncating prose; transport/stay/activity
+ * notes are full markdown in a boxed `.panel-note`. Returns "" for empty text.
+ */
+function renderNote(text?: string, opts: { boxed?: boolean } = {}): string {
+  if (!text) return ""
+  return opts.boxed
+    ? `<div class="note panel-note">${renderMarkdown(text)}</div>`
+    : `<div class="note">${renderInlineNote(text)}</div>`
+}
+
 // ─── Trip level renders ───────────────────────────────────────────────────────
 
-/** Desktop panel content for the trip level. */
-export function renderTripPanel(doc: CrumbDocument): string {
+/** Sticky bar + trip header block (crumb eyebrow, name, tags, note, author). Shared by the trip and single-place panels. */
+function renderTripHeader(doc: CrumbDocument): string {
   const parts: string[] = []
 
   if (doc.trip) {
@@ -91,11 +111,20 @@ export function renderTripPanel(doc: CrumbDocument): string {
   if (doc.trip) {
     const { name, author, note, tags } = doc.trip
     parts.push(`  <h1 class="panel-trip-name">${escape(name ?? "Itinerary")}</h1>`)
-    if (tags?.length) parts.push(`  <div class="tags">${tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>`)
-    if (note) parts.push(`  <div class="note">${renderInlineNote(note)}</div>`)
+    const tagsHtml = renderTags(tags)
+    if (tagsHtml) parts.push(`  ${tagsHtml}`)
+    const noteHtml = renderNote(note)
+    if (noteHtml) parts.push(`  ${noteHtml}`)
     if (author) parts.push(`  <p class="trip-author">by ${escape(author)}</p>`)
   }
   parts.push(`</div>`)
+  return parts.join("\n")
+}
+
+/** Desktop panel content for the trip level. */
+export function renderTripPanel(doc: CrumbDocument): string {
+  const parts: string[] = []
+  parts.push(renderTripHeader(doc))
 
   parts.push(`<ul class="panel-list">`)
   const itin = doc.itinerary
@@ -230,15 +259,12 @@ function renderPlaceActivities(place: Place): string {
 
 // ─── Panel header helpers ─────────────────────────────────────────────────────
 
-const PANEL_CLOSE_BTN =
-  `<button class="panel-close" id="nav-back">` +
-  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16">` +
-  `<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
-
-const STICKY_CLOSE_BTN =
-  `<button class="panel-close sticky-bar-close" id="nav-back">` +
-  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16">` +
-  `<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
+/** A close button carrying the shared ICON_CLOSE; extra classes select context (sticky bar, etc.). */
+function closeBtn(extraClass = ""): string {
+  return `<button class="panel-close${extraClass ? " " + extraClass : ""}" id="nav-back">${ICON_CLOSE}</button>`
+}
+const PANEL_CLOSE_BTN  = closeBtn()
+const STICKY_CLOSE_BTN = closeBtn("sticky-bar-close")
 
 function renderStickyBar(badge: string, name: string, meta?: string): string {
   const metaHtml = meta ? `<span class="sticky-bar-meta">${meta}</span>` : ""
@@ -252,17 +278,19 @@ function renderStickyBar(badge: string, name: string, meta?: string): string {
 }
 
 interface PanelHeaderOpts {
-  stickyBar: string
-  badge:     string
-  title:     string    // full heading element HTML (h1 with class + content)
-  meta?:     string    // optional subtitle (escaped text or HTML — Place: duration·dates, Activity: time·duration)
+  stickyBar?: string   // sticky scroll bar (omitted by the flat single-place view, which has its own)
+  badge:      string
+  title:      string   // full heading element HTML (h1 with class + content)
+  meta?:      string   // optional subtitle (escaped text or HTML — Place: duration·dates, Activity: time·duration)
+  flat?:      boolean  // single-place flat view: more air above the title, no nav chrome
+  showClose?: boolean  // render the close button (default true)
 }
 
-function renderPanelHeader({ stickyBar, badge, title, meta }: PanelHeaderOpts): string {
+function renderPanelHeader({ stickyBar, badge, title, meta, flat = false, showClose = true }: PanelHeaderOpts): string {
   const metaHtml = meta ? `\n        <div class="trip-duration">${meta}</div>` : ""
   return [
-    stickyBar,
-    `<div class="panel-header">`,
+    stickyBar ?? "",
+    `<div class="panel-header${flat ? " panel-header--flat" : ""}">`,
     `  <div class="panel-header-body">`,
     `    <div class="panel-title-row">`,
     `      ${badge}`,
@@ -271,9 +299,9 @@ function renderPanelHeader({ stickyBar, badge, title, meta }: PanelHeaderOpts): 
     `      </div>`,
     `    </div>`,
     `  </div>`,
-    `  ${PANEL_CLOSE_BTN}`,
+    showClose ? `  ${PANEL_CLOSE_BTN}` : "",
     `</div>`,
-  ].join("\n")
+  ].filter(line => line !== "").join("\n")
 }
 
 /** Total activity count across all groups in a place (for card metadata). */
@@ -316,16 +344,19 @@ export function renderPlacePanel(doc: CrumbDocument, placeIdx: number): string {
     meta:  metaLine || undefined,
   }))
 
-  const bodyParts = [
-    place.tags?.length ? `<div class="tags">${place.tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>` : "",
-    place.note         ? `<div class="note">${renderInlineNote(place.note)}</div>` : "",
-  ].filter(Boolean)
-  if (bodyParts.length) parts.push(`<div class="panel-place-body">${bodyParts.join("")}</div>`)
+  const body = renderPlaceBody(place)
+  if (body) parts.push(body)
 
   parts.push(`<ul class="panel-list">`)
   parts.push(renderPlaceActivities(place))
   parts.push(`</ul>`)
   return parts.join("\n")
+}
+
+/** Tags + note block beneath a place title. Returns "" when the place has neither. */
+function renderPlaceBody(place: Place): string {
+  const body = renderTags(place.tags) + renderNote(place.note)
+  return body ? `<div class="panel-place-body">${body}</div>` : ""
 }
 
 /** Combined flat view for single-place docs: trip header + activities, no navigation chrome. */
@@ -335,51 +366,21 @@ export function renderSinglePlacePanel(doc: CrumbDocument): string {
   if (!place) return renderTripPanel(doc)
 
   const parts: string[] = []
-
-  if (doc.trip) {
-    const { name, duration } = doc.trip
-    const stickyDur = duration && duration.type !== "unknown"
-      ? `<span class="sticky-bar-meta">${escape(formatDuration(duration))}</span>` : ""
-    parts.push(`<div class="panel-sticky-bar"><div class="panel-sticky-inner"><span class="sticky-bar-name">${escape(name ?? "Itinerary")}</span>${stickyDur}</div></div>`)
-  }
-
-  const dur2 = doc.trip?.duration
-  const durSuffix2 = dur2 && dur2.type !== "unknown"
-    ? `<span class="trip-eyebrow-sep">·</span>${escape(formatDuration(dur2))}`
-    : dur2?.type === "unknown"
-    ? `<span class="trip-eyebrow-sep">·</span><span class="value-unknown">${escape(dur2.label)}</span>`
-    : ""
-  parts.push(`<div class="panel-trip-header">`)
-  parts.push(`  <div class="trip-eyebrow"><span class="trip-eyebrow-logo">crumb</span>${durSuffix2}</div>`)
-  if (doc.trip) {
-    const { name, author, note, tags } = doc.trip
-    parts.push(`  <h1 class="panel-trip-name">${escape(name ?? "Itinerary")}</h1>`)
-    if (tags?.length) parts.push(`  <div class="tags">${tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>`)
-    if (note) parts.push(`  <div class="note">${renderInlineNote(note)}</div>`)
-    if (author) parts.push(`  <p class="trip-author">by ${escape(author)}</p>`)
-  }
-  parts.push(`</div>`)
+  parts.push(renderTripHeader(doc))
 
   const geoIcon = renderGeoIcon(place.location)
   const metaLine = [renderPlaceDuration(resolvePlaceDisplayDuration(place)), renderPlaceDates(place)]
     .filter(Boolean).join(`<span class="place-meta-sep"> · </span>`)
-  parts.push(`<div class="panel-header panel-header--flat">`)
-  parts.push(`  <div class="panel-header-body">`)
-  parts.push(`    <div class="panel-title-row">`)
-  parts.push(`      <span class="place-num place-num--sm">1</span>`)
-  parts.push(`      <div class="panel-title-body">`)
-  parts.push(`        <h1 class="panel-place-name">${escape(place.name)}${geoIcon}</h1>`)
-  if (metaLine) parts.push(`        <div class="trip-duration">${metaLine}</div>`)
-  parts.push(`      </div>`)
-  parts.push(`    </div>`)
-  parts.push(`  </div>`)
-  parts.push(`</div>`)
+  parts.push(renderPanelHeader({
+    flat: true,
+    showClose: false,
+    badge: `<span class="place-num place-num--sm">1</span>`,
+    title: `<h1 class="panel-place-name">${escape(place.name)}${geoIcon}</h1>`,
+    meta:  metaLine || undefined,
+  }))
 
-  const bodyParts = [
-    place.tags?.length ? `<div class="tags">${place.tags.map(t => `<span class="tag">${escape(t)}</span>`).join("")}</div>` : "",
-    place.note         ? `<div class="note">${renderInlineNote(place.note)}</div>` : "",
-  ].filter(Boolean)
-  if (bodyParts.length) parts.push(`<div class="panel-place-body">${bodyParts.join("")}</div>`)
+  const body = renderPlaceBody(place)
+  if (body) parts.push(body)
 
   parts.push(`<ul class="panel-list">`)
   parts.push(renderPlaceActivities(place))
@@ -395,9 +396,9 @@ function renderTransportPanelContent(leg: TransportLeg): string {
   const departsHtml  = leg.departs  ? wrapInferred(momentOrUnknown(leg.departs),  leg.departs)  : null
   const arrivesHtml  = leg.arrives  ? wrapInferred(momentOrUnknown(leg.arrives),  leg.arrives)  : null
   const durationText = leg.duration ? durOrUnknown(leg.duration) : null
-  const noteHtml     = leg.note ? `<div class="note transport-note panel-note">${renderMarkdown(leg.note)}</div>` : ""
+  const noteHtml     = renderNote(leg.note, { boxed: true })
   const infoHtml     = leg.info?.length
-    ? `<div class="transport-info">${leg.info.map(renderInfoItem).join("")}</div>`
+    ? `<div class="panel-info">${leg.info.map(renderInfoItem).join("")}</div>`
     : ""
 
   const routeHtml = renderDetailedRoute(from, to, departsHtml, arrivesHtml, durationText)
@@ -511,9 +512,7 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
     <div id="editor-panel" style="display:none">
       <div class="editor-header">
         <button id="editor-close-btn" class="editor-close-btn">
-          <svg class="editor-close-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
+          ${ICON_CLOSE}
           Close
         </button>
       </div>
@@ -533,7 +532,7 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
     .map(name => `<div class="menu-sub-item" data-example="${escape(name)}">${escape(name.replace(/\.crumb$/, ""))}</div>`)
     .join("\n        ")
 
-  const chevronSvg = `<svg class="app-bar-chevron" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="6 9 12 15 18 9"/></svg>`
+  const chevronSvg = `<span class="app-bar-chevron">${ICON_CHEVRON_DOWN}</span>`
 
   const appBarDom = includeEditor ? `
   <!-- App bar (editor mode only) -->
@@ -577,7 +576,7 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
   <!-- New itinerary modal -->
   <div class="modal-overlay" id="new-modal">
     <div class="modal-box">
-      <button class="modal-x" id="new-close-x"<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <button class="modal-x" id="new-close-x">${ICON_CLOSE}</button>
       <div class="modal-header">
         <div class="modal-title">New itinerary</div>
         <div class="modal-description">Paste a <code>.crumb</code> document below to load it.</div>
@@ -603,7 +602,7 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
   <!-- Generate with AI modal -->
   <div class="modal-overlay" id="generate-modal">
     <div class="modal-box">
-      <button class="modal-x" id="generate-close-x"<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <button class="modal-x" id="generate-close-x">${ICON_CLOSE}</button>
       <div class="modal-header">
         <div class="modal-title">Generate with AI</div>
         <div class="modal-description">Copy the prompt into any AI assistant (ChatGPT, Claude, …), describe your trip, then paste the result back into the editor.</div>
@@ -625,7 +624,7 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
   <!-- About modal -->
   <div class="modal-overlay" id="about-modal">
     <div class="modal-box">
-      <button class="modal-x" id="about-close-x"<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <button class="modal-x" id="about-close-x">${ICON_CLOSE}</button>
       <div class="modal-header">
         <div class="modal-title">About Crumb</div>
       </div>
@@ -880,10 +879,8 @@ function renderStayPanel(stay: Stay): string {
                 : stay.arrives ? formatMoment(stay.arrives)
                 : stay.departs ? formatMoment(stay.departs) : ""
 
-  const stayTags: string[] = []
-  if (stay.location?.geocodingDisabled) stayTags.push(`<span class="tag tag--icon">${ICON_PIN_OFF} No map</span>`)
-  ;(stay.tags ?? []).forEach(t => stayTags.push(`<span class="tag">${escape(t)}</span>`))
-  const allStayTagsHtml = stayTags.join("")
+  const leadingIcons = stay.location?.geocodingDisabled ? [`<span class="tag tag--icon">${ICON_PIN_OFF} No map</span>`] : []
+  const tagsHtml = renderTags(stay.tags, leadingIcons)
 
   const parts: string[] = []
   parts.push(renderPanelHeader({
@@ -903,11 +900,12 @@ function renderStayPanel(stay: Stay): string {
   const departsHtml = dMoment ? wrapInferred(dMoment, stay.departs!) : null
 
   parts.push(`<div class="panel-stay-body">`)
-  if (allStayTagsHtml) parts.push(`  <div class="tags">${allStayTagsHtml}</div>`)
+  if (tagsHtml) parts.push(`  ${tagsHtml}`)
   const timeline = renderStayTimeline(arrivesHtml, departsHtml)
   if (timeline) parts.push(timeline)
-  if (stay.note)       parts.push(`  <div class="note stay-note panel-note">${renderMarkdown(stay.note)}</div>`)
-  if (stay.info?.length) parts.push(`  <div class="stay-info">${stay.info.map(renderInfoItem).join("")}</div>`)
+  const noteHtml = renderNote(stay.note, { boxed: true })
+  if (noteHtml) parts.push(`  ${noteHtml}`)
+  if (stay.info?.length) parts.push(`  <div class="panel-info">${stay.info.map(renderInfoItem).join("")}</div>`)
   parts.push(`</div>`)
 
   return parts.join("\n")
@@ -964,7 +962,7 @@ function renderActivityPanel(act: Activity, actIndex: number, groupLabel?: strin
   if (act.priority === "must")         iconTags.push(`<span class="tag tag--icon">${ICON_PRIORITY_MUST} Must</span>`)
   if (act.priority === "maybe")        iconTags.push(`<span class="tag tag--icon">${ICON_PRIORITY_MAYBE} Maybe</span>`)
   if (act.location?.geocodingDisabled) iconTags.push(`<span class="tag tag--icon">${ICON_PIN_OFF} No map</span>`)
-  const allTagsHtml = [...iconTags, ...(act.tags ?? []).map(t => `<span class="tag">${escape(t)}</span>`)].join("")
+  const tagsHtml = renderTags(act.tags, iconTags)
 
   const parts: string[] = []
   parts.push(renderPanelHeader({
@@ -979,9 +977,10 @@ function renderActivityPanel(act: Activity, actIndex: number, groupLabel?: strin
   }))
 
   parts.push(`<div class="panel-activity-body">`)
-  if (allTagsHtml) parts.push(`  <div class="tags">${allTagsHtml}</div>`)
-  if (act.note) parts.push(`  <div class="note act-note panel-note">${renderMarkdown(act.note)}</div>`)
-  if (act.info?.length) parts.push(`  <div class="act-info">${act.info.map(renderInfoItem).join("")}</div>`)
+  if (tagsHtml) parts.push(`  ${tagsHtml}`)
+  const noteHtml = renderNote(act.note, { boxed: true })
+  if (noteHtml) parts.push(`  ${noteHtml}`)
+  if (act.info?.length) parts.push(`  <div class="panel-info">${act.info.map(renderInfoItem).join("")}</div>`)
   parts.push(`</div>`)
 
   return parts.join("\n")
