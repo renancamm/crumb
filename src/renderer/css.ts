@@ -841,6 +841,7 @@ const itineraryCSS = `
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  gap: 12px;
   padding: 16px 16px 14px;
 }
 /* single-place flat view: more air above the place title, tighter below */
