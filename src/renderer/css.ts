@@ -782,6 +782,10 @@ const itineraryCSS = `
   margin-top: 10px;
 }
 .panel-info { display: flex; flex-direction: column; gap: 4px; }
+/* Section break after the from/to route block (transport + stay panels):
+   the panel's 16px section rhythm rather than the 10px inter-block gap. */
+.transport-route-block + .panel-note,
+.transport-route-block + .panel-info { margin-top: 16px; }
 
 /* ── Stays ───────────────────────────────────────────────────────────── */
 .stay-icon-wrap.--loading svg { visibility: hidden; }
