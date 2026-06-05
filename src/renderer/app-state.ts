@@ -19,6 +19,8 @@ declare global {
     // Always present:
     __CRUMB_DATA:     CrumbDocument | null
     Crumb: {
+      // Present only in editor-mode output; the viewer-only bundle omits `parse`.
+      // Safe because the editor bundle (its sole caller) ships only alongside it.
       parse:               (src: string) => CrumbDocument
       renderTripPanel:        (doc: CrumbDocument) => string
       renderPlacePanel:       (doc: CrumbDocument, placeIdx: number) => string

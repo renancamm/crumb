@@ -40,9 +40,12 @@ async function main() {
   const source = fs.readFileSync(resolved, "utf8")
   const doc    = parse(source)
 
-  // 2 — Bundle parser + renderer for the browser (live re-parsing)
-  const parserResult = await esbuild.build({
-    entryPoints: [path.resolve(__dirname, "browser-entry.ts")],
+  // 2 — Bundle the window.Crumb API for the browser. Editor mode needs `parse`
+  // (live re-parsing); viewer-only mode uses a render-only entry so esbuild drops
+  // js-yaml + the parser passes as dead code.
+  const crumbEntry = withEditor ? "browser-entry.ts" : "viewer-render-entry.ts"
+  const crumbResult = await esbuild.build({
+    entryPoints: [path.resolve(__dirname, crumbEntry)],
     bundle:      true,
     format:      "iife",
     globalName:  "Crumb",
@@ -50,7 +53,7 @@ async function main() {
     write:       false,
     logLevel:    "silent",
   })
-  const parserBundle = parserResult.outputFiles[0].text
+  const crumbBundle = crumbResult.outputFiles[0].text
 
   // 3 — Bundle viewer (map, geocoding, panel navigation, mobile sheet)
   const viewerResult = await esbuild.build({
@@ -101,7 +104,7 @@ async function main() {
 
   // 7 — Render
   const options: AppOptions = {
-    parserBundle,
+    crumbBundle,
     viewerBundle,
     editorBundle,
     includeEditor: withEditor,

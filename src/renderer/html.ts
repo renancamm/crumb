@@ -43,8 +43,8 @@ import {
 // ─── AppOptions ───────────────────────────────────────────────────────────────
 
 export interface AppOptions {
-  /** Esbuild bundle: parse + render functions (sets window.Crumb). */
-  parserBundle: string
+  /** Esbuild bundle for window.Crumb: render functions (+ parse in editor mode). */
+  crumbBundle: string
   /** Esbuild bundle: map, panel navigation, geocoding, mobile sheet. */
   viewerBundle: string
   /** Esbuild bundle: YAML editor, menus, dialogs. Only injected when includeEditor is true. */
@@ -693,7 +693,7 @@ ${modalsDom}
   <div id="map-status" class="map-status-chip"></div>
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-  <script>${options.parserBundle}</script>
+  <script>${options.crumbBundle}</script>
   <script>
     window.__CRUMB_DATA   = ${docJson};${editorGlobals}
   </script>
