@@ -104,6 +104,22 @@ export function cacheGeo(name: string, result: GeoResult): void {
   } catch { /* storage quota exceeded */ }
 }
 
+/**
+ * Pre-populate the geo cache from injected data (e.g. a demo page that ships a
+ * baked `{ query: {lat,lng} }` map) so the viewer resolves known places with
+ * zero network requests. Routed through `cacheGeo` so the versioned
+ * `crumb-geo-v4:` key format stays the single source of truth — see invariant 9.
+ * `migrateGeoCache()` has already run at import time, so positive seeds under
+ * the current prefix survive; unknown queries still fall back to online lookup.
+ */
+export function seedGeoCache(data: Record<string, GeoResult>): void {
+  for (const [query, coords] of Object.entries(data)) {
+    if (coords && typeof coords.lat === "number" && typeof coords.lng === "number") {
+      cacheGeo(query, coords)
+    }
+  }
+}
+
 function cacheNegative(name: string): void {
   try {
     localStorage.setItem(

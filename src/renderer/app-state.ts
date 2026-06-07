@@ -18,6 +18,11 @@ declare global {
     __CRUMB_EXAMPLES?: Record<string, string>
     // Always present:
     __CRUMB_DATA:     CrumbDocument | null
+    // Optional baked geocoding cache ({ query: {lat,lng} }) and opt-out flag.
+    // When present (and mode !== "online"), the viewer seeds localStorage so
+    // known places resolve with zero network requests.
+    __CRUMB_GEO_DATA?: Record<string, GeoResult>
+    __CRUMB_GEO_MODE?: "online" | "static"
     Crumb: {
       // Present only in editor-mode output; the viewer-only bundle omits `parse`.
       // Safe because the editor bundle (its sole caller) ships only alongside it.

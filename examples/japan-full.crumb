@@ -107,7 +107,7 @@ itinerary:
               traditional wedding procession on a weekend morning.
           - activity: Takeshita Street, Harajuku
             time: 10:30am
-            location: Takeshita Street, Harajuku, Tokyo
+            location: Takeshita Street, Tokyo
             note: The birthplace of Japan's street-fashion subcultures — loud, young, and packed with crêpe stands.
           - activity: Shibuya Crossing
             time: midday
@@ -229,6 +229,7 @@ itinerary:
               and matcha shops.
           - activity: Sannenzaka & Ninenzaka
             time: afternoon
+            location: Sannenzaka, Kyoto
             note: Preserved stone-paved lanes of wooden shops and teahouses — the most photogenic streets in the city.
 
       - day: Arashiyama & the northwest
@@ -341,6 +342,7 @@ itinerary:
           - activity: Todai-ji & the Great Buddha
             time: 10am
             duration: 1h30m
+            location: Todai-ji, Nara
             note: |
               Japan's first capital, and home to Todai-ji — for centuries the
               largest wooden building on earth — sheltering a 15m bronze Buddha

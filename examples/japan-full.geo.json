@@ -1,0 +1,146 @@
+{
+  "2-5-15 shinsaibashisuji, chuo ward, osaka": {
+    "lat": 34.6734326,
+    "lng": 135.5013432
+  },
+  "akihabara": {
+    "lat": 35.6983609,
+    "lng": 139.7731217
+  },
+  "arashiyama bamboo grove": {
+    "lat": 35.0167419,
+    "lng": 135.6711482
+  },
+  "dotonbori, osaka": {
+    "lat": 34.6690306,
+    "lng": 135.5015715
+  },
+  "ginza, tokyo": {
+    "lat": 35.6728947,
+    "lng": 139.7630946
+  },
+  "gion, higashiyama, kyoto": {
+    "lat": 35.0062415,
+    "lng": 135.7772631
+  },
+  "gion, kyoto": {
+    "lat": 35.0046897,
+    "lng": 135.778403
+  },
+  "kappabashi kitchen street": {
+    "lat": 35.7125201,
+    "lng": 139.7885498
+  },
+  "kasuga taisha, nara": {
+    "lat": 34.6805063,
+    "lng": 135.8460746
+  },
+  "kegon falls, nikko": {
+    "lat": 36.7380094,
+    "lng": 139.5019683
+  },
+  "kinkaku-ji, kyoto": {
+    "lat": 35.0395293,
+    "lng": 135.7295373
+  },
+  "kiyomizu-dera": {
+    "lat": 34.994303,
+    "lng": 135.7844389
+  },
+  "kuromon ichiba market": {
+    "lat": 34.666272,
+    "lng": 135.5070387
+  },
+  "kyoto station": {
+    "lat": 34.9868899,
+    "lng": 135.7591503
+  },
+  "kyoto, japan": {
+    "lat": 35.0115754,
+    "lng": 135.7681441
+  },
+  "lake chuzenji, nikko": {
+    "lat": 36.7368493,
+    "lng": 139.4768685
+  },
+  "meiji shrine": {
+    "lat": 35.6748417,
+    "lng": 139.6996266
+  },
+  "mori art museum": {
+    "lat": 35.660432,
+    "lng": 139.729261
+  },
+  "nishiki market": {
+    "lat": 35.0050244,
+    "lng": 135.7655699
+  },
+  "omoide yokocho": {
+    "lat": 35.6930161,
+    "lng": 139.6996971
+  },
+  "osaka castle": {
+    "lat": 34.6873735,
+    "lng": 135.5258555
+  },
+  "osaka, japan": {
+    "lat": 34.6937569,
+    "lng": 135.5014539
+  },
+  "sannenzaka, kyoto": {
+    "lat": 34.9964787,
+    "lng": 135.7813178
+  },
+  "senso-ji temple": {
+    "lat": 35.7134032,
+    "lng": 139.7955265
+  },
+  "shibuya crossing": {
+    "lat": 35.6594951,
+    "lng": 139.7004982
+  },
+  "shibuya sky": {
+    "lat": 35.6582857,
+    "lng": 139.7022617
+  },
+  "shin-osaka station": {
+    "lat": 34.7328955,
+    "lng": 135.4985436
+  },
+  "shinsekai & tsutenkaku": {
+    "lat": 34.6525393,
+    "lng": 135.5063098
+  },
+  "takeshita street, tokyo": {
+    "lat": 35.6711612,
+    "lng": 139.7049553
+  },
+  "teamlab planets, tokyo": {
+    "lat": 35.64938,
+    "lng": 139.789728
+  },
+  "tenryu-ji": {
+    "lat": 35.0157032,
+    "lng": 135.6745031
+  },
+  "todai-ji, nara": {
+    "lat": 34.6882437,
+    "lng": 135.8397568
+  },
+  "tokyo skytree": {
+    "lat": 35.7100543,
+    "lng": 139.8107141
+  },
+  "tokyo station": {
+    "lat": 35.6805898,
+    "lng": 139.7643876
+  },
+  "tokyo, japan": {
+    "lat": 35.6768601,
+    "lng": 139.7638947
+  },
+  "tosho-gu shrine": {
+    "lat": 36.7576378,
+    "lng": 139.59911
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "christiania & christianshavn": {
+    "lat": 55.6772107,
+    "lng": 12.610452
+  },
+  "copenhagen, denmark": {
+    "lat": 55.6867243,
+    "lng": 12.5700724
+  },
+  "islands brygge, copenhagen": {
+    "lat": 55.6684988,
+    "lng": 12.5789816
+  },
+  "louisiana museum, humlebæk": {
+    "lat": 55.969352,
+    "lng": 12.5431572
+  },
+  "nyhavn": {
+    "lat": 55.6803298,
+    "lng": 12.5893935
+  },
+  "reffen, copenhagen": {
+    "lat": 55.6931675,
+    "lng": 12.60978
+  },
+  "rosenborg castle, copenhagen": {
+    "lat": 55.6856935,
+    "lng": 12.5774199
+  },
+  "round tower (rundetaarn)": {
+    "lat": 55.6813577,
+    "lng": 12.5757938
+  },
+  "sankt peders stræde 34, copenhagen": {
+    "lat": 55.678827,
+    "lng": 12.567178
+  },
+  "tivoli gardens": {
+    "lat": 55.6734266,
+    "lng": 12.5691891
+  },
+  "torvehallerne, copenhagen": {
+    "lat": 55.6838669,
+    "lng": 12.5695512
+  }
+}

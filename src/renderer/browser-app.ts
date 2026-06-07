@@ -18,6 +18,7 @@ import { setupListClickHandler, clearFocus, highlightMarker } from "./app-focus"
 import { updateMap, fitAllPlaces, applyDetailMarkerFilter, fitTransportPoints, mapPadding, applyGeoState } from "./app-map"
 import { state, ZOOM_PLACE_FLY, ZOOM_DETAIL_FLY, MOBILE_MAX_W, FLY_DURATION } from "./app-state"
 import { initSheet, exitSheet, goMedium } from "./app-sheet"
+import { seedGeoCache } from "./geocoder"
 import { ICON_PIN_OFF, ICON_CHEVRON_LEFT, ICON_CHEVRON_RIGHT } from "./icons"
 import { placeStays, placeActivityItems } from "./plan-view"
 import type { ModalRef } from "./app-state"
@@ -599,6 +600,13 @@ window.addEventListener("crumb:doc-updated", () => {
 })
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
+
+// Seed the geo cache from baked data (demo page) before any geocoding runs, so
+// known places resolve instantly with no network requests. Unknown queries
+// still fall back to online lookup. Opt out with __CRUMB_GEO_MODE === "online".
+if (window.__CRUMB_GEO_DATA && window.__CRUMB_GEO_MODE !== "online") {
+  seedGeoCache(window.__CRUMB_GEO_DATA)
+}
 
 const mobileQuery = window.matchMedia(`(max-width: ${MOBILE_MAX_W - 1}px)`)
 

@@ -2,12 +2,16 @@
 /**
  * Crumb CLI
  *
- * Usage: npx ts-node src/cli.ts <file.crumb> [output.html] [--editor]
+ * Usage: npx ts-node src/cli.ts <file.crumb> [output.html] [--editor] [--geo[=path]] [--geo-mode=online|static]
  *
  * Produces a self-contained HTML file with:
  *   — interactive map (MapLibre GL + Nominatim geocoding)
  *   — itinerary panel with place/transport navigation
  *   — live YAML editor (opt-in with --editor; omitted by default for clean embeddable output)
+ *
+ * If a baked geo-cache sidecar (`<file>.geo.json`, or `--geo=<path>`) exists, its
+ * coordinates are embedded so the viewer resolves known places with no network
+ * requests. Pass `--geo-mode=online` to embed but skip seeding.
  *
  * Writes to stdout if no output path is given, or to the specified file.
  */
@@ -39,6 +43,23 @@ async function main() {
   // 1 — Parse the .crumb source
   const source = fs.readFileSync(resolved, "utf8")
   const doc    = parse(source)
+
+  // 1b — Optional baked geo-cache sidecar. Default path: <file>.geo.json next to
+  // the input; override with --geo=<path>. Bare --geo just enables the default.
+  const geoArg     = args.find(a => a === "--geo" || a.startsWith("--geo="))
+  const geoModeArg = args.find(a => a.startsWith("--geo-mode="))?.split("=")[1]
+  const geoMode    = geoModeArg === "online" ? "online" : geoModeArg === "static" ? "static" : undefined
+  const geoPath    = geoArg && geoArg.includes("=")
+    ? path.resolve(geoArg.split("=").slice(1).join("="))
+    : resolved.replace(/\.crumb$/, ".geo.json")
+  let geoData: Record<string, { lat: number; lng: number }> | undefined
+  if (fs.existsSync(geoPath)) {
+    try {
+      geoData = JSON.parse(fs.readFileSync(geoPath, "utf8"))
+    } catch (e) {
+      console.error(`Warning: could not parse geo-cache ${geoPath}: ${(e as Error).message}`)
+    }
+  }
 
   // 2 — Bundle the window.Crumb API for the browser. Editor mode needs `parse`
   // (live re-parsing); viewer-only mode uses a render-only entry so esbuild drops
@@ -112,6 +133,8 @@ async function main() {
     examples,
     specContent,
     aiGuideContent,
+    geoData,
+    geoMode,
   }
   const html = renderHtml(doc, options)
 

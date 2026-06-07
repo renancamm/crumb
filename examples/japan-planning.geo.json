@@ -1,0 +1,66 @@
+{
+  "arashiyama bamboo grove": {
+    "lat": 35.0167419,
+    "lng": 135.6711482
+  },
+  "dotonbori": {
+    "lat": 34.6690306,
+    "lng": 135.5015715
+  },
+  "fushimi inari": {
+    "lat": 34.9688922,
+    "lng": 135.7692574
+  },
+  "gion, kyoto": {
+    "lat": 35.0046897,
+    "lng": 135.778403
+  },
+  "kinkaku-ji": {
+    "lat": 35.0395293,
+    "lng": 135.7295373
+  },
+  "kuromon market": {
+    "lat": 34.666272,
+    "lng": 135.5070387
+  },
+  "kyoto": {
+    "lat": 35.0115754,
+    "lng": 135.7681441
+  },
+  "nara": {
+    "lat": 34.6845445,
+    "lng": 135.8048359
+  },
+  "nikko, tochigi": {
+    "lat": 36.7197576,
+    "lng": 139.698139
+  },
+  "osaka": {
+    "lat": 34.6937569,
+    "lng": 135.5014539
+  },
+  "osaka castle": {
+    "lat": 34.6873735,
+    "lng": 135.5258555
+  },
+  "senso-ji temple": {
+    "lat": 35.7134032,
+    "lng": 139.7955265
+  },
+  "shibuya crossing": {
+    "lat": 35.6594951,
+    "lng": 139.7004982
+  },
+  "teamlab planets": {
+    "lat": 35.64938,
+    "lng": 139.789728
+  },
+  "tokyo": {
+    "lat": 35.6768601,
+    "lng": 139.7638947
+  },
+  "tsukiji outer market": {
+    "lat": 35.6652527,
+    "lng": 139.7693024
+  }
+}

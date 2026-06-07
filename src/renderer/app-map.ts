@@ -8,15 +8,19 @@ import {
   writeBackGeo,
   geocodeTransportPoints,
   type GeoResult,
-  type GeoTarget,
   type DetailPoint,
 } from "./geocoder"
 import {
   ICON_STAY, ICON_PLANE, ICON_TRAIN, ICON_BUS, ICON_CAR, ICON_SHIP,
   ICON_WALK, ICON_BIKE, ICON_ROUTE, ICON_PIN_OFF,
 } from "./icons"
-import { escape, activityLabel } from "./format"
-import { placeStays, placeActivityItems } from "./plan-view"
+import { escape } from "./format"
+import {
+  collectActivityGeoTargets,
+  collectStayGeoTargets,
+  type ActivityGeoTarget,
+  type StayGeoTarget,
+} from "./geo-targets"
 import { state, ZOOM_OVERVIEW, ZOOM_DETAIL, ROUTE_COLOR, MOBILE_MAX_W, SHEET_MEDIUM_RATIO } from "./app-state"
 
 declare const maplibregl: any
@@ -163,90 +167,8 @@ export function applyGeoState(doc: CrumbDocument): void {
 }
 
 // ─── Geo target collection ────────────────────────────────────────────────────
-
-interface ActivityGeoTarget extends GeoTarget {
-  priority: string | null
-  placeIdx: number
-  actLabel: string
-}
-
-interface StayGeoTarget extends GeoTarget {
-  stayName:  string
-  hasCoords: boolean
-  placeIdx:  number
-}
-
-function collectActivityGeoTargets(doc: CrumbDocument): ActivityGeoTarget[] {
-  const targets: ActivityGeoTarget[] = []
-  let placeIdx = 0
-  for (const item of doc.itinerary) {
-    if (item.type !== "place") continue
-    placeIdx++
-    let dayIdx = 0, weekIdx = 0, groupIdx = 0, ungroupedIdx = 0
-    for (const actItem of placeActivityItems(item)) {
-      if (actItem.type === "group") {
-        const isPlan = actItem.kind === "group"
-        if (isPlan)                        groupIdx++
-        else if (actItem.kind === "day")   dayIdx++
-        else if (actItem.kind === "week")  weekIdx++
-        const groupNum = isPlan ? groupIdx : actItem.kind === "day" ? dayIdx : actItem.kind === "week" ? weekIdx : undefined
-        let actGroupIdx = 0
-        for (const act of actItem.items) {
-          if (!act.location?.geocodingDisabled) {
-            // Query is the activity's location label (or, failing that, its
-            // name) geocoded verbatim — the per-place parentCoords viewbox
-            // supplies the region, so no city is appended.
-            targets.push({
-              name:     act.name,
-              location: act.location ?? null,
-              priority: act.priority ?? null,
-              placeIdx,
-              actLabel: activityLabel(actGroupIdx, groupNum),
-            })
-          }
-          actGroupIdx++
-        }
-      } else {
-        let localIdx = ungroupedIdx
-        for (const act of actItem.items) {
-          if (!act.location?.geocodingDisabled) {
-            targets.push({
-              name:     act.name,
-              location: act.location ?? null,
-              priority: act.priority ?? null,
-              placeIdx,
-              actLabel: activityLabel(localIdx),
-            })
-          }
-          localIdx++
-          ungroupedIdx++
-        }
-      }
-    }
-  }
-  return targets
-}
-
-function collectStayGeoTargets(doc: CrumbDocument): StayGeoTarget[] {
-  const targets: StayGeoTarget[] = []
-  let placeIdx = 0
-  for (const item of doc.itinerary) {
-    if (item.type !== "place") continue
-    placeIdx++
-    for (const stay of placeStays(item)) {
-      if (stay.location?.geocodingDisabled) continue
-      const hasCoords = stay.location?.lat != null && stay.location?.lng != null
-      targets.push({
-        name:      stay.name,
-        stayName:  stay.name,
-        location:  stay.location ?? null,
-        hasCoords,
-        placeIdx,
-      })
-    }
-  }
-  return targets
-}
+// collectActivityGeoTargets / collectStayGeoTargets live in ./geo-targets so the
+// offline geo-cache generator can reuse the exact same query set.
 
 function actPoint(t: ActivityGeoTarget, geo: GeoResult): DetailPoint {
   return {

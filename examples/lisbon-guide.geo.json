@@ -1,0 +1,66 @@
+{
+  "alfama": {
+    "lat": 38.7117561,
+    "lng": -9.1320111
+  },
+  "bairro alto": {
+    "lat": 38.7133919,
+    "lng": -9.1455522
+  },
+  "belém": {
+    "lat": 38.6977695,
+    "lng": -9.2094318
+  },
+  "cabo da roca": {
+    "lat": 38.7809045,
+    "lng": -9.4994163
+  },
+  "cascais": {
+    "lat": 38.6968919,
+    "lng": -9.4204495
+  },
+  "cervejaria ramiro": {
+    "lat": 38.7201981,
+    "lng": -9.1357063
+  },
+  "largo de são domingos, lisbon": {
+    "lat": 38.714868,
+    "lng": -9.1390638
+  },
+  "lisbon, portugal": {
+    "lat": 38.7077507,
+    "lng": -9.1365919
+  },
+  "miradouro das portas do sol": {
+    "lat": 38.7123462,
+    "lng": -9.1303665
+  },
+  "miradouro de santa luzia": {
+    "lat": 38.7114781,
+    "lng": -9.130617
+  },
+  "miradouro de são pedro de alcântara": {
+    "lat": 38.7154373,
+    "lng": -9.1440476
+  },
+  "miradouro nossa senhora do monte, lisbon": {
+    "lat": 38.7191589,
+    "lng": -9.1328103
+  },
+  "mouraria": {
+    "lat": 38.714991,
+    "lng": -9.1348415
+  },
+  "pastéis de belém": {
+    "lat": 38.6974795,
+    "lng": -9.2033202
+  },
+  "sintra": {
+    "lat": 38.8355446,
+    "lng": -9.3522371
+  },
+  "time out market": {
+    "lat": 38.7070934,
+    "lng": -9.1458973
+  }
+}

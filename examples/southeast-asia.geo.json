@@ -1,0 +1,98 @@
+{
+  "an bang beach, hội an": {
+    "lat": 15.9117198,
+    "lng": 108.3411656
+  },
+  "bangkok, thailand": {
+    "lat": 13.7524938,
+    "lng": 100.4935089
+  },
+  "ben thanh market, ho chi minh city": {
+    "lat": 10.7725301,
+    "lng": 106.6980365
+  },
+  "chatuchak market, bangkok": {
+    "lat": 13.8002651,
+    "lng": 100.5511228
+  },
+  "cu chi tunnels, ho chi minh city": {
+    "lat": 11.0630436,
+    "lng": 106.5291244
+  },
+  "da nang airport": {
+    "lat": 16.0425792,
+    "lng": 108.1971613
+  },
+  "da nang train station": {
+    "lat": 16.071559,
+    "lng": 108.2095117
+  },
+  "district 1, ho chi minh city": {
+    "lat": 10.7753939,
+    "lng": 106.6996249
+  },
+  "grand palace, bangkok": {
+    "lat": 13.7493514,
+    "lng": 100.4918643
+  },
+  "hanoi, vietnam": {
+    "lat": 21.0283334,
+    "lng": 105.854041
+  },
+  "ho chi minh city, vietnam": {
+    "lat": 10.8186965,
+    "lng": 106.6518346
+  },
+  "hoan kiem lake, hanoi": {
+    "lat": 21.0288313,
+    "lng": 105.8525357
+  },
+  "hội an": {
+    "lat": 15.8880397,
+    "lng": 108.3367883
+  },
+  "hội an ancient town": {
+    "lat": 15.8779509,
+    "lng": 108.3239898
+  },
+  "hội an, vietnam": {
+    "lat": 15.8880397,
+    "lng": 108.3367883
+  },
+  "kuang si falls, luang prabang": {
+    "lat": 19.7497382,
+    "lng": 101.9920713
+  },
+  "luang prabang, laos": {
+    "lat": 19.8887438,
+    "lng": 102.135898
+  },
+  "old quarter, hanoi": {
+    "lat": 21.0349204,
+    "lng": 105.852144
+  },
+  "phou si, luang prabang": {
+    "lat": 19.8902559,
+    "lng": 102.1369447
+  },
+  "sisavangvong road, luang prabang": {
+    "lat": 19.891215,
+    "lng": 102.1361456
+  },
+  "tha tien pier, bangkok": {
+    "lat": 13.7457897,
+    "lng": 100.4903989
+  },
+  "train street, hanoi": {
+    "lat": 21.0308949,
+    "lng": 105.8447914
+  },
+  "war remnants museum, ho chi minh city": {
+    "lat": 10.7793647,
+    "lng": 106.6922806
+  },
+  "wat arun, bangkok": {
+    "lat": 13.7437072,
+    "lng": 100.488904
+  }
+}

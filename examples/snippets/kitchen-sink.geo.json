@@ -1,0 +1,54 @@
+{
+  "akihabara": {
+    "lat": 35.6983609,
+    "lng": 139.7731217
+  },
+  "fushimi inari": {
+    "lat": 34.9688922,
+    "lng": 135.7692574
+  },
+  "harajuku": {
+    "lat": 35.6687049,
+    "lng": 139.7053357
+  },
+  "kyoto": {
+    "lat": 35.0115754,
+    "lng": 135.7681441
+  },
+  "meiji shrine": {
+    "lat": 35.6748417,
+    "lng": 139.6996266
+  },
+  "nishiki market": {
+    "lat": 35.0050244,
+    "lng": 135.7655699
+  },
+  "osaka": {
+    "lat": 34.6937569,
+    "lng": 135.5014539
+  },
+  "senso-ji temple": {
+    "lat": 35.7134032,
+    "lng": 139.7955265
+  },
+  "shinjuku granbell hotel": {
+    "lat": 35.6965754,
+    "lng": 139.7056852
+  },
+  "teamlab planets": {
+    "lat": 35.64938,
+    "lng": 139.789728
+  },
+  "tokyo haneda airport": {
+    "lat": 35.5513668,
+    "lng": 139.7760343
+  },
+  "tokyo skytree": {
+    "lat": 35.7100543,
+    "lng": 139.8107141
+  },
+  "tokyo, japan": {
+    "lat": 35.6768601,
+    "lng": 139.7638947
+  }
+}

@@ -59,6 +59,11 @@ export interface AppOptions {
   specContent?: string
   /** CRUMB_FOR_AI.md content — the compact authoring guide used by the "Generate with AI" prompt. Only used when includeEditor is true. */
   aiGuideContent?: string
+  /** Baked geocoding cache ({ query: {lat,lng} }). When provided, the viewer seeds
+   *  localStorage from it so known places resolve with zero network requests. */
+  geoData?: Record<string, { lat: number; lng: number }>
+  /** Set to "online" to embed geoData but skip seeding (force live geocoding). */
+  geoMode?: "online" | "static"
 }
 
 
@@ -659,6 +664,9 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
 
   const editorScript = includeEditor ? `\n  <script>${options.editorBundle}</script>` : ""
 
+  const geoGlobals = options.geoData ? `
+    window.__CRUMB_GEO_DATA = ${JSON.stringify(options.geoData)};${options.geoMode ? `\n    window.__CRUMB_GEO_MODE = ${JSON.stringify(options.geoMode)};` : ""}` : ""
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -695,7 +703,7 @@ ${modalsDom}
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <script>${options.crumbBundle}</script>
   <script>
-    window.__CRUMB_DATA   = ${docJson};${editorGlobals}
+    window.__CRUMB_DATA   = ${docJson};${editorGlobals}${geoGlobals}
   </script>
   <script>${options.viewerBundle}</script>${editorScript}
 </body>
