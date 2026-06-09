@@ -4,7 +4,7 @@ trip:
   duration: 3 weeks
   tags: [thailand, laos, vietnam, temples, food, backpacking]
   note: |
-    Bangkok down through Laos and Vietnam — a mix of flights, an overnight train,
+    Bangkok down through Laos and Vietnam, a mix of flights, an overnight train,
     and a lot of street food. A loose plan; add or drop nights as you go. Sort a
     Vietnam e-visa before you fly, and carry small, clean US dollars for visas
     and border crossings.
@@ -17,7 +17,7 @@ itinerary:
     location: Bangkok, Thailand
     tags: [city, temples, street-food]
     note: |
-      Thailand's chaotic, exhilarating capital — gilded temples and royal palaces
+      Thailand's chaotic, exhilarating capital, gilded temples and royal palaces
       threaded between street-food alleys, canals, malls, and tuk-tuks. It rewards
       surrender: accept the heat and the noise, eat from the carts, and take the
       breezy river ferries instead of fighting the traffic.
@@ -29,7 +29,7 @@ itinerary:
           The former royal seat and the Emerald Buddha, Thailand's most sacred
           image, carved from a single block of jade. Next door, Wat Pho holds the
           46m Reclining Buddha and the country's oldest massage school. Dress
-          modestly — shoulders and knees covered — or you'll be turned away.
+          modestly, shoulders and knees covered, or you'll be turned away.
       - activity: Wat Arun at sunset
         location: Wat Arun, Bangkok
         note: |
@@ -39,10 +39,10 @@ itinerary:
       - activity: Chatuchak Weekend Market
         priority: maybe
         location: Chatuchak Market, Bangkok
-        note: One of the world's largest markets — 15,000 stalls, open weekends only. Go early, before the heat and the crowds peak.
+        note: One of the world's largest markets, 15,000 stalls, open weekends only. Go early, before the heat and the crowds peak.
       - activity: Boat down the Chao Phraya
         location: Tha Tien Pier, Bangkok
-        note: Hop on the orange-flag express ferry — the locals' commute and the best-value tour in the city.
+        note: Hop on the orange-flag express ferry, the locals' commute and the best-value tour in the city.
 
   - transport: flight
     to: Luang Prabang
@@ -53,7 +53,7 @@ itinerary:
     location: Luang Prabang, Laos
     tags: [temples, river, slow]
     note: |
-      A tiny UNESCO-listed town where the Mekong meets the Nam Khan — the former
+      A tiny UNESCO-listed town where the Mekong meets the Nam Khan, the former
       royal capital of Laos, all saffron-robed monks, gilded temples, and
       French-colonial shophouses. The pace is famously, deliberately slow; this
       is the place on the trip to do nothing in particular.
@@ -70,14 +70,14 @@ itinerary:
         note: |
           At sunrise, lines of monks walk the streets collecting offerings of sticky
           rice (the *tak bat*, a centuries-old ritual). If you watch, do so quietly
-          from across the street and never use a flash — it is a daily devotion, not
+          from across the street and never use a flash, it is a daily devotion, not
           a show. Buy rice from a respectful vendor, or simply observe.
       - activity: Mount Phousi at sunset
         location: Phou Si, Luang Prabang
         note: Climb the 300-odd steps up the town's central hill for a 360° view over the rivers and rooftops as the light fades.
       - activity: Browse the night market on Sisavangvong Road
         location: Sisavangvong Road, Luang Prabang
-        note: Lao textiles, lanterns, and handicrafts laid out along the main street every evening — haggle gently.
+        note: Lao textiles, lanterns, and handicrafts laid out along the main street every evening, haggle gently.
 
   - transport: flight
     to: Hanoi
@@ -87,21 +87,21 @@ itinerary:
     location: Hanoi, Vietnam
     tags: [city, history, food]
     note: |
-      Vietnam's thousand-year-old capital — a dense, motorbike-swarmed Old Quarter
+      Vietnam's thousand-year-old capital, a dense, motorbike-swarmed Old Quarter
       where each street was once a guild selling a single trade, wrapped around a
       legend-haunted lake. Crossing the road is an art: step out slowly and let
       the scooters flow around you. Some of the best street food in Asia is here.
     plan:
       - activity: Wander the Old Quarter
         location: Old Quarter, Hanoi
-        note: Thirty-six ancient guild streets, each once devoted to a single trade — silk, silver, tin, paper.
+        note: Thirty-six ancient guild streets, each once devoted to a single trade, silk, silver, tin, paper.
       - activity: Train Street
         priority: maybe
         location: Train Street, Hanoi
         note: |
           A working railway runs within arm's reach of the houses, and cafés set
           stools along the track between trains. Check the timetable, order a coffee,
-          and stand well back when the barrier drops — it's thrilling and very close.
+          and stand well back when the barrier drops, it's thrilling and very close.
       - activity: Hoan Kiem Lake & Ngoc Son Temple
         location: Hoan Kiem Lake, Hanoi
         note: The Old Quarter's tranquil heart, named for a legend of a returned sword; a red bridge leads to a temple on a tiny island.
@@ -109,7 +109,7 @@ itinerary:
         priority: must
         location: Old Quarter, Hanoi
         note: |
-          Hanoi's signature dish — grilled pork patties in a sweet-sour broth with
+          Hanoi's signature dish, grilled pork patties in a sweet-sour broth with
           noodles and herbs, eaten at lunchtime. Best from a smoky street stall on a
           plastic stool; the smell of the grilling pork will lead you there.
 
@@ -127,7 +127,7 @@ itinerary:
     tags: [old-town, beach, tailors]
     note: |
       A lantern-lit former trading port, exquisitely preserved, where Japanese,
-      Chinese, and European merchants met from the 15th century on — you can still
+      Chinese, and European merchants met from the 15th century on, you can still
       see the Japanese covered bridge and the old guild halls. The car-free old
       town, the beach, and a hundred tailors' shops make it the trip's easy idyll.
     plan:
@@ -140,7 +140,7 @@ itinerary:
           just after sunset; float a paper lantern downstream for luck.
       - activity: An Bang Beach
         location: An Bang Beach, Hội An
-        note: A wide, easy beach a short bike ride from town — a good afternoon off your feet.
+        note: A wide, easy beach a short bike ride from town, a good afternoon off your feet.
       - activity: Have a suit or dress tailored
         priority: maybe
         location: Hội An Ancient Town
@@ -161,7 +161,7 @@ itinerary:
     location: Ho Chi Minh City, Vietnam
     tags: [city, history, nightlife]
     note: |
-      Vietnam's fast, southern megacity — still Saigon to many — where French
+      Vietnam's fast, southern megacity, still Saigon to many, where French
       boulevards and colonial landmarks meet rooftop bars and round-the-clock
       energy. This is the country's commercial engine, and the war's history sits
       close to the surface; give it time for both.
@@ -171,7 +171,7 @@ itinerary:
         location: War Remnants Museum, Ho Chi Minh City
         note: |
           An unflinching, essential account of the war from the Vietnamese
-          perspective — sobering and at times graphic. Allow a couple of hours, and
+          perspective, sobering and at times graphic. Allow a couple of hours, and
           start upstairs before the courtyard of captured aircraft and tanks.
       - activity: Cu Chi Tunnels
         priority: maybe
@@ -179,10 +179,10 @@ itinerary:
         note: |
           A vast network of hand-dug tunnels northwest of the city where Viet Cong
           fighters lived and fought; you can crawl through a widened section. Most
-          go on a half-day guided trip — the boat option up the river beats the bus.
+          go on a half-day guided trip, the boat option up the river beats the bus.
       - activity: Ben Thanh Market
         location: Ben Thanh Market, Ho Chi Minh City
-        note: The city's landmark market — souvenirs and bartering by day, a sprawl of street-food stalls by night.
+        note: The city's landmark market, souvenirs and bartering by day, a sprawl of street-food stalls by night.
       - activity: Sunset drink on a District 1 rooftop
         location: District 1, Ho Chi Minh City
-        note: End the trip up high — the city's skyline glitters and the heat finally lifts.
+        note: End the trip up high, the city's skyline glitters and the heat finally lifts.

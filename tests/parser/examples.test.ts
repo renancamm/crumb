@@ -30,7 +30,7 @@ describe("example files parse", () => {
     expect(doc.itinerary.length).toBeGreaterThan(0)
   })
 
-  for (const f of ["japan-sketch", "japan-planning", "japan-full"]) {
+  for (const f of ["japan-sketch", "japan-planning", "japan-detailed"]) {
     it(`parses the hero tier: ${f}`, () => {
       const doc = parse(read(`examples/${f}.crumb`))
       const places = doc.itinerary.filter((i) => i.type === "place") as Place[]
@@ -45,17 +45,17 @@ describe("example files parse", () => {
     })
   }
 
-  it("hero progression: sketch has no dates, full resolves them", () => {
-    const sketch = parse(read("examples/japan-sketch.crumb"))
-    const full   = parse(read("examples/japan-full.crumb"))
-    const firstSketch = sketch.itinerary[0] as Place
-    const firstFull   = full.itinerary[0] as Place
+  it("hero progression: sketch has no dates, detailed resolves them", () => {
+    const sketch   = parse(read("examples/japan-sketch.crumb"))
+    const detailed = parse(read("examples/japan-detailed.crumb"))
+    const firstSketch   = sketch.itinerary[0] as Place
+    const firstDetailed = detailed.itinerary[0] as Place
     expect(firstSketch.arrives).toBeUndefined()
-    expect(firstFull.arrives?.date?.precision).toBe("absolute")
+    expect(firstDetailed.arrives?.date?.precision).toBe("absolute")
   })
 
-  it("parses japan-full with well-formed plans", () => {
-    const doc = parse(read("examples/japan-full.crumb"))
+  it("parses japan-detailed with well-formed plans", () => {
+    const doc = parse(read("examples/japan-detailed.crumb"))
     const places = doc.itinerary.filter((i) => i.type === "place") as Place[]
     expect(places.length).toBeGreaterThanOrEqual(3)
     // every place's plan is a well-formed array; groups carry their own plan

@@ -105,13 +105,13 @@ src/parser/
 ## Dev commands
 
 ```bash
-npm run build          # render examples/japan-full.crumb → dist/index.html (with editor shell)
-npm run build:viewer   # render examples/japan-full.crumb → dist/viewer.html (viewer only)
+npm run build          # build the site → dist/{index,editor,embed}.html (scripts/build-site.ts)
+npm run build:viewer   # render examples/japan-detailed.crumb → dist/viewer.html (single viewer, dev)
 npm run typecheck      # tsc --noEmit (zero errors required)
 npm run test           # vitest run (single pass, used in CI)
 npm run test:watch     # vitest (watch mode for development)
-npm run render -- examples/japan-full.crumb /tmp/out.html            # viewer-only (default)
-npm run render -- examples/japan-full.crumb /tmp/out.html --editor   # with editor shell
+npm run render -- examples/japan-detailed.crumb /tmp/out.html            # viewer-only (default)
+npm run render -- examples/japan-detailed.crumb /tmp/out.html --editor   # with editor shell
 ```
 
 ## Test targets
@@ -140,4 +140,4 @@ tests/
 The 5-phase timeline algorithm is the most complex part of the codebase. Before changing it:
 1. Read `spec/reference/parser.md` section 3.4 for the full algorithm description
 2. Run `npm run test` to establish a baseline
-3. After your change, render `examples/japan-full.crumb` and `examples/southeast-asia.crumb` and verify that dates are correct in the output
+3. After your change, render `examples/japan-detailed.crumb` and `examples/southeast-asia.crumb` and verify that dates are correct in the output (e.g. `npm run build:viewer`)

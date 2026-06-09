@@ -2,15 +2,15 @@ trip:
   name: Lisbon Guide
   tags: [portugal, city, food, viewpoints]
   note: |
-    A loose, no-dates guide to Lisbon — viewpoints to catch the light, places to
+    A loose, no-dates guide to Lisbon, viewpoints to catch the light, places to
     eat well, neighbourhoods to get lost in, and a few easy escapes.
 
     Built across seven hills above the river Tagus, Lisbon is one of Europe's
-    oldest cities and its westernmost capital — a place of tiled façades, rattling
+    oldest cities and its westernmost capital, a place of tiled façades, rattling
     yellow trams, melancholy *fado* song, and a famously soft, clear light. Much of
     the centre was rebuilt on a grand grid after the catastrophic 1755 earthquake;
     the surviving medieval tangle is Alfama. It was from here that the Age of
-    Discovery set sail. Wander first, plan later — a city to feel, not to tick off.
+    Discovery set sail. Wander first, plan later, a city to feel, not to tick off.
 
 itinerary:
 
@@ -34,9 +34,9 @@ itinerary:
           - activity: Miradouro de São Pedro de Alcântara
             note: |
               An easy stroll from Bairro Alto. Take the Glória funicular up
-              rather than the steep climb — it's a Lisbon ritual in itself.
+              rather than the steep climb, it's a Lisbon ritual in itself.
           - activity: Miradouro das Portas do Sol
-            note: Postcard view down into Alfama, right beside Santa Luzia — do both in one pass.
+            note: Postcard view down into Alfama, right beside Santa Luzia, do both in one pass.
 
       - group: Where to eat
         plan:
@@ -51,8 +51,8 @@ itinerary:
           - activity: Cervejaria Ramiro
             priority: must
             note: |
-              Lisbon's temple of seafood. Finish with a prego — a garlicky steak
-              sandwich — exactly as the locals do, as dessert.
+              Lisbon's temple of seafood. Finish with a prego, a garlicky steak
+              sandwich, exactly as the locals do, as dessert.
           - activity: Ginjinha bars near Largo de São Domingos
             location: Largo de São Domingos, Lisbon
             note: |
@@ -67,9 +67,9 @@ itinerary:
               The oldest quarter, a maze of lanes that survived the 1755
               earthquake. Follow the sound of fado spilling from tiny tavernas at night.
           - activity: Bairro Alto
-            note: Sleepy by day, the loudest district after dark — the done thing is to drink in the street.
+            note: Sleepy by day, the loudest district after dark, the done thing is to drink in the street.
           - activity: Belém
-            note: Riverside district of grand monuments — the Jerónimos Monastery and the Belém Tower.
+            note: Riverside district of grand monuments, the Jerónimos Monastery and the Belém Tower.
           - activity: Mouraria
             note: The multicultural birthplace of fado, just over the hill from Alfama. Gritty and real.
 
