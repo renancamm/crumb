@@ -51,8 +51,10 @@ export function renderLandingHtml(opts: LandingOptions): string {
   const cards = EXAMPLES.map(e =>
     `<a class="example-card" href="${escape(opts.links.editor)}?example=${encodeURIComponent(e.file)}">
         <div class="example-card-thumb" aria-hidden="true"></div>
-        <div class="example-card-title">${escape(e.title)}</div>
-        <div class="example-card-desc">${escape(e.desc)}</div>
+        <div class="example-card-body">
+          <div class="example-card-title">${escape(e.title)}</div>
+          <div class="example-card-desc">${escape(e.desc)}</div>
+        </div>
       </a>`
   ).join("\n      ")
 
@@ -86,8 +88,8 @@ export function renderLandingHtml(opts: LandingOptions): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Crumb · Leave a trail.</title>
-  <meta name="description" content="Crumb is a small, open format for trip itineraries: a plain-text document that turns a list of places into an interactive map.">
+  <title>Crumb · Leave a trail</title>
+  <meta name="description" content="Crumb is an open format for trip itineraries: a plain-text document that turns a list of places into an interactive map.">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" />
@@ -100,8 +102,8 @@ ${landingCSS}</style>
   <header class="landing-hero">
     <div class="landing-wrap hero-head">
       <div class="hero-nav"><span class="landing-brand">crumb</span></div>
-      <h1 class="landing-h1">Leave a trail.</h1>
-      <p class="landing-lede">Crumb is a small, open format for trip itineraries: a plain-text document that turns a list of places into an interactive map. Add as little or as much detail as you feel like.</p>
+      <h1 class="landing-h1">An open format for trip itineraries</h1>
+      <p class="landing-lede">A list of a few cities, or a fully-timed schedule with every activity. You add detail as plans take shape.</p>
 
       <div class="pill-wrap">
         <div class="detail-pill" id="detail-pill" role="tablist" aria-label="Level of detail">${pillOpts}</div>
@@ -115,12 +117,17 @@ ${landingCSS}</style>
 
   <!-- It's just text -->
   <section class="landing-section" id="sec-text">
-    <div class="landing-wrap text-grid">
-      <div class="text-col">
-        <h2 class="landing-h2">It's just text</h2>
-        <p class="landing-p">Everything above is a plain text file. Here's the one behind it. You can read it without any tools, keep it in a folder, or send it to a friend like any other message.</p>
+    <div class="landing-wrap">
+      <h2 class="landing-h2">It's just text</h2>
+      <div class="text-stage">
+        <div class="text-float">
+          <p class="landing-p">The trip above is just plain text. Under the hood, that's YAML, a handful of simple fields.</p>
+          <p class="landing-p">You can read it in any text editor, keep it in a folder, or send it to a friend like any other message.</p>
+          <p class="landing-p">And like a recipe, a crumb is meant to be shared and made your own. Take someone else's trip, remix it into yours, and pass it on.</p>
+          <p class="landing-p"><a href="${escape(opts.links.spec)}">Learn the format in the documentation →</a></p>
+        </div>
+        <div class="yaml-block"><pre><code id="yaml-code">${yamlHtml[def]}</code></pre></div>
       </div>
-      <div class="yaml-block"><pre><code id="yaml-code">${yamlHtml[def]}</code></pre></div>
     </div>
   </section>
 
@@ -148,7 +155,7 @@ ${landingCSS}</style>
   <!-- Footer -->
   <footer class="landing-footer">
     <div class="landing-wrap landing-footer-inner">
-      <span class="footer-brand">Leave a trail.</span>
+      <span class="footer-brand">Leave a trail</span>
       <nav class="footer-links">
         <a href="${escape(opts.links.editor)}">Live editor</a>
         <a href="${escape(opts.links.spec)}">Spec</a>
