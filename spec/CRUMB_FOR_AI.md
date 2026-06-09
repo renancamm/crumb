@@ -154,11 +154,11 @@ trip:
 
 itinerary:
 
-  - Osaka                    # bare place — only the name is known so far
+  - Osaka                    # bare place, only the name is known so far
 
   - transport: train
 
-  - place: Kyoto             # a little detail — just how long, a couple of ideas
+  - place: Kyoto             # a little detail, just how long, a couple of ideas
     duration: 3 nights
     plan:
       - Fushimi Inari                  # bare activity
