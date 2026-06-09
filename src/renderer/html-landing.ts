@@ -13,7 +13,7 @@ import { CSS }           from "./css"
 import { landingCSS }    from "./landing-css"
 import { escape }        from "./format"
 import { highlightYaml } from "./yaml-highlight"
-import { ICON_SPARKLES, ICON_PENCIL, ICON_CODE, ICON_WRENCH } from "./icons"
+import { ICON_SPARKLES, ICON_PENCIL, ICON_CODE, ICON_WRENCH, ICON_CHEVRON_LEFT, ICON_CHEVRON_RIGHT } from "./icons"
 
 export interface LandingStage {
   label:  string   // "Sketch" | "Planned" | "Full"
@@ -27,18 +27,19 @@ export interface LandingLinks {
   github:  string
 }
 
-export interface LandingOptions {
-  landingBundle: string
-  stages:        LandingStage[]   // [sketch, planning, full]
-  links:         LandingLinks
-  defaultStage?: number           // index shown on load (default 0 = Sketch)
+export interface LandingExample {
+  file: string   // example filename for the ?example= deep link
+  name: string   // real trip.name from the file
+  note: string   // first paragraph of trip.note (trimmed, markdown stripped)
 }
 
-const EXAMPLES = [
-  { title: "Lisbon",         desc: "a single-city guide",     file: "lisbon-guide.crumb" },
-  { title: "Copenhagen",     desc: "a weekend",               file: "copenhagen-weekend.crumb" },
-  { title: "Southeast Asia", desc: "months of backpacking",   file: "southeast-asia.crumb" },
-]
+export interface LandingOptions {
+  landingBundle: string
+  stages:        LandingStage[]    // [sketch, planning, full]
+  links:         LandingLinks
+  examples:      LandingExample[]  // gallery cards (Lisbon / Copenhagen / SE Asia)
+  defaultStage?: number            // index shown on load (default 0 = Sketch)
+}
 
 export function renderLandingHtml(opts: LandingOptions): string {
   const def = opts.defaultStage ?? 0
@@ -48,12 +49,12 @@ export function renderLandingHtml(opts: LandingOptions): string {
     `<button class="pill-opt${i === def ? " is-active" : ""}" role="tab" aria-selected="${i === def}">${escape(s.label)}</button>`
   ).join("")
 
-  const cards = EXAMPLES.map(e =>
+  const cards = opts.examples.map(e =>
     `<a class="example-card" href="${escape(opts.links.editor)}?example=${encodeURIComponent(e.file)}">
         <div class="example-card-thumb" aria-hidden="true"></div>
         <div class="example-card-body">
-          <div class="example-card-title">${escape(e.title)}</div>
-          <div class="example-card-desc">${escape(e.desc)}</div>
+          <div class="example-card-title">${escape(e.name)}</div>
+          <p class="example-card-note">${escape(e.note)}</p>
         </div>
       </a>`
   ).join("\n      ")
@@ -106,7 +107,15 @@ ${landingCSS}</style>
       <p class="landing-lede">A list of a few cities, or a fully-timed schedule with every activity. You add detail as plans take shape.</p>
 
       <div class="pill-wrap">
+        <span class="pill-scale pill-scale--left" aria-hidden="true">
+          <span class="pill-label">less details</span>
+          <span class="pill-arrow pill-arrow--left">${ICON_CHEVRON_LEFT}</span>
+        </span>
         <div class="detail-pill" id="detail-pill" role="tablist" aria-label="Level of detail">${pillOpts}</div>
+        <span class="pill-scale pill-scale--right" aria-hidden="true">
+          <span class="pill-arrow pill-arrow--right">${ICON_CHEVRON_RIGHT}</span>
+          <span class="pill-label">more details</span>
+        </span>
       </div>
 
       <div class="hero-card">
@@ -119,12 +128,12 @@ ${landingCSS}</style>
   <section class="landing-section" id="sec-text">
     <div class="landing-wrap">
       <h2 class="landing-h2">It's just text</h2>
-      <div class="text-stage">
-        <div class="text-float">
-          <p class="landing-p">The trip above is just plain text. Under the hood, that's YAML, a handful of simple fields.</p>
-          <p class="landing-p">You can read it in any text editor, keep it in a folder, or send it to a friend like any other message.</p>
-          <p class="landing-p">And like a recipe, a crumb is meant to be shared and made your own. Take someone else's trip, remix it into yours, and pass it on.</p>
-          <p class="landing-p"><a href="${escape(opts.links.spec)}">Learn the format in the documentation →</a></p>
+      <div class="text-cols">
+        <div class="text-col">
+          <p class="text-body-p">The trip above is just plain text, written in YAML, a handful of simple fields.</p>
+          <p class="text-body-p">You can read it in any text editor, keep it in a folder, or send it to a friend like any other message.</p>
+          <p class="text-body-p">It's just as easy to remix: take someone else's trip and make it your own, like adapting a recipe.</p>
+          <a class="text-doc-link" href="${escape(opts.links.spec)}">Learn the format in the documentation →</a>
         </div>
         <div class="yaml-block"><pre><code id="yaml-code">${yamlHtml[def]}</code></pre></div>
       </div>

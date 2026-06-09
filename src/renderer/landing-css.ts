@@ -21,7 +21,7 @@ body.landing {
 .landing-wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
 
 /* Landing display type — beyond the app's --text-xl (30px) ceiling. */
-.landing-h1   { font-size: clamp(40px, 7vw, 64px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; margin: 0; text-wrap: balance; }
+.landing-h1   { font-size: clamp(38px, 7vw, 64px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; margin: 0 auto; max-width: 20ch; text-wrap: balance; }
 .landing-lede { font-size: clamp(17px, 2.2vw, 21px); color: var(--text-secondary); line-height: 1.55; max-width: 46ch; margin: 16px auto 0; text-wrap: balance; }
 .landing-h2   { font-size: clamp(24px, 4vw, 34px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; margin: 0 0 12px; }
 .landing-p    { font-size: var(--text-lg); color: var(--text-secondary); line-height: 1.6; max-width: 56ch; margin: 0; }
@@ -41,7 +41,35 @@ body.landing {
 
 /* Detail-level pill — centred segmented control at rest; floats (still centred)
    when pinned, so it reads as the same element sliding up. */
-.pill-wrap { margin: 28px 0 20px; text-align: center; }
+/* Orange simpler→more-detailed scale. The pill stays dead-centre (1fr | auto | 1fr
+   grid, so unequal labels never shift it); each side is a label + a small chevron
+   whose shaft fades toward the pill. */
+.pill-wrap {
+  margin: 48px 0 20px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0;
+}
+.pill-scale { display: inline-flex; align-items: center; gap: 6px; color: var(--activity); font-size: var(--text-sm); font-weight: 500; }
+.pill-scale--left  { justify-self: end; }
+.pill-scale--right { justify-self: start; }
+.pill-label { white-space: nowrap; }
+.pill-arrow { position: relative; display: inline-flex; align-items: center; width: 46px; height: 16px; }
+.pill-arrow--left  { justify-content: flex-start; }
+.pill-arrow--right { justify-content: flex-end; }
+.pill-arrow .crumb-icon { position: relative; z-index: 1; width: 15px; height: 15px; stroke-width: 2.5; }
+.pill-arrow::before {
+  content: "";
+  position: absolute;
+  top: 50%; height: 2px;
+  transform: translateY(-50%);
+}
+.pill-arrow--left::before  { left: 5px; right: 0; background: linear-gradient(to right, var(--activity), transparent); }
+.pill-arrow--right::before { left: 0; right: 5px; background: linear-gradient(to left,  var(--activity), transparent); }
+/* Hide the scale while the pill is floating (pinned) — it belongs to the hero. */
+.pill-wrap:has(.detail-pill.is-pinned) .pill-scale { opacity: 0; }
+@media (max-width: 559px) { .pill-scale { display: none; } }
 .detail-pill {
   display: inline-flex;
   gap: 2px;
@@ -92,57 +120,28 @@ body.landing {
   .hero-card { height: 70vh; border-radius: var(--radius-xl); }
 }
 
-/* ── "It's just text" — section-wide code block with a floating copy card ─── */
-.text-stage { position: relative; }
+/* ── "It's just text" — copy column beside a fixed-height code block ──────── */
+.text-cols { display: grid; gap: 32px; }
+@media (min-width: 820px) {
+  .text-cols { grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+}
+.text-col { display: flex; flex-direction: column; align-items: flex-start; }
+#sec-text .landing-h2 { margin-bottom: 28px; }
+.text-body-p { font-size: clamp(17px, 2.2vw, 21px); color: var(--text-secondary); line-height: 1.6; margin: 0; max-width: 46ch; }
+.text-body-p + .text-body-p { margin-top: 16px; }
+.text-doc-link { margin-top: 22px; font-size: var(--text-base); color: var(--text); text-decoration: none; border-bottom: 1px solid var(--border); }
+.text-doc-link:hover { border-color: var(--text); }
 
 .yaml-block {
   width: 100%;
   border: 1px solid var(--border);
-  border-radius: calc(var(--radius-xl) + 12px);   /* concentric with the inset panel, like the hero card */
+  border-radius: var(--radius-xl);
   background: var(--surface);
   overflow: auto;
-  height: min(64vh, 620px);          /* same height logic as the embed map card */
+  height: min(58vh, 460px);
 }
 
-/* Heading sits above the code; the copy floats over the lower-right of it. */
-#sec-text .landing-h2 { margin-bottom: 24px; }
-/* Styled like the embed's floating sidebar panel, but pinned right. Same 12px
-   inset, width, radius, shadow, and solid surface — no border. */
-.text-float {
-  position: absolute;
-  top: 12px; right: 12px; bottom: 12px;
-  width: 320px;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  padding: 32px;
-  background: var(--bg);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sidebar);
-  overflow: hidden;
-}
-.text-float .landing-p + .landing-p { margin-top: 14px; }
-.text-float a {
-  color: var(--text);
-  text-decoration: none;
-  border-bottom: 1px solid var(--border);
-}
-.text-float a:hover { border-color: var(--text); }
-
-@media (max-width: 767px) {
-  /* Mobile: the panel becomes a bottom sheet rising over the code block (like
-     the embed panel does). The stage clips its square bottom corners. */
-  .text-stage { overflow: hidden; border-radius: var(--radius-xl); }
-  .text-float {
-    top: auto; left: 0; right: 0; bottom: 0;
-    width: auto;
-    padding: 24px;
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    box-shadow: var(--shadow-sheet);
-  }
-  .yaml-block { height: 70vh; border-radius: var(--radius-xl); }
-}
+@media (max-width: 819px) { .yaml-block { height: 340px; } }
 .yaml-block pre { margin: 0; padding: 20px; }
 .yaml-block code {
   font-family: var(--mono);
@@ -178,7 +177,16 @@ body.landing {
 }
 .example-card-body  { padding: 16px 20px; }
 .example-card-title { font-size: var(--text-lg); font-weight: 600; }
-.example-card-desc  { font-size: var(--text-sm); color: var(--muted); margin-top: 4px; }
+.example-card-note  {
+  margin: 6px 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 
 /* ── "Give it a try" paths ────────────────────────────────────────────────── */
 .try-list { display: grid; gap: 28px; margin-top: 28px; }

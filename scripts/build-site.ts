@@ -63,6 +63,13 @@ function readFirst(candidates: string[]): string | undefined {
   return undefined
 }
 
+/** First paragraph of a trip note, markdown emphasis stripped and whitespace
+ *  collapsed — a clean one-liner summary for the example cards. */
+function noteExcerpt(note: string): string {
+  const first = note.split(/\n[ \t]*\n/)[0] ?? ""
+  return first.replace(/\*([^*]+)\*/g, "$1").replace(/\s+/g, " ").trim()
+}
+
 async function main() {
   fs.mkdirSync(DIST, { recursive: true })
 
@@ -111,10 +118,16 @@ async function main() {
   fs.writeFileSync(path.join(DIST, "editor.html"), editorHtml)
 
   // ── index.html — the landing page ──
+  const GALLERY = ["lisbon-guide", "copenhagen-weekend", "southeast-asia"]
+  const galleryExamples = GALLERY.map(key => {
+    const doc = parse(readExample(`${key}.crumb`))
+    return { file: `${key}.crumb`, name: doc.trip?.name ?? key, note: noteExcerpt(doc.trip?.note ?? "") }
+  })
   const landingHtml = renderLandingHtml({
     landingBundle,
     stages: STAGES.map((s, i) => ({ label: s.label, source: sources[i] })),
     links:  LINKS,
+    examples: galleryExamples,
     defaultStage: DEFAULT_STAGE,
   })
   fs.writeFileSync(path.join(DIST, "index.html"), landingHtml)
