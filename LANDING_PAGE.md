@@ -76,7 +76,7 @@ links — **Live editor · Spec · GitHub** — live in the **footer**.
 ## Page structure
 
 ```
-        ┌─ [Sketch · Planned · Full] ── one shared control, sticky across ─┐
+        ┌─ [Sketch · Planned · Detailed] ── one shared control, sticky across ─┐
         │  both sections below; un-pins after "It's just text"             │
 HERO     Leave a trail. + live viewer (control swaps the Japan trip)
 IT'S JUST TEXT  Reveal the YAML for the selected detail level
@@ -91,7 +91,7 @@ FOOTER          Live editor · Spec · GitHub   (all nav lives here; no top bar)
 
 ### Shared detail-level control (hero + "It's just text")
 
-One segmented control — **Sketch · Planned · Full** — drives a single
+One segmented control — **Sketch · Planned · Detailed** — drives a single
 `detailLevel` state that *both* the hero viewer and the "It's just text" YAML
 reveal read from. It's not a per-section toggle; it's the spine of the top of
 the page.
@@ -116,7 +116,7 @@ it between three real example files:
 
 - **Sketch** → `examples/japan-sketch.crumb`
 - **Planned** → `examples/japan-planning.crumb`
-- **Full** → `examples/japan-full.crumb`
+- **Detailed** → `examples/japan-detailed.crumb`
 
 The control is the whole point: *the same trip, as much or as little detail as
 you want, mixed freely.*
@@ -129,7 +129,7 @@ you want, mixed freely.*
 > as you feel like.
 
 **No CTA button.** The live demo *is* the hero's call to action — the visitor
-plays with the Sketch/Planned/Full control rather than clicking through to
+plays with the Sketch/Planned/Detailed control rather than clicking through to
 somewhere else.
 
 **Technical approach (hero)**
@@ -174,9 +174,10 @@ real crumb in the viewer:
 - **Copenhagen** — a weekend (`copenhagen-weekend.crumb`)
 - **Southeast Asia** — months of backpacking (`southeast-asia.crumb`)
 
-**Cards (first iteration):** text only — title + one line, hairline border, no
-thumbnail. Map thumbnails would add colour and life but are deferred to keep the
-first pass simple (see Later tasks).
+**Cards (first iteration):** a **thumbnail placeholder** (empty hairline box)
+above the title + one line. The real map thumbnail lands later (see Later tasks);
+the placeholder reserves the layout now. Pill stages: Sketch · Planned ·
+**Detailed** (the old "Full" label, renamed for clarity).
 
 **Draft copy**
 
@@ -271,7 +272,7 @@ clearly pays off. Judge each case by: (1) does it ship into every output?
 - Full **live viewer embed** in the hero (not side-by-side text/render, not
   static screenshots).
 - Pre-baked digested models for the three hero stages; no parser in the embed.
-- One **shared sticky detail-level control** (Sketch/Planned/Full) drives both
+- One **shared sticky detail-level control** (Sketch/Planned/Detailed) drives both
   the hero viewer and the "It's just text" YAML; sticky across both sections,
   un-pins after. (Resolves the old "mirror the hero?" question — yes.)
 - Mobile: locked inline map + fullscreen expand button.

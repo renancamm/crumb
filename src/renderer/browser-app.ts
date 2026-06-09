@@ -15,11 +15,11 @@
  */
 
 import { setupListClickHandler, clearFocus, highlightMarker } from "./app-focus"
-import { updateMap, fitAllPlaces, applyDetailMarkerFilter, fitTransportPoints, mapPadding, applyGeoState } from "./app-map"
-import { state, ZOOM_PLACE_FLY, ZOOM_DETAIL_FLY, MOBILE_MAX_W, FLY_DURATION } from "./app-state"
+import { updateMap, fitAllPlaces, applyDetailMarkerFilter, fitTransportPoints, mapPadding, applyGeoState, setMapInteractive } from "./app-map"
+import { state, ZOOM_PLACE_FLY, ZOOM_DETAIL_FLY, MOBILE_MAX_W, FLY_DURATION, EMBED } from "./app-state"
 import { initSheet, exitSheet, goMedium } from "./app-sheet"
 import { seedGeoCache } from "./geocoder"
-import { ICON_PIN_OFF, ICON_CHEVRON_LEFT, ICON_CHEVRON_RIGHT } from "./icons"
+import { ICON_PIN_OFF, ICON_CHEVRON_LEFT, ICON_CHEVRON_RIGHT, ICON_MAXIMIZE, ICON_MINIMIZE } from "./icons"
 import { placeStays, placeActivityItems } from "./plan-view"
 import type { ModalRef } from "./app-state"
 
@@ -599,6 +599,66 @@ window.addEventListener("crumb:doc-updated", () => {
   updateMap(doc)
 })
 
+// ─── Embed mode ────────────────────────────────────────────────────────────────
+// A self-contained, host-friendly render: the map starts with interactions locked
+// (so a host page scrolls past it) and exposes an expand→fullscreen control that
+// re-enables them. Hosts can also swap the document via
+// postMessage({ type: "crumb:set-doc", index }).
+
+function setupEmbedMode(mobileQuery: MediaQueryList): void {
+  document.body.classList.add("embed")
+
+  const mapEl = document.getElementById("map")!
+
+  // Scroll scrim (shown on mobile preview via CSS): a transparent layer with
+  // touch-action: pan-y, so a vertical swipe scrolls the *host* page instead of
+  // being trapped by the locked map or the bottom sheet. Removed in fullscreen,
+  // where real interaction (pan, sheet) is wanted.
+  const scrim = document.createElement("div")
+  scrim.className = "embed-scrim"
+  mapEl.appendChild(scrim)
+
+  const btn = document.createElement("button")
+  btn.className = "embed-expand-btn"
+  btn.setAttribute("aria-label", "Expand map")
+  btn.innerHTML = ICON_MAXIMIZE
+  mapEl.appendChild(btn)
+
+  // Fullscreen escapes the host <iframe> (which sets allow="fullscreen"). Handle
+  // the WebKit-prefixed API too so Safari works.
+  const doc: any = document
+  const root: any = document.documentElement
+  const isFull = () => !!(doc.fullscreenElement || doc.webkitFullscreenElement)
+  btn.addEventListener("click", () => {
+    if (isFull()) (doc.exitFullscreen || doc.webkitExitFullscreen)?.call(doc)
+    else          (root.requestFullscreen || root.webkitRequestFullscreen)?.call(root)
+  })
+
+  const onFsChange = () => {
+    const full = isFull()
+    document.body.classList.toggle("embed-full", full)
+    btn.innerHTML = full ? ICON_MINIMIZE : ICON_MAXIMIZE
+    btn.setAttribute("aria-label", full ? "Exit fullscreen" : "Expand map")
+    setMapInteractive(full)          // free pan/zoom while fullscreen; locked otherwise
+    // The interactive bottom sheet only makes sense once fullscreen on mobile;
+    // in preview the sheet is a static peek behind the scrim (no scroll trap).
+    if (mobileQuery.matches) full ? initSheet() : exitSheet()
+    state.map.resize()
+  }
+  document.addEventListener("fullscreenchange", onFsChange)
+  document.addEventListener("webkitfullscreenchange", onFsChange)
+
+  // Host-driven document swap (e.g. the landing page detail-level pill).
+  window.addEventListener("message", (e: MessageEvent) => {
+    const d = e.data
+    if (!d || d.type !== "crumb:set-doc") return
+    const swap = window.__CRUMB_EMBED_DOCS?.[d.index]
+    if (!swap) return
+    window.__CRUMB_DATA = swap
+    window.dispatchEvent(new CustomEvent("crumb:doc-updated"))
+  })
+}
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 // Seed the geo cache from baked data (demo page) before any geocoding runs, so
@@ -610,12 +670,17 @@ if (window.__CRUMB_GEO_DATA && window.__CRUMB_GEO_MODE !== "online") {
 
 const mobileQuery = window.matchMedia(`(max-width: ${MOBILE_MAX_W - 1}px)`)
 
-if (mobileQuery.matches) initSheet()
-
-mobileQuery.addEventListener("change", e => {
-  if (e.matches) initSheet()
-  else           exitSheet()
-})
+if (EMBED) {
+  // Embed preview shows a static sheet behind a scroll scrim; the interactive
+  // sheet is wired only on entering fullscreen (see onFsChange).
+  setupEmbedMode(mobileQuery)
+} else {
+  if (mobileQuery.matches) initSheet()
+  mobileQuery.addEventListener("change", e => {
+    if (e.matches) initSheet()
+    else           exitSheet()
+  })
+}
 
 setupListClickHandler()
 if (!state.DATA) {

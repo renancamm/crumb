@@ -1276,6 +1276,47 @@ const mobileCSS = `
 }
 `
 
+const embedCSS = `
+/* ── Embed mode: locked-preview map + expand→fullscreen control ───────────── */
+.embed-expand-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: var(--z-chip);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);   /* matches the panel close button */
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background var(--duration);
+}
+.embed-expand-btn:hover { background: var(--muted-bg); }
+.embed-expand-btn .crumb-icon { width: 16px; height: 16px; stroke-width: 2; }
+
+/* Scroll scrim — mobile preview only. A transparent layer over the locked map
+   and static sheet whose touch-action: pan-y lets a vertical swipe scroll the
+   HOST page (the map/sheet would otherwise trap it). Sits just below the expand
+   button; removed in fullscreen, where real interaction is wanted. */
+.embed-scrim { display: none; }
+@media (max-width: 767px) {
+  body.embed:not(.embed-full) .embed-scrim {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: calc(var(--z-chip) - 1);
+    touch-action: pan-y;
+    background: transparent;
+  }
+}
+`
+
 export const CSS = [
   resetCSS,
   tokensCSS,
@@ -1288,4 +1329,5 @@ export const CSS = [
   mapCSS,
   itineraryCSS,
   mobileCSS,
+  embedCSS,
 ].join("\n")

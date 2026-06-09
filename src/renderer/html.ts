@@ -64,6 +64,11 @@ export interface AppOptions {
   geoData?: Record<string, { lat: number; lng: number }>
   /** Set to "online" to embed geoData but skip seeding (force live geocoding). */
   geoMode?: "online" | "static"
+  /** Embed mode: the full set of documents a host can swap between via
+   *  postMessage({ type: "crumb:set-doc", index }). When provided, the page
+   *  renders in viewer-only embed mode (locked-preview map + expand control);
+   *  the `doc` argument is the one shown initially. */
+  embedDocs?: CrumbDocument[]
 }
 
 
@@ -667,6 +672,10 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
   const geoGlobals = options.geoData ? `
     window.__CRUMB_GEO_DATA = ${JSON.stringify(options.geoData)};${options.geoMode ? `\n    window.__CRUMB_GEO_MODE = ${JSON.stringify(options.geoMode)};` : ""}` : ""
 
+  const embedGlobals = options.embedDocs ? `
+    window.__CRUMB_EMBED = true;
+    window.__CRUMB_EMBED_DOCS = ${JSON.stringify(options.embedDocs)};` : ""
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -703,7 +712,7 @@ ${modalsDom}
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <script>${options.crumbBundle}</script>
   <script>
-    window.__CRUMB_DATA   = ${docJson};${editorGlobals}${geoGlobals}
+    window.__CRUMB_DATA   = ${docJson};${editorGlobals}${geoGlobals}${embedGlobals}
   </script>
   <script>${options.viewerBundle}</script>${editorScript}
 </body>

@@ -21,7 +21,7 @@ import {
   type ActivityGeoTarget,
   type StayGeoTarget,
 } from "./geo-targets"
-import { state, ZOOM_OVERVIEW, ZOOM_DETAIL, ROUTE_COLOR, MOBILE_MAX_W, SHEET_MEDIUM_RATIO } from "./app-state"
+import { state, ZOOM_OVERVIEW, ZOOM_DETAIL, ROUTE_COLOR, MOBILE_MAX_W, SHEET_MEDIUM_RATIO, EMBED } from "./app-state"
 
 declare const maplibregl: any
 
@@ -43,13 +43,30 @@ const mapStatusEl = document.getElementById("map-status") as HTMLElement
 
 // ─── MapLibre GL init ─────────────────────────────────────────────────────────
 
+// Handlers toggled together by setMapInteractive(). In embed mode they start
+// disabled so the map is a static preview that a host page can scroll past;
+// the expand→fullscreen control re-enables them.
+const INTERACTION_HANDLERS = [
+  "scrollZoom", "boxZoom", "dragRotate", "dragPan",
+  "keyboard", "doubleClickZoom", "touchZoomRotate", "touchPitch",
+] as const
+
 state.map = new maplibregl.Map({
   container:          "map",
   style:              "https://tiles.openfreemap.org/styles/liberty",
   center:             [10, 30],
   zoom:               2,
   attributionControl: false,
+  ...(EMBED ? Object.fromEntries(INTERACTION_HANDLERS.map(h => [h, false])) : {}),
 })
+
+/** Enable/disable all map interaction handlers at once (used by embed fullscreen). */
+export function setMapInteractive(on: boolean): void {
+  for (const h of INTERACTION_HANDLERS) {
+    const handler = (state.map as any)[h]
+    if (handler) on ? handler.enable() : handler.disable()
+  }
+}
 const attribution = new maplibregl.AttributionControl({ compact: true })
 state.map.addControl(attribution)
 setTimeout(() => {

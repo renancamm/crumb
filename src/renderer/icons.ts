@@ -131,6 +131,16 @@ export const ICON_CHEVRON_LEFT  = icon(`<path d="m15 18-6-6 6-6"/>`)
 export const ICON_CHEVRON_RIGHT = icon(`<path d="m9 18 6-6-6-6"/>`)
 export const ICON_CHEVRON_DOWN  = icon(`<path d="m6 9 6 6 6-6"/>`)
 
+// ─── Embed controls ───────────────────────────────────────────────────────────
+export const ICON_MAXIMIZE = icon(`<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>`)
+export const ICON_MINIMIZE = icon(`<path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/>`)
+
+// ─── Landing "give it a try" ──────────────────────────────────────────────────
+export const ICON_SPARKLES = icon(`<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .962L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>`)
+export const ICON_PENCIL   = icon(`<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>`)
+export const ICON_CODE     = icon(`<path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>`)
+export const ICON_WRENCH   = icon(`<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>`)
+
 // ─── Mode → icon lookup ───────────────────────────────────────────────────────
 
 const MODE_ICONS: Record<string, string> = {

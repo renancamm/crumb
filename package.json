@@ -4,8 +4,8 @@
   "description": "Crumb — open format for travel itineraries",
   "scripts": {
     "render": "ts-node src/cli.ts",
-    "build": "ts-node src/cli.ts examples/japan-full.crumb dist/index.html --editor",
-    "build:viewer": "ts-node src/cli.ts examples/japan-full.crumb dist/viewer.html",
+    "build": "ts-node --transpile-only scripts/build-site.ts",
+    "build:viewer": "ts-node src/cli.ts examples/japan-detailed.crumb dist/viewer.html",
     "gen:geocache": "ts-node --transpile-only scripts/gen-geocache.ts",
     "typecheck": "node_modules/.bin/tsc --noEmit",
     "test": "node_modules/.bin/vitest run",

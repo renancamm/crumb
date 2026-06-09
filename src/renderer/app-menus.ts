@@ -240,6 +240,19 @@ document.querySelectorAll<HTMLElement>("[data-example]").forEach(el => {
   })
 })
 
+// Deep link: editor.html?example=<file> opens the live editor pre-loaded with
+// that example (the landing page's cards link here). Renders straight to the map;
+// the editor textarea stays one click away via File → Edit.
+{
+  const exParam = new URLSearchParams(location.search).get("example")
+  const src = exParam ? (window.__CRUMB_EXAMPLES ?? {})[exParam] : undefined
+  if (src) {
+    editorEl.value = src
+    setCurrentSavedName(null)
+    render()
+  }
+}
+
 // ─── About → What is a Crumb ──────────────────────────────────────────────────
 
 const aboutCtrl = bindModal(aboutModal, ["about-close-x", "about-close-btn"])

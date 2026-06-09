@@ -23,6 +23,12 @@ declare global {
     // known places resolve with zero network requests.
     __CRUMB_GEO_DATA?: Record<string, GeoResult>
     __CRUMB_GEO_MODE?: "online" | "static"
+    // Embed mode: a self-contained, host-friendly render. The map starts with
+    // interactions locked (so a host page scrolls past it) and offers an
+    // expand→fullscreen control. __CRUMB_EMBED_DOCS lets a host swap the
+    // rendered document via postMessage({ type: "crumb:set-doc", index }).
+    __CRUMB_EMBED?:      boolean
+    __CRUMB_EMBED_DOCS?: CrumbDocument[]
     Crumb: {
       // Present only in editor-mode output; the viewer-only bundle omits `parse`.
       // Safe because the editor bundle (its sole caller) ships only alongside it.
@@ -47,6 +53,10 @@ export const ZOOM_DETAIL_FLY = 14
 export const MOBILE_MAX_W    = 768
 export const ROUTE_COLOR     = "#18181b"   // intentionally matches --primary in css.ts
 export const FLY_DURATION    = 800         // ms — map camera animation on focus/navigation
+
+// Embed mode: locked-interaction preview map + expand→fullscreen, host-swappable
+// document. True when html.ts injected window.__CRUMB_EMBED.
+export const EMBED = typeof window !== "undefined" && !!window.__CRUMB_EMBED
 
 // Bottom-sheet snap geometry (single source of truth for app-sheet.ts + app-map.ts).
 // CSS in css.ts mirrors these as pre-JS first-paint placeholders (90vh / 40vh) — keep
