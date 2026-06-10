@@ -587,7 +587,8 @@ window.addEventListener("crumb:doc-updated", () => {
   }
   state.DATA         = doc
   state.activeDetail = null
-  panelNav.innerHTML = ""
+  panelNav.innerHTML    = ""
+  panelFooter.innerHTML = ""   // reset the pager so the previous crumb's nav doesn't linger
   if (isSinglePlace(doc)) {
     state.activePlaceIndex = 1
     panelContent.innerHTML = window.Crumb.renderSinglePlacePanel(doc)
