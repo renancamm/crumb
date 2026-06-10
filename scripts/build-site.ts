@@ -125,7 +125,7 @@ async function main() {
   })
   const landingHtml = renderLandingHtml({
     landingBundle,
-    stages: STAGES.map((s, i) => ({ label: s.label, source: sources[i] })),
+    stages: STAGES.map((s, i) => ({ label: s.label, file: `${s.key}.crumb`, source: sources[i] })),
     links:  LINKS,
     examples: galleryExamples,
     defaultStage: DEFAULT_STAGE,

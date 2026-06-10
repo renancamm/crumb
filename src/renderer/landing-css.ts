@@ -129,20 +129,47 @@ body.landing {
 #sec-text .landing-h2 { margin-bottom: 28px; }
 .text-body-p { font-size: clamp(17px, 2.2vw, 21px); color: var(--text-secondary); line-height: 1.6; margin: 0; max-width: 46ch; }
 .text-body-p + .text-body-p { margin-top: 16px; }
-.text-doc-link { margin-top: 22px; font-size: var(--text-base); color: var(--text); text-decoration: none; border-bottom: 1px solid var(--border); }
-.text-doc-link:hover { border-color: var(--text); }
+.text-doc-btn {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 24px;
+  padding: 9px 18px;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text);
+  text-decoration: none;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: transform var(--duration), border-color var(--duration), background var(--duration);
+}
+.text-doc-btn:hover { transform: translateY(-1px); border-color: var(--primary); background: var(--surface); }
 
 .yaml-block {
   width: 100%;
+  display: flex;
+  flex-direction: column;
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   background: var(--surface);
-  overflow: auto;
+  overflow: hidden;
   height: min(58vh, 460px);
 }
+.yaml-head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.yaml-head .crumb-icon { width: 15px; height: 15px; color: var(--muted); }
 
 @media (max-width: 819px) { .yaml-block { height: 340px; } }
-.yaml-block pre { margin: 0; padding: 20px; }
+.yaml-block pre { flex: 1; min-height: 0; overflow: auto; margin: 0; padding: 20px; }
 .yaml-block code {
   font-family: var(--mono);
   font-size: var(--text-sm);
@@ -154,6 +181,7 @@ body.landing {
 .yml-v { color: var(--text-secondary); }
 .yml-c { color: var(--muted); font-style: italic; }
 .yml-p { color: var(--muted); }
+.yml-s { color: var(--text-secondary); }   /* block-scalar body (note text), not parsed as YAML */
 
 /* ── Example cards ────────────────────────────────────────────────────────── */
 .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 28px; }

@@ -43,5 +43,28 @@ function highlightLine(line: string): string {
 }
 
 export function highlightYaml(src: string): string {
-  return src.replace(/\s+$/, "").split("\n").map(highlightLine).join("\n")
+  const lines = src.replace(/\s+$/, "").split("\n")
+  const out: string[] = []
+  let blockIndent: number | null = null   // key column of an open block scalar (note: | / >)
+
+  for (const line of lines) {
+    const indent = /^[ \t]*/.exec(line)![0].length
+
+    if (blockIndent !== null) {
+      // Body of a block scalar: markdown/prose, not YAML — render as a plain string.
+      if (line.trim() === "" || indent > blockIndent) {
+        out.push(`<span class="yml-s">${esc(line)}</span>`)
+        continue
+      }
+      blockIndent = null   // dedented out of the block; parse this line normally
+    }
+
+    out.push(highlightLine(line))
+
+    // Did this line open a block scalar ("key: |" / "key: >", optional chomp/indent)?
+    const opener = /^([ \t]*)(- )?[^:#]+:[ \t]*[|>][+-]?\d*[ \t]*$/.exec(line)
+    if (opener) blockIndent = opener[1].length + (opener[2] ? opener[2].length : 0)
+  }
+
+  return out.join("\n")
 }

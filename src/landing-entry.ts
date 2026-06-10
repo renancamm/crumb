@@ -9,7 +9,7 @@
  * Pre-highlighted YAML for each stage is baked into window.__CRUMB_LANDING.
  */
 
-interface LandingData { yaml: string[]; defaultStage: number }
+interface LandingData { yaml: string[]; files: string[]; defaultStage: number }
 
 const DATA = (window as unknown as { __CRUMB_LANDING?: LandingData }).__CRUMB_LANDING
 
@@ -17,6 +17,7 @@ const pill    = document.getElementById("detail-pill")
 const wrap    = pill?.parentElement ?? null                 // .pill-wrap keeps flow space when pinned
 const options = pill ? Array.from(pill.querySelectorAll<HTMLButtonElement>(".pill-opt")) : []
 const yamlEl  = document.getElementById("yaml-code")
+const fileEl  = document.getElementById("yaml-file")
 const frame   = document.getElementById("hero-frame") as HTMLIFrameElement | null
 const textSec = document.getElementById("sec-text")
 
@@ -30,6 +31,7 @@ function setStage(i: number): void {
     b.setAttribute("aria-selected", String(on))
   })
   if (yamlEl && DATA) yamlEl.innerHTML = DATA.yaml[i]
+  if (fileEl && DATA) fileEl.textContent = DATA.files[i]
   frame?.contentWindow?.postMessage({ type: "crumb:set-doc", index: i }, "*")
 }
 

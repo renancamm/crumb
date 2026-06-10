@@ -13,10 +13,11 @@ import { CSS }           from "./css"
 import { landingCSS }    from "./landing-css"
 import { escape }        from "./format"
 import { highlightYaml } from "./yaml-highlight"
-import { ICON_SPARKLES, ICON_PENCIL, ICON_CODE, ICON_WRENCH, ICON_CHEVRON_LEFT, ICON_CHEVRON_RIGHT } from "./icons"
+import { ICON_SPARKLES, ICON_PENCIL, ICON_CODE, ICON_WRENCH, ICON_CHEVRON_LEFT, ICON_CHEVRON_RIGHT, ICON_FILE } from "./icons"
 
 export interface LandingStage {
-  label:  string   // "Sketch" | "Planned" | "Full"
+  label:  string   // "Sketch" | "Planned" | "Detailed"
+  file:   string   // example filename, shown as the code tab (e.g. japan-sketch.crumb)
   source: string   // raw .crumb YAML, shown in the "it's just text" block
 }
 
@@ -130,12 +131,15 @@ ${landingCSS}</style>
       <h2 class="landing-h2">It's just text</h2>
       <div class="text-cols">
         <div class="text-col">
-          <p class="text-body-p">The trip above is just plain text, written in YAML, a handful of simple fields.</p>
+          <p class="text-body-p">The map above comes from this plain-text file, written in YAML, a handful of simple fields.</p>
           <p class="text-body-p">You can read it in any text editor, keep it in a folder, or send it to a friend like any other message.</p>
-          <p class="text-body-p">It's just as easy to remix: take someone else's trip and make it your own, like adapting a recipe.</p>
-          <a class="text-doc-link" href="${escape(opts.links.spec)}">Learn the format in the documentation →</a>
+          <p class="text-body-p">The format was designed with half-formed plans in mind, so details and dates can stay as vague as yours, and it still works out a timeline.</p>
+          <a class="text-doc-btn" href="${escape(opts.links.spec)}">Open documentation</a>
         </div>
-        <div class="yaml-block"><pre><code id="yaml-code">${yamlHtml[def]}</code></pre></div>
+        <div class="yaml-block">
+          <div class="yaml-head">${ICON_FILE}<span id="yaml-file">${escape(opts.stages[def].file)}</span></div>
+          <pre><code id="yaml-code">${yamlHtml[def]}</code></pre>
+        </div>
       </div>
     </div>
   </section>
@@ -174,7 +178,7 @@ ${landingCSS}</style>
   </footer>
 
   <script>
-    window.__CRUMB_LANDING = { yaml: ${JSON.stringify(yamlHtml)}, defaultStage: ${def} };
+    window.__CRUMB_LANDING = { yaml: ${JSON.stringify(yamlHtml)}, files: ${JSON.stringify(opts.stages.map(s => s.file))}, defaultStage: ${def} };
   </script>
   <script>${opts.landingBundle}</script>
 </body>
