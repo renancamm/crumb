@@ -1323,30 +1323,38 @@ body.embed-card .embed-expand-btn,
 body.embed-card #map-status,
 body.embed-card .embed-scrim,
 body.embed-card .maplibregl-control-container { display: none !important; }
-body.embed-card #main { display: flex; flex-direction: column; }
-body.embed-card #map { flex: 1; min-height: 0; }
+/* The trip header is a caption bar overlaying the bottom of the map. (maplibre's
+   #map doesn't shrink as a normal flex/grid child — its canvas is absolutely
+   positioned — so an absolute bar is the robust layout.) */
+body.embed-card #main { position: relative; }
 #embed-card-caption { display: none; }
 body.embed-card #embed-card-caption {
   display: block;
-  flex-shrink: 0;
-  padding: 12px 16px;
-  border-top: 1px solid var(--border);
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  z-index: 5;
+  padding: 10px 14px;
   background: var(--bg);
-  overflow: hidden;
+  border-top: 1px solid var(--border);
 }
 body.embed-card #embed-card-caption:empty { display: none; }
 .panel-trip-header--compact { margin: 0; }
-.panel-trip-header--compact .panel-trip-name { font-size: var(--text-base); font-weight: 600; margin: 0; line-height: 1.25; }
+.panel-trip-header--compact .panel-trip-name { font-size: var(--text-sm); font-weight: 600; margin: 0; line-height: 1.25; }
 .panel-trip-header--compact .note {
-  margin: 4px 0 0;
+  margin: 3px 0 0;
   font-size: var(--text-sm);
   color: var(--text-secondary);
-  line-height: 1.45;
+  line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+/* Inline the panel's own truncation box + the markdown paragraph so the outer
+   .note's -webkit-line-clamp (2 lines) drives the "…"; drop the "more" toggle. */
+.panel-trip-header--compact .note-trunc { display: inline; }
+.panel-trip-header--compact .note p { display: inline; margin: 0; }
+.panel-trip-header--compact .note-more { display: none; }
 `
 
 export const CSS = [

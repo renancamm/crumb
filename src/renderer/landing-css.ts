@@ -198,7 +198,7 @@ body.landing {
 .example-card {
   display: block;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--bg);
   text-decoration: none;
@@ -211,7 +211,7 @@ body.landing {
 .example-card-frame {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 12;
+  aspect-ratio: 1 / 1;
   border: 0;
   pointer-events: none;
   background: var(--muted-bg);
