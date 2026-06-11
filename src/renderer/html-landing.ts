@@ -71,14 +71,12 @@ export function renderLandingHtml(opts: LandingOptions): string {
       link: { label: "Live editor", href: opts.links.editor } },
     { icon: ICON_CODE, title: "Embed it anywhere",
       desc: "A crumb's interactive map is self-contained, so you can drop it straight into your own site or blog as a single HTML embed.",
-      link: { label: "How to embed (coming soon)", href: null } },
+      link: { label: "How to embed", href: null } },
     { icon: ICON_WRENCH, title: "Build your own",
       desc: "The format is open and fully specified. This parser is just one implementation, so read the spec and build your own viewer, exporter, or whatever you need.",
       link: { label: "Spec & parser reference", href: opts.links.spec } },
   ].map(t => {
-    const link = t.link.href
-      ? `<a class="try-link" href="${escape(t.link.href)}">${escape(t.link.label)} →</a>`
-      : `<span class="try-link is-disabled">${escape(t.link.label)}</span>`
+    const link = `<span class="try-link">${escape(t.link.label)} (coming soon)</span>`
     return `<div class="try-item">
         <div class="try-item-icon" aria-hidden="true">${t.icon}</div>
         <div class="try-item-title">${escape(t.title)}</div>
@@ -138,7 +136,7 @@ ${landingCSS}</style>
           <p class="text-body-p">The map above comes from this plain-text file, written in YAML, a handful of simple fields.</p>
           <p class="text-body-p">You can read it in any text editor, keep it in a folder, or send it to a friend like any other message.</p>
           <p class="text-body-p">The format was designed with half-formed plans in mind, so details and dates can stay as vague as yours, and it still works out a timeline.</p>
-          <a class="text-doc-btn" href="${escape(opts.links.spec)}">Open documentation</a>
+          <span class="text-doc-btn">Check the documentation (coming soon)</span>
         </div>
         <div class="yaml-block">
           <div class="yaml-head">${ICON_FILE}<span id="yaml-file">${escape(opts.stages[def].file)}</span></div>
@@ -173,11 +171,6 @@ ${landingCSS}</style>
   <footer class="landing-footer">
     <div class="landing-wrap landing-footer-inner">
       <span class="footer-brand">Leave a trail</span>
-      <nav class="footer-links">
-        <a href="${escape(opts.links.editor)}">Live editor</a>
-        <a href="${escape(opts.links.spec)}">Spec</a>
-        <a href="${escape(opts.links.github)}">GitHub</a>
-      </nav>
     </div>
   </footer>
 
