@@ -9,7 +9,12 @@
  * Pre-highlighted YAML for each stage is baked into window.__CRUMB_LANDING.
  */
 
-interface LandingData { yaml: string[]; files: string[]; defaultStage: number }
+interface Embeddable { crumb: string; geo: Record<string, { lat: number; lng: number }> }
+interface LandingData {
+  yaml: string[]; files: string[]; defaultStage: number
+  hero:  Embeddable[]   // crumb + geo per stage, posted to the hero embed
+  cards: Embeddable[]   // crumb + geo per example card, in DOM order
+}
 
 const DATA = (window as unknown as { __CRUMB_LANDING?: LandingData }).__CRUMB_LANDING
 
@@ -23,16 +28,11 @@ const textSec = document.getElementById("sec-text")
 
 let current = DATA?.defaultStage ?? 0
 
-// Tell the hero embed to load a stage's crumb — a real host→embed control message
-// (no iframe reload): examples/<base>.crumb plus its baked geo cache.
+// Hand the hero embed a stage's crumb + geo inline — no iframe reload, no fetch.
 function loadStage(i: number): void {
   if (!frame || !DATA) return
-  const base = DATA.files[i].replace(/\.crumb$/, "")
-  frame.contentWindow?.postMessage({
-    type: "crumb:load",
-    src:  `examples/${base}.crumb`,
-    geo:  `examples/${base}.geo.json`,
-  }, "*")
+  const s = DATA.hero[i]
+  frame.contentWindow?.postMessage({ type: "crumb:load", crumb: s.crumb, geo: s.geo }, "*")
 }
 
 function setStage(i: number): void {
@@ -64,9 +64,17 @@ reservePillSpace()
 window.addEventListener("load", reservePillSpace)
 window.addEventListener("resize", reservePillSpace)
 
-// The hero iframe loads the default stage itself via ?src; only re-sync if the
-// user already switched before it finished loading (avoids a redundant reload).
-frame?.addEventListener("load", () => { if (current !== (DATA?.defaultStage ?? 0)) loadStage(current) })
+// Each embed (hero + cards) starts blank and asks for its data with a
+// "crumb:ready" message; we reply with the inline crumb + geo. Timing-safe for the
+// lazy card iframes — no reliance on catching their load event.
+const cardFrames = Array.from(document.querySelectorAll<HTMLIFrameElement>(".example-card-frame"))
+window.addEventListener("message", (e: MessageEvent) => {
+  if (!DATA || !e.data || e.data.type !== "crumb:ready") return
+  if (frame && e.source === frame.contentWindow) { loadStage(current); return }
+  const i = cardFrames.findIndex(f => f.contentWindow === e.source)
+  const c = i >= 0 ? DATA.cards[i] : undefined
+  if (c) (e.source as Window).postMessage({ type: "crumb:load", crumb: c.crumb, geo: c.geo }, "*")
+})
 
 // Float behaviour: in-flow in the hero; fixed + compact once it reaches the top;
 // faded out once scrolled past the middle of the "it's just text" section.

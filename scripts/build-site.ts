@@ -4,9 +4,8 @@
  *
  *   index.html   landing page (Phase 3)
  *   editor.html  the live editor (was the old index.html)
- *   embed.html   generic map embed — loads a .crumb from ?src at runtime; used by
- *                the landing hero + cards. The example files it fetches are copied
- *                to dist/examples/. Not linked in nav.
+ *   embed.html   generic map embed — takes a crumb inline (postMessage) or by URL
+ *                (?src). The landing feeds its hero + cards inline. Not linked in nav.
  *
  * Bundles are built once with esbuild and reused across pages. No new runtime
  * dependencies — same pipeline as src/cli.ts.
@@ -75,23 +74,17 @@ async function main() {
   const embedBundle        = await bundle("embed-entry.ts")
   const landingBundle      = await bundle("landing-entry.ts")
 
-  // ── embed.html — generic, content-agnostic embed: loads a .crumb from ?src at
-  //    runtime (embed-boot.ts). Ships the render bundle *with* parse so a fetched
-  //    crumb is parsed client-side. No baked doc/geo. ──
+  // ── embed.html — generic, content-agnostic embed: takes a crumb inline (the
+  //    landing posts crumb + geo via postMessage) or by URL (?src=…&geo=…). Ships
+  //    the render bundle *with* parse so the crumb is parsed client-side. ──
   const embedHtml = renderHtml(null, {
-    crumbBundle:  editorRenderBundle,   // window.Crumb.parse for the fetched crumb
+    crumbBundle:  editorRenderBundle,   // window.Crumb.parse for the crumb
     viewerBundle: embedBundle,
     editorBundle,                       // unused in viewer-only
     includeEditor: false,
     embed: true,
   })
   fs.writeFileSync(path.join(DIST, "embed.html"), embedHtml)
-
-  // ── Deploy the example files the embeds fetch by URL (dist/examples/*) ──
-  const exDir = path.join(DIST, "examples")
-  fs.mkdirSync(exDir, { recursive: true })
-  for (const f of fs.readdirSync(EXAMPLES).filter(f => f.endsWith(".crumb") || f.endsWith(".geo.json")))
-    fs.copyFileSync(path.join(EXAMPLES, f), path.join(exDir, f))
 
   // ── editor.html — the live editor (all examples embedded) ──
   const examples: Record<string, string> = {}
@@ -111,21 +104,27 @@ async function main() {
   fs.writeFileSync(path.join(DIST, "editor.html"), editorHtml)
 
   // ── index.html — the landing page ──
-  // Hero detail-level stages (pill-swappable) + gallery example cards. The landing
-  // points its embed <iframe>s at dist/examples/<key>.crumb; `source` feeds the
-  // "it's just text" YAML block.
+  // Hero detail-level stages (pill-swappable) + gallery example cards. Each embed
+  // is the shared embed.html, fed its crumb + geo INLINE via postMessage (no
+  // external .crumb fetch); `source` also feeds the "it's just text" YAML block.
   const STAGES = [
     { key: "japan-sketch",   label: "Sketch"   },
     { key: "japan-planning", label: "Planned"  },
     { key: "japan-detailed", label: "Detailed" },
   ]
   const DEFAULT_STAGE = 0   // Sketch — leads with the "even this is valid" floor
-  const sources = STAGES.map(s => readExample(`${s.key}.crumb`))
+  const sources   = STAGES.map(s => readExample(`${s.key}.crumb`))
+  const stageGeos = STAGES.map(s => readGeo(`${s.key}.geo.json`))
   const GALLERY = ["lisbon-guide", "copenhagen-weekend", "southeast-asia"]
-  const galleryExamples = GALLERY.map(key => ({ key, file: `${key}.crumb` }))
+  const galleryExamples = GALLERY.map(key => ({
+    key,
+    file:   `${key}.crumb`,
+    source: readExample(`${key}.crumb`),
+    geo:    readGeo(`${key}.geo.json`),
+  }))
   const landingHtml = renderLandingHtml({
     landingBundle,
-    stages: STAGES.map((s, i) => ({ label: s.label, file: `${s.key}.crumb`, source: sources[i] })),
+    stages: STAGES.map((s, i) => ({ label: s.label, file: `${s.key}.crumb`, source: sources[i], geo: stageGeos[i] })),
     links:  LINKS,
     examples: galleryExamples,
     defaultStage: DEFAULT_STAGE,

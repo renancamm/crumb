@@ -18,7 +18,8 @@ import { ICON_SPARKLES, ICON_PENCIL, ICON_CODE, ICON_WRENCH, ICON_CHEVRON_LEFT, 
 export interface LandingStage {
   label:  string   // "Sketch" | "Planned" | "Detailed"
   file:   string   // example filename, shown as the code tab (e.g. japan-sketch.crumb)
-  source: string   // raw .crumb YAML, shown in the "it's just text" block
+  source: string   // raw .crumb YAML — shown in the "it's just text" block AND posted to the hero embed
+  geo:    Record<string, { lat: number; lng: number }>  // baked geo-cache, posted with the source
 }
 
 export interface LandingLinks {
@@ -29,8 +30,10 @@ export interface LandingLinks {
 }
 
 export interface LandingExample {
-  key:  string   // filename minus .crumb — the embed loads examples/<key>.crumb
-  file: string   // example filename for the ?example= editor deep link
+  key:    string   // filename minus .crumb — used for the card's aria-label
+  file:   string   // example filename for the ?example= editor deep link
+  source: string   // raw .crumb YAML, posted inline to the card embed
+  geo:    Record<string, { lat: number; lng: number }>  // baked geo-cache, posted with the source
 }
 
 export interface LandingOptions {
@@ -45,23 +48,17 @@ export function renderLandingHtml(opts: LandingOptions): string {
   const def = opts.defaultStage ?? 0
   const yamlHtml = opts.stages.map(s => highlightYaml(s.source))
 
-  // Hero loads the default stage as a real embed; the pill swaps it via postMessage.
-  const heroBase = opts.stages[def].file.replace(/\.crumb$/, "")
-  const heroSrc  = `embed.html?src=examples/${encodeURIComponent(heroBase)}.crumb&geo=examples/${encodeURIComponent(heroBase)}.geo.json`
-
   const pillOpts = opts.stages.map((s, i) =>
     `<button class="pill-opt${i === def ? " is-active" : ""}" role="tab" aria-selected="${i === def}">${escape(s.label)}</button>`
   ).join("")
 
-  // The whole card is one real embed: embed.html?src=…&card renders the map and a
-  // compact trip header (name + note). The <a> carries the label for a11y since
-  // the visible title now lives inside the iframe.
+  // Each card is one shared embed (embed.html?card) fed its crumb + geo inline via
+  // postMessage (landing-entry) — no external .crumb fetch. The <a> carries the
+  // a11y label since the visible title lives inside the iframe.
   const cards = opts.examples.map(e => {
     const label = e.key.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
-    const ex    = encodeURIComponent(e.key)
-    const src   = `embed.html?src=examples/${ex}.crumb&geo=examples/${ex}.geo.json&card`
     return `<a class="example-card" href="${escape(opts.links.editor)}?example=${encodeURIComponent(e.file)}" aria-label="Open ${escape(label)} in the editor">
-        <iframe class="example-card-frame" src="${src}" title="${escape(label)} map" loading="lazy" tabindex="-1"></iframe>
+        <iframe class="example-card-frame" src="embed.html?card" title="${escape(label)} map" loading="lazy" tabindex="-1"></iframe>
       </a>`
   }).join("\n      ")
 
@@ -127,7 +124,7 @@ ${landingCSS}</style>
       </div>
 
       <div class="hero-card">
-        <iframe id="hero-frame" class="hero-frame" src="${heroSrc}" title="Live Crumb map" allow="fullscreen" allowfullscreen></iframe>
+        <iframe id="hero-frame" class="hero-frame" src="embed.html" title="Live Crumb map" allow="fullscreen" allowfullscreen></iframe>
       </div>
     </div>
   </header>
@@ -185,7 +182,13 @@ ${landingCSS}</style>
   </footer>
 
   <script>
-    window.__CRUMB_LANDING = { yaml: ${JSON.stringify(yamlHtml)}, files: ${JSON.stringify(opts.stages.map(s => s.file))}, defaultStage: ${def} };
+    window.__CRUMB_LANDING = {
+      yaml: ${JSON.stringify(yamlHtml)},
+      files: ${JSON.stringify(opts.stages.map(s => s.file))},
+      defaultStage: ${def},
+      hero: ${JSON.stringify(opts.stages.map(s => ({ crumb: s.source, geo: s.geo })))},
+      cards: ${JSON.stringify(opts.examples.map(e => ({ crumb: e.source, geo: e.geo })))}
+    };
   </script>
   <script>${opts.landingBundle}</script>
 </body>
