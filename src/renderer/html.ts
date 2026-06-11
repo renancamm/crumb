@@ -64,11 +64,10 @@ export interface AppOptions {
   geoData?: Record<string, { lat: number; lng: number }>
   /** Set to "online" to embed geoData but skip seeding (force live geocoding). */
   geoMode?: "online" | "static"
-  /** Embed mode: the full set of documents a host can swap between via
-   *  postMessage({ type: "crumb:set-doc", index }). When provided, the page
-   *  renders in viewer-only embed mode (locked-preview map + expand control);
-   *  the `doc` argument is the one shown initially. */
-  embedDocs?: CrumbDocument[]
+  /** Embed mode: a generic, content-agnostic embed. The page ships no baked doc;
+   *  it loads a crumb at runtime from `?src=<.crumb url>` (see embed-boot.ts),
+   *  with the map locked + an expand→fullscreen control. Pass `doc = null`. */
+  embed?: boolean
 }
 
 
@@ -101,7 +100,17 @@ function renderNote(text?: string, opts: { boxed?: boolean } = {}): string {
 // ─── Trip level renders ───────────────────────────────────────────────────────
 
 /** Sticky bar + trip header block (crumb eyebrow, name, tags, note, author). Shared by the trip and single-place panels. */
-function renderTripHeader(doc: CrumbDocument): string {
+export function renderTripHeader(doc: CrumbDocument, opts: { compact?: boolean } = {}): string {
+  if (opts.compact) {
+    // Card embeds: the trip header trimmed to name + note (both optional). Returns
+    // "" when there's nothing to show, so a header-less crumb renders just the map.
+    const name     = doc.trip?.name
+    const nameHtml = name ? `<h1 class="panel-trip-name">${escape(name)}</h1>` : ""
+    const noteHtml = renderNote(doc.trip?.note)
+    if (!nameHtml && !noteHtml) return ""
+    return `<div class="panel-trip-header panel-trip-header--compact">${nameHtml}${noteHtml}</div>`
+  }
+
   const parts: string[] = []
 
   if (doc.trip) {
@@ -511,11 +520,11 @@ export function renderModalContent(doc: CrumbDocument, modal: ModalRef): string 
  *   — editor panel (left split, toggled via Edit) with live hot-reload
  *   — MapLibre GL map with Nominatim geocoding
  */
-export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
+export function renderHtml(doc: CrumbDocument | null, options: AppOptions): string {
   const includeEditor  = options.includeEditor !== false
-  const title          = "Crumb" + (doc.trip?.name ? " — " + escape(doc.trip.name) : "")
-  const panelBody      = includeEditor ? "" : renderTripPanel(doc)
-  const docJson        = includeEditor ? "null" : JSON.stringify(doc)
+  const title          = "Crumb" + (doc?.trip?.name ? " — " + escape(doc.trip.name) : "")
+  const panelBody      = includeEditor || !doc ? "" : renderTripPanel(doc)
+  const docJson        = includeEditor || !doc ? "null" : JSON.stringify(doc)
 
   const editorDom = includeEditor ? `
     <!-- Editor panel (left split, hidden by default) -->
@@ -672,9 +681,8 @@ export function renderHtml(doc: CrumbDocument, options: AppOptions): string {
   const geoGlobals = options.geoData ? `
     window.__CRUMB_GEO_DATA = ${JSON.stringify(options.geoData)};${options.geoMode ? `\n    window.__CRUMB_GEO_MODE = ${JSON.stringify(options.geoMode)};` : ""}` : ""
 
-  const embedGlobals = options.embedDocs ? `
-    window.__CRUMB_EMBED = true;
-    window.__CRUMB_EMBED_DOCS = ${JSON.stringify(options.embedDocs)};` : ""
+  const embedGlobals = options.embed ? `
+    window.__CRUMB_EMBED = true;` : ""
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -702,7 +710,7 @@ ${editorDom}
         <div id="panel-content">${panelBody}</div>
         <div id="panel-footer"></div>
       </div>
-    </div>
+    </div>${options.embed ? `\n    <div id="embed-card-caption"></div>` : ""}
 
   </div>
 ${modalsDom}

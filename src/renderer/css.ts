@@ -1315,6 +1315,38 @@ const embedCSS = `
     background: transparent;
   }
 }
+
+/* Card embed (embed.html?...&card): a self-contained trip card — the map on top,
+   a compact trip header (name + note) below; no panel or controls. */
+body.embed-card #sidebar,
+body.embed-card .embed-expand-btn,
+body.embed-card #map-status,
+body.embed-card .embed-scrim,
+body.embed-card .maplibregl-control-container { display: none !important; }
+body.embed-card #main { display: flex; flex-direction: column; }
+body.embed-card #map { flex: 1; min-height: 0; }
+#embed-card-caption { display: none; }
+body.embed-card #embed-card-caption {
+  display: block;
+  flex-shrink: 0;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  overflow: hidden;
+}
+body.embed-card #embed-card-caption:empty { display: none; }
+.panel-trip-header--compact { margin: 0; }
+.panel-trip-header--compact .panel-trip-name { font-size: var(--text-base); font-weight: 600; margin: 0; line-height: 1.25; }
+.panel-trip-header--compact .note {
+  margin: 4px 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 `
 
 export const CSS = [

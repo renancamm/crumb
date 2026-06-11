@@ -29,9 +29,8 @@ export interface LandingLinks {
 }
 
 export interface LandingExample {
-  file: string   // example filename for the ?example= deep link
-  name: string   // real trip.name from the file
-  note: string   // first paragraph of trip.note (trimmed, markdown stripped)
+  key:  string   // filename minus .crumb — the embed loads examples/<key>.crumb
+  file: string   // example filename for the ?example= editor deep link
 }
 
 export interface LandingOptions {
@@ -46,19 +45,25 @@ export function renderLandingHtml(opts: LandingOptions): string {
   const def = opts.defaultStage ?? 0
   const yamlHtml = opts.stages.map(s => highlightYaml(s.source))
 
+  // Hero loads the default stage as a real embed; the pill swaps it via postMessage.
+  const heroBase = opts.stages[def].file.replace(/\.crumb$/, "")
+  const heroSrc  = `embed.html?src=examples/${encodeURIComponent(heroBase)}.crumb&geo=examples/${encodeURIComponent(heroBase)}.geo.json`
+
   const pillOpts = opts.stages.map((s, i) =>
     `<button class="pill-opt${i === def ? " is-active" : ""}" role="tab" aria-selected="${i === def}">${escape(s.label)}</button>`
   ).join("")
 
-  const cards = opts.examples.map(e =>
-    `<a class="example-card" href="${escape(opts.links.editor)}?example=${encodeURIComponent(e.file)}">
-        <div class="example-card-thumb" aria-hidden="true"></div>
-        <div class="example-card-body">
-          <div class="example-card-title">${escape(e.name)}</div>
-          <p class="example-card-note">${escape(e.note)}</p>
-        </div>
+  // The whole card is one real embed: embed.html?src=…&card renders the map and a
+  // compact trip header (name + note). The <a> carries the label for a11y since
+  // the visible title now lives inside the iframe.
+  const cards = opts.examples.map(e => {
+    const label = e.key.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
+    const ex    = encodeURIComponent(e.key)
+    const src   = `embed.html?src=examples/${ex}.crumb&geo=examples/${ex}.geo.json&card`
+    return `<a class="example-card" href="${escape(opts.links.editor)}?example=${encodeURIComponent(e.file)}" aria-label="Open ${escape(label)} in the editor">
+        <iframe class="example-card-frame" src="${src}" title="${escape(label)} map" loading="lazy" tabindex="-1"></iframe>
       </a>`
-  ).join("\n      ")
+  }).join("\n      ")
 
   const tryItems = [
     { icon: ICON_SPARKLES, title: "Generate one with AI",
@@ -94,7 +99,7 @@ export function renderLandingHtml(opts: LandingOptions): string {
   <meta name="description" content="Crumb is an open format for trip itineraries: a plain-text document that turns a list of places into an interactive map.">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" />
   <style>${CSS}
 ${landingCSS}</style>
 </head>
@@ -109,18 +114,20 @@ ${landingCSS}</style>
 
       <div class="pill-wrap">
         <span class="pill-scale pill-scale--left" aria-hidden="true">
-          <span class="pill-label">less details</span>
+          <span class="pill-label">Less details</span>
           <span class="pill-arrow pill-arrow--left">${ICON_CHEVRON_LEFT}</span>
+          <span class="pill-sign">&minus;</span>
         </span>
         <div class="detail-pill" id="detail-pill" role="tablist" aria-label="Level of detail">${pillOpts}</div>
         <span class="pill-scale pill-scale--right" aria-hidden="true">
+          <span class="pill-sign">+</span>
           <span class="pill-arrow pill-arrow--right">${ICON_CHEVRON_RIGHT}</span>
-          <span class="pill-label">more details</span>
+          <span class="pill-label">More details</span>
         </span>
       </div>
 
       <div class="hero-card">
-        <iframe id="hero-frame" class="hero-frame" src="embed.html" title="Live Crumb map" allow="fullscreen" allowfullscreen></iframe>
+        <iframe id="hero-frame" class="hero-frame" src="${heroSrc}" title="Live Crumb map" allow="fullscreen" allowfullscreen></iframe>
       </div>
     </div>
   </header>
@@ -148,7 +155,7 @@ ${landingCSS}</style>
   <section class="landing-section">
     <div class="landing-wrap">
       <h2 class="landing-h2">Different ways of using it</h2>
-      <p class="landing-p">The same format works for a single afternoon or months of travel. Check a few examples:</p>
+      <p class="text-body-p">The same format works for a single afternoon or months of travel. Check a few examples:</p>
       <div class="card-grid">
       ${cards}
       </div>

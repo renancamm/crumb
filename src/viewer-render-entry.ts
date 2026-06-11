@@ -5,6 +5,7 @@
 // window.__CRUMB_DATA and never re-parses. The editor build uses browser-entry.ts
 // instead, which additionally exports `parse` for live re-parsing.
 export {
+  renderTripHeader,
   renderTripPanel,
   renderPlacePanel,
   renderSinglePlacePanel,

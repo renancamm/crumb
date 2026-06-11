@@ -24,7 +24,6 @@ body.landing {
 .landing-h1   { font-size: clamp(38px, 7vw, 64px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; margin: 0 auto; max-width: 20ch; text-wrap: balance; }
 .landing-lede { font-size: clamp(17px, 2.2vw, 21px); color: var(--text-secondary); line-height: 1.55; max-width: 46ch; margin: 16px auto 0; text-wrap: balance; }
 .landing-h2   { font-size: clamp(24px, 4vw, 34px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; margin: 0 0 12px; }
-.landing-p    { font-size: var(--text-lg); color: var(--text-secondary); line-height: 1.6; max-width: 56ch; margin: 0; }
 
 .landing-brand { font-family: var(--mono); font-size: 20px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); }
 
@@ -51,10 +50,10 @@ body.landing {
   align-items: center;
   gap: 0;
 }
-.pill-scale { display: inline-flex; align-items: center; gap: 6px; color: var(--activity); font-size: var(--text-sm); font-weight: 500; }
+.pill-scale { display: inline-flex; align-items: center; gap: 6px; color: var(--activity); font-size: var(--text-sm); font-weight: 500; transition: opacity 0.25s ease, transform 0.25s ease; }
 .pill-scale--left  { justify-self: end; }
 .pill-scale--right { justify-self: start; }
-.pill-label { white-space: nowrap; }
+.pill-label { white-space: nowrap; font-family: "Caveat", cursive; font-size: 22px; font-weight: 600; line-height: 1; position: relative; top: -1px; }
 .pill-arrow { position: relative; display: inline-flex; align-items: center; width: 46px; height: 16px; }
 .pill-arrow--left  { justify-content: flex-start; }
 .pill-arrow--right { justify-content: flex-end; }
@@ -67,17 +66,28 @@ body.landing {
 }
 .pill-arrow--left::before  { left: 5px; right: 0; background: linear-gradient(to right, var(--activity), transparent); }
 .pill-arrow--right::before { left: 0; right: 5px; background: linear-gradient(to left,  var(--activity), transparent); }
+/* Handwritten −/+ shown in place of the arrow+label on mobile. */
+.pill-sign { display: none; font-family: "Caveat", cursive; font-size: 40px; font-weight: 700; line-height: 1; color: var(--activity); padding: 0 12px; position: relative; top: -2px; }
+/* Optical nudge: Caveat's left bearing on "More"/"+" reads as a wider gap on the
+   right than the left's trailing "s"/"−"; pull the right side back to match. */
+.pill-scale--right .pill-label { margin-left: -3px; }
+.pill-scale--right .pill-sign  { padding-left: 8px; }
 /* Hide the scale while the pill is floating (pinned) — it belongs to the hero. */
-.pill-wrap:has(.detail-pill.is-pinned) .pill-scale { opacity: 0; }
-@media (max-width: 559px) { .pill-scale { display: none; } }
+.pill-wrap:has(.detail-pill.is-pinned) .pill-scale { opacity: 0; transform: translateY(-4px); }
+@media (max-width: 559px) {
+  .pill-label, .pill-arrow { display: none; }
+  .pill-sign { display: inline-block; }
+}
 .detail-pill {
+  grid-column: 2;   /* stay in the centre track even when the scales are display:none (mobile) */
+  justify-self: center;
   display: inline-flex;
   gap: 2px;
   padding: 4px;
   border: 1px solid var(--border);
   border-radius: var(--radius-full);
   background: var(--surface);
-  transition: background var(--duration), box-shadow var(--duration);
+  transition: background var(--duration), box-shadow var(--duration), opacity 0.25s ease;
 }
 .pill-opt {
   appearance: none;
@@ -104,7 +114,7 @@ body.landing {
   background: var(--bg);
   box-shadow: var(--shadow-md);
 }
-.detail-pill.is-hidden { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(-8px); }
+.detail-pill.is-hidden { opacity: 0; pointer-events: none; }
 
 /* Hero map card — reads as a big embedded map; rounded, hairline, no shadow. */
 .hero-card {
@@ -196,24 +206,15 @@ body.landing {
   transition: transform var(--duration), border-color var(--duration), background var(--duration);
 }
 .example-card:hover { transform: translateY(-2px); border-color: var(--primary); background: var(--surface); }
-/* Full-bleed thumbnail placeholder — a real map preview lands here later. */
-.example-card-thumb {
+/* The whole card is one real embed (embed.html?…&card): map + compact trip
+   header. Inert so the card stays a single link to the editor. */
+.example-card-frame {
+  display: block;
   width: 100%;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 16 / 12;
+  border: 0;
+  pointer-events: none;
   background: var(--muted-bg);
-  border-bottom: 1px solid var(--border);
-}
-.example-card-body  { padding: 16px 20px; }
-.example-card-title { font-size: var(--text-lg); font-weight: 600; }
-.example-card-note  {
-  margin: 6px 0 0;
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 /* ── "Give it a try" paths ────────────────────────────────────────────────── */

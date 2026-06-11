@@ -603,8 +603,8 @@ window.addEventListener("crumb:doc-updated", () => {
 // ─── Embed mode ────────────────────────────────────────────────────────────────
 // A self-contained, host-friendly render: the map starts with interactions locked
 // (so a host page scrolls past it) and exposes an expand→fullscreen control that
-// re-enables them. Hosts can also swap the document via
-// postMessage({ type: "crumb:set-doc", index }).
+// re-enables them. (Runtime document loading — ?src and crumb:load — lives in
+// embed-boot.ts.)
 
 function setupEmbedMode(mobileQuery: MediaQueryList): void {
   document.body.classList.add("embed")
@@ -648,16 +648,6 @@ function setupEmbedMode(mobileQuery: MediaQueryList): void {
   }
   document.addEventListener("fullscreenchange", onFsChange)
   document.addEventListener("webkitfullscreenchange", onFsChange)
-
-  // Host-driven document swap (e.g. the landing page detail-level pill).
-  window.addEventListener("message", (e: MessageEvent) => {
-    const d = e.data
-    if (!d || d.type !== "crumb:set-doc") return
-    const swap = window.__CRUMB_EMBED_DOCS?.[d.index]
-    if (!swap) return
-    window.__CRUMB_DATA = swap
-    window.dispatchEvent(new CustomEvent("crumb:doc-updated"))
-  })
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────

@@ -25,14 +25,14 @@ declare global {
     __CRUMB_GEO_MODE?: "online" | "static"
     // Embed mode: a self-contained, host-friendly render. The map starts with
     // interactions locked (so a host page scrolls past it) and offers an
-    // expand→fullscreen control. __CRUMB_EMBED_DOCS lets a host swap the
-    // rendered document via postMessage({ type: "crumb:set-doc", index }).
+    // expand→fullscreen control. A host loads a crumb at runtime via
+    // embed.html?src=… or postMessage({ type: "crumb:load", src, geo }).
     __CRUMB_EMBED?:      boolean
-    __CRUMB_EMBED_DOCS?: CrumbDocument[]
     Crumb: {
       // Present only in editor-mode output; the viewer-only bundle omits `parse`.
       // Safe because the editor bundle (its sole caller) ships only alongside it.
       parse:               (src: string) => CrumbDocument
+      renderTripHeader:       (doc: CrumbDocument, opts?: { compact?: boolean }) => string
       renderTripPanel:        (doc: CrumbDocument) => string
       renderPlacePanel:       (doc: CrumbDocument, placeIdx: number) => string
       renderSinglePlacePanel: (doc: CrumbDocument) => string

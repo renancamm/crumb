@@ -23,6 +23,18 @@ const textSec = document.getElementById("sec-text")
 
 let current = DATA?.defaultStage ?? 0
 
+// Tell the hero embed to load a stage's crumb — a real host→embed control message
+// (no iframe reload): examples/<base>.crumb plus its baked geo cache.
+function loadStage(i: number): void {
+  if (!frame || !DATA) return
+  const base = DATA.files[i].replace(/\.crumb$/, "")
+  frame.contentWindow?.postMessage({
+    type: "crumb:load",
+    src:  `examples/${base}.crumb`,
+    geo:  `examples/${base}.geo.json`,
+  }, "*")
+}
+
 function setStage(i: number): void {
   current = i
   options.forEach((b, idx) => {
@@ -32,7 +44,7 @@ function setStage(i: number): void {
   })
   if (yamlEl && DATA) yamlEl.innerHTML = DATA.yaml[i]
   if (fileEl && DATA) fileEl.textContent = DATA.files[i]
-  frame?.contentWindow?.postMessage({ type: "crumb:set-doc", index: i }, "*")
+  loadStage(i)
 }
 
 options.forEach((b, i) => b.addEventListener("click", () => setStage(i)))
@@ -40,24 +52,32 @@ options.forEach((b, i) => b.addEventListener("click", () => setStage(i)))
 // Reserve the pill's height on its wrapper so detaching it (position: fixed when
 // pinned) doesn't collapse the wrapper and jolt the scroll. Re-measure on resize.
 function reservePillSpace(): void {
-  if (wrap && pill) wrap.style.minHeight = `${pill.getBoundingClientRect().height}px`
+  if (!wrap || !pill) return
+  const r = pill.getBoundingClientRect()
+  wrap.style.minHeight = `${r.height}px`
+  // Freeze the middle column at the pill's width so the side scales hold their
+  // place when the pill detaches (position: fixed) — otherwise the auto column
+  // collapses to 0 and the scales slide inward mid-fade.
+  wrap.style.gridTemplateColumns = `1fr ${r.width}px 1fr`
 }
 reservePillSpace()
 window.addEventListener("load", reservePillSpace)
+window.addEventListener("resize", reservePillSpace)
 
-// Keep the iframe in sync once it has loaded (covers the initial state and any
-// reload), since the landing page is the source of truth for the active stage.
-frame?.addEventListener("load", () => setStage(current))
+// The hero iframe loads the default stage itself via ?src; only re-sync if the
+// user already switched before it finished loading (avoids a redundant reload).
+frame?.addEventListener("load", () => { if (current !== (DATA?.defaultStage ?? 0)) loadStage(current) })
 
 // Float behaviour: in-flow in the hero; fixed + compact once it reaches the top;
-// faded out once the "it's just text" section scrolls past.
+// faded out once scrolled past the middle of the "it's just text" section.
 function onScroll(): void {
   if (!pill || !wrap) return
-  const wrapTop    = wrap.getBoundingClientRect().top
-  const textBottom = textSec ? textSec.getBoundingClientRect().bottom : Infinity
+  const wrapTop  = wrap.getBoundingClientRect().top
+  const textRect = textSec?.getBoundingClientRect()
+  const textMid  = textRect ? (textRect.top + textRect.bottom) / 2 : Infinity
   const pinned = wrapTop <= 14
   pill.classList.toggle("is-pinned", pinned)
-  pill.classList.toggle("is-hidden", pinned && textBottom <= 80)
+  pill.classList.toggle("is-hidden", pinned && textMid <= 80)
 }
 window.addEventListener("scroll", onScroll, { passive: true })
 window.addEventListener("resize", onScroll)
