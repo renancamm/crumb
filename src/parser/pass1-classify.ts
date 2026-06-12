@@ -36,19 +36,20 @@ import {
   RawStay,
   RawTransportLeg,
 } from "../types/raw"
+import {
+  ACTIVITY_FIELDS,
+  GROUP_FIELDS,
+  PLACE_FIELDS,
+  STAY_FIELDS,
+  TOP_LEVEL_KEYS,
+  TRANSPORT_FIELDS,
+  TRIP_FIELDS,
+} from "./vocab"
 
 // ─── Vocabularies & field sets ───────────────────────────────────────────────
 
 const TRANSPORT_MODE_SET = new Set<string>(TRANSPORT_MODES)
 const GROUP_KIND_SET     = new Set<string>(GROUP_KINDS)
-
-const TOP_LEVEL_KEYS   = ["trip", "itinerary"]
-const TRIP_FIELDS      = ["name", "author", "duration", "tags", "info", "note"]
-const PLACE_FIELDS     = ["arrives", "departs", "duration", "location", "tags", "plan", "info", "note"]
-const TRANSPORT_FIELDS = ["from", "to", "departs", "arrives", "duration", "info", "note"]
-const ACTIVITY_FIELDS  = ["priority", "tags", "time", "duration", "location", "info", "note"]
-const STAY_FIELDS      = ["arrives", "departs", "duration", "location", "tags", "info", "note"]
-const GROUP_FIELDS     = ["time", "duration", "plan"]
 
 const ITINERARY_KINDS = ["place", "transport"]
 const PLAN_KINDS      = ["activity", "stay", "day", "week", "group"]
@@ -307,7 +308,7 @@ function pickKind(
 function rejectUnknownFields(
   obj: Record<string, unknown>,
   kindKey: string,
-  allowed: string[],
+  allowed: readonly string[],
   kindLabel: string,
   name?: string,
 ): void {
@@ -320,7 +321,7 @@ function rejectUnknownFields(
   }
 }
 
-function rejectUnknownKeys(obj: Record<string, unknown>, allowed: string[], context: string): void {
+function rejectUnknownKeys(obj: Record<string, unknown>, allowed: readonly string[], context: string): void {
   for (const key of Object.keys(obj)) {
     if (!allowed.includes(key)) {
       throw new Error(`Unknown key "${key}" in ${context}. Valid keys: ${allowed.join(", ")}.`)

@@ -24,7 +24,7 @@ import {
   placeActivityItems,
 } from "./plan-view"
 import { CSS } from "./css"
-import { ICON_STAY, ICON_ARRIVES, ICON_DEPARTS, ICON_CLOCK, ICON_PIN_OFF, ICON_PRIORITY_MUST, ICON_PRIORITY_MAYBE, ICON_CLOSE, ICON_CHEVRON_DOWN, modeIconSvg } from "./icons"
+import { ICON_STAY, ICON_ARRIVES, ICON_DEPARTS, ICON_CLOCK, ICON_PIN_OFF, ICON_PRIORITY_MUST, ICON_PRIORITY_MAYBE, ICON_CLOSE, ICON_CHEVRON_DOWN, ICON_CHEVRON_LEFT, ICON_CHEVRON_RIGHT, ICON_UNDO, ICON_REDO, ICON_HELP, modeIconSvg } from "./icons"
 import {
   escape,
   jsonForScript,
@@ -533,94 +533,81 @@ export function renderHtml(doc: CrumbDocument | null, options: AppOptions): stri
   const panelBody      = includeEditor || !doc ? "" : renderTripPanel(doc)
   const docJson        = includeEditor || !doc ? "null" : jsonForScript(doc)
 
-  const editorDom = includeEditor ? `
-    <!-- Editor panel (left split, hidden by default) -->
-    <div id="editor-panel" style="display:none">
-      <div class="editor-header">
-        <button id="editor-close-btn" class="editor-close-btn">
-          ${ICON_CLOSE}
-          Close
-        </button>
-      </div>
-      <div id="editor-error-bar" class="editor-error-bar" style="display:none"></div>
-      <textarea
-        id="editor"
-        class="editor-textarea"
-        spellcheck="false"
-        autocorrect="off"
-        autocapitalize="off"
-        autocomplete="off"
-        placeholder="Paste or type a .crumb document…"
-      ></textarea>
-    </div>` : ""
-
-  const exampleItemsHtml = Object.keys(options.examples ?? {})
-    .map(name => `<div class="menu-sub-item" data-example="${escape(name)}">${escape(name.replace(/\.crumb$/, ""))}</div>`)
-    .join("\n        ")
+  // Inner editor body: CodeMirror mount + a persistent bottom status bar (always
+  // rendered, so errors never reflow the layout) + the circular expand button
+  // shown only in the collapsed (slim-rail) state. The menu pill (app bar) floats
+  // over the top-left, positioned absolutely within #editor-pane.
+  const editorBodyDom = includeEditor ? `
+      <div id="editor" class="editor-host"></div>
+      <div id="editor-status">● ready</div>
+      <button id="editor-collapse" class="editor-edge-btn" title="Hide editor" aria-label="Hide editor">${ICON_CHEVRON_LEFT}</button>
+      <button id="editor-reopen" class="editor-edge-btn" title="Show editor" aria-label="Show editor">${ICON_CHEVRON_RIGHT}</button>` : ""
 
   const chevronSvg = `<span class="app-bar-chevron">${ICON_CHEVRON_DOWN}</span>`
 
   const appBarDom = includeEditor ? `
-  <!-- App bar (editor mode only) -->
+  <!-- Floating menu pill (editor mode only) -->
   <div id="app-bar">
-    <span class="app-bar-brand">crumb</span>
-    <div class="app-bar-sep"></div>
-
     <!-- File menu -->
     <div class="app-bar-item" id="menu-file">File ${chevronSvg}
       <div class="app-bar-submenu" id="file-sub">
-        <div class="menu-sub-item" id="menu-edit">Edit</div>
         <div class="menu-sub-item" id="menu-new">New</div>
+        <div class="menu-sub-item" id="menu-generate">Generate with AI…</div>
         <div class="menu-sub-sep"></div>
+        <div class="menu-sub-item" id="menu-open">Open…</div>
+        <div class="menu-sub-item menu-sub-parent" id="menu-open-recent">Open recent
+          <span class="menu-sub-arrow">${ICON_CHEVRON_RIGHT}</span>
+          <div class="app-bar-submenu menu-flyout" id="recent-sub">
+            <div id="recent-list"></div>
+          </div>
+        </div>
         <div class="menu-sub-item" id="menu-save">Save</div>
-        <div class="menu-sub-item" id="menu-save-as">Save as…</div>
+        <div class="menu-sub-item menu-sub-parent" id="menu-export">Export
+          <span class="menu-sub-arrow">${ICON_CHEVRON_RIGHT}</span>
+          <div class="app-bar-submenu menu-flyout" id="export-sub">
+            <div class="menu-sub-item" id="menu-download">Download .crumb</div>
+            <div class="menu-sub-item" id="menu-embed">Generate map embed</div>
+          </div>
+        </div>
         <div class="menu-sub-sep"></div>
-        <div class="menu-section-label">Open recent</div>
-        <div id="recent-list"></div>
-        <div class="menu-sub-sep"></div>
+        <div class="menu-sub-item" id="menu-revert">Revert changes</div>
         <div class="menu-sub-item" id="menu-delete">Delete</div>
       </div>
     </div>
 
-    <!-- Examples menu -->
-    <div class="app-bar-item" id="menu-examples">Examples ${chevronSvg}
-      <div class="app-bar-submenu" id="examples-sub">
-        ${exampleItemsHtml}
-      </div>
-    </div>
+    <div class="app-bar-sep"></div>
 
-    <!-- About menu -->
-    <div class="app-bar-item" id="menu-about">About ${chevronSvg}
-      <div class="app-bar-submenu" id="about-sub">
-        <div class="menu-sub-item" id="about-what">What is a Crumb</div>
-        <div class="menu-sub-item" id="about-generate">How to generate</div>
-      </div>
-    </div>
-  </div>` : ""
+    <!-- History -->
+    <button class="app-bar-icon-btn" id="menu-undo" title="Undo" aria-label="Undo">${ICON_UNDO}</button>
+    <button class="app-bar-icon-btn" id="menu-redo" title="Redo" aria-label="Redo">${ICON_REDO}</button>
+
+    <div class="app-bar-sep"></div>
+
+    <!-- Help → landing page -->
+    <a class="app-bar-icon-btn" id="menu-help" href="index.html" target="_blank" rel="noopener" title="About Crumb" aria-label="About Crumb">${ICON_HELP}</a>
+  </div>
+  <input type="file" id="open-file-input" accept=".crumb,.yaml,.yml,.txt,.md" style="display:none">` : ""
 
   const modalsDom = includeEditor ? `
-  <!-- New itinerary modal -->
-  <div class="modal-overlay" id="new-modal">
+  <!-- Generate map embed modal -->
+  <div class="modal-overlay" id="embed-modal">
     <div class="modal-box">
-      <button class="modal-x" id="new-close-x">${ICON_CLOSE}</button>
+      <button class="modal-x" id="embed-close-x">${ICON_CLOSE}</button>
       <div class="modal-header">
-        <div class="modal-title">New itinerary</div>
-        <div class="modal-description">Paste a <code>.crumb</code> document below to load it.</div>
+        <div class="modal-title">Embed this map</div>
+        <div class="modal-description">Paste this snippet into any web page. It loads the map from this site's <code>embed.html</code> and passes your current itinerary in — so the page must be served over http(s).</div>
       </div>
       <div class="modal-body">
         <textarea
-          id="new-textarea"
-          class="new-textarea"
+          id="embed-snippet"
+          class="embed-snippet"
+          readonly
           spellcheck="false"
-          autocorrect="off"
-          autocapitalize="off"
-          autocomplete="off"
-          placeholder="Paste your .crumb YAML here…"
         ></textarea>
       </div>
       <div class="modal-footer">
-        <button class="action-btn" id="new-cancel">Cancel</button>
-        <button class="action-btn primary" id="new-load">Load</button>
+        <button class="action-btn" id="embed-close">Close</button>
+        <button class="action-btn primary" id="embed-copy-btn">Copy snippet</button>
       </div>
     </div>
   </div>
@@ -643,22 +630,6 @@ export function renderHtml(doc: CrumbDocument | null, options: AppOptions): stri
         <button class="action-btn" id="generate-close">Close</button>
         <button class="action-btn" id="dl-guide-btn">Download guide</button>
         <button class="action-btn primary" id="copy-prompt-btn">Copy prompt</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- About modal -->
-  <div class="modal-overlay" id="about-modal">
-    <div class="modal-box">
-      <button class="modal-x" id="about-close-x">${ICON_CLOSE}</button>
-      <div class="modal-header">
-        <div class="modal-title">About Crumb</div>
-      </div>
-      <div class="modal-body">
-        <p class="ref-intro">Crumb is a plain-text, YAML-based format for travel itineraries designed to work naturally with AI assistants. It keeps trips human-readable while making it easy to collaborate with a language model to plan routes, fill in activities, timings, and notes — then render everything as an interactive map.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="action-btn primary" id="about-close-btn">Close</button>
       </div>
     </div>
   </div>
@@ -704,11 +675,13 @@ export function renderHtml(doc: CrumbDocument | null, options: AppOptions): stri
   <style>${CSS}</style>
 </head>
 <body>
-${appBarDom}
-  <!-- Main split view -->
-  <div id="main">
-${editorDom}
-    <!-- Map (full area; sidebar floats inside it) -->
+  <!-- Main split view: editor pane (menus + code) | draggable splitter | map -->
+  <div id="main">${includeEditor ? `
+    <!-- Editor pane (left split): menus sit only atop the code side -->
+    <div id="editor-pane">${appBarDom}${editorBodyDom}
+    </div>
+    <div id="editor-splitter" title="Drag to resize"></div>` : ""}
+    <!-- Map (fills remaining area; sidebar floats inside it) -->
     <div id="map">
       <!-- Floating sidebar panel (desktop) / bottom sheet (mobile) -->
       <div id="sidebar">

@@ -1,7 +1,7 @@
 /**
  * Crumb CSS
  *
- * Layout: editor-panel (left split) | sidebar | map.
+ * Layout: editor-pane (resizable left split) | splitter | map (sidebar floats inside).
  * Design system: shadcn/ui Zinc palette — clean, minimal.
  *
  * Tune the :root tokens to restyle the whole UI:
@@ -23,8 +23,8 @@ html, body { height: 100%; overflow: hidden; }
  *   STATIC TOKENS — radius, type scale, fonts, motion, layout, z-index. These
  *                   are theme-independent and must NOT be duplicated in dark.
  *
- * The editor (--ed-*) is a self-contained Catppuccin Mocha surface, not part of
- * the light/dark flip — it stays dark in both themes.
+ * The editor (--ed-*) is a self-contained dark surface skinned with Crumb's own
+ * dark-mode palette, not part of the light/dark flip — it stays dark in both themes.
  */
 const tokensCSS = `
 :root {
@@ -135,16 +135,24 @@ const tokensCSS = `
   --z-modal:   3000;
 
   /* ===================== EDITOR (always-dark, not themed) =============== */
-  /* Catppuccin Mocha — a self-contained dark surface, the same in both themes. */
-  --ed-bg:          #1e1e2e;
-  --ed-text:        #cdd6f4;
-  --ed-muted:       #6c7086;
-  --ed-placeholder: #45475a;
-  --ed-caret:       #89b4fa;
-  --ed-border:      rgba(255,255,255,.06);
-  --ed-error-bg:    #3b0f0f;
-  --ed-error-bd:    #6b2020;
-  --ed-error-text:  #f38ba8;
+  /* A self-contained dark surface (the same in both themes) skinned with Crumb's
+     own dark-mode zinc palette — not a third-party theme. See invariant 10. */
+  --ed-bg:          #141417;   /* editor surface (Crumb dark --bg) */
+  --ed-surface:     #1e1e22;   /* active line / elevated (Crumb dark --surface) */
+  --ed-text:        #e8e8ea;
+  --ed-muted:       #9a9aa2;   /* gutter / line numbers */
+  --ed-placeholder: #6b6b73;
+  --ed-caret:       #e8e8ea;
+  --ed-border:      #313139;
+  --ed-hover:       #2a2a33;   /* menu/button hover on the dark editor chrome */
+  --ed-selection-bg:#2a2a33;
+  --ed-error-text:  #f87171;   /* Crumb dark --danger */
+  /* CodeMirror syntax — desaturated accents tuned to the zinc base. */
+  --ed-syntax-key:     #93c5fd;
+  --ed-syntax-string:  #86efac;
+  --ed-syntax-comment: #71717a;
+  --ed-syntax-number:  #fcd34d;
+  --ed-syntax-bool:    #c4b5fd;
 }
 
 /* System-preference dark theme. Re-declares ONLY the theme-token group above
@@ -204,20 +212,35 @@ const iconsCSS = `
 .geo-no-loc .crumb-icon { width: 12px; height: 12px; }
 `
 
-/* #main split layout: editor-panel | map (sidebar floats inside map) */
+/* #main split layout: editor-pane | splitter | map (sidebar floats inside map) */
 const layoutCSS = `
 /* ── Layout ─────────────────────────────────────────────────────────── */
 #main { display: flex; flex: 1; min-height: 0; overflow: hidden; }
 
-#editor-panel {
-  width: var(--sidebar-w);
-  flex-shrink: 0;
-  border-right: 1px solid var(--ed-border);
+/* Editor pane: a resizable left split. Width is driven by --editor-width on
+   #main (set by the splitter drag in app-layout.ts), defaulting to a third.
+   position:relative anchors the floating menu pill and bottom status bar. */
+#editor-pane {
+  position: relative;
+  width: var(--editor-width, 33%);
+  flex: 0 0 auto;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;   /* let menu flyouts extend past the pane; CM clips via .editor-host */
   background: var(--ed-bg);
 }
+
+/* Draggable divider between the editor pane and the map. */
+#editor-splitter {
+  flex: 0 0 auto;
+  width: 6px;
+  cursor: col-resize;
+  background: var(--ed-border);
+  transition: background var(--duration);
+}
+#editor-splitter:hover,
+#editor-splitter.dragging { background: var(--ed-muted); }
 
 #map { flex: 1; min-width: 0; position: relative; }
 
@@ -236,36 +259,26 @@ const layoutCSS = `
 }
 `
 
-/* #app-bar: top app bar (editor mode only) and its Examples submenu */
+/* #app-bar: floating menu pill (editor mode only) and its dropdown submenus */
 const menuCSS = `
-/* ── App bar ─────────────────────────────────────────────────────────── */
+/* ── Menu pill ───────────────────────────────────────────────────────── */
+/* A floating rounded pill over the editor's top-left. It sits over the
+   always-dark editor, so it (and its dropdowns) stay dark in both themes,
+   using the editor's --ed-* tokens. */
 #app-bar {
-  flex-shrink: 0;
-  height: var(--appbar-h);
-  display: flex;
-  align-items: stretch;
-  padding: 0 8px;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-  user-select: none;
-}
-
-.app-bar-brand {
-  font-family: var(--mono);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--text);
+  position: absolute;
+  top: 10px; left: 10px;
+  z-index: var(--z-appbar);
   display: flex;
   align-items: center;
-  padding: 0 10px 0 4px;
-}
-
-.app-bar-sep {
-  width: 1px;
-  background: var(--border);
-  margin: 7px 4px;
-  flex-shrink: 0;
+  gap: 1px;
+  height: var(--appbar-h);
+  padding: 3px 5px;
+  background: var(--ed-surface);
+  border: 1px solid var(--ed-border);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sidebar);
+  user-select: none;
 }
 
 .app-bar-item {
@@ -273,17 +286,46 @@ const menuCSS = `
   display: flex;
   align-items: center;
   gap: 3px;
-  padding: 0 8px;
+  padding: 5px 9px;
   font-size: var(--text-sm);
-  color: var(--text);
+  color: var(--ed-text);
   cursor: pointer;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-full);
 }
-.app-bar-item:hover { background: var(--muted-bg); }
-.app-bar-item.open  { background: var(--muted-bg); }
+.app-bar-item:hover { background: var(--ed-hover); }
+.app-bar-item.open  { background: var(--ed-hover); }
 
-.app-bar-chevron { display: inline-flex; color: var(--muted); }
+.app-bar-chevron { display: inline-flex; color: var(--ed-muted); }
 .app-bar-chevron .crumb-icon { width: 11px; height: 11px; stroke-width: 2; }
+
+/* Icon buttons in the pill (undo / redo / help). */
+.app-bar-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--ed-text);
+  text-decoration: none;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: background var(--duration);
+}
+.app-bar-icon-btn:hover { background: var(--ed-hover); }
+.app-bar-icon-btn .crumb-icon { width: 15px; height: 15px; stroke-width: 2; }
+/* The bare "?" glyph sits small within its viewBox — size it up to match. */
+#menu-help .crumb-icon { width: 22px; height: 22px; stroke-width: 1.75; }
+
+/* Thin divider grouping the File menu from the icon buttons. */
+.app-bar-sep {
+  width: 1px;
+  align-self: stretch;
+  margin: 4px 3px;
+  background: var(--ed-border);
+  flex-shrink: 0;
+}
 
 /* ── Examples dropdown ───────────────────────────────────────────────── */
 .app-bar-submenu {
@@ -291,11 +333,11 @@ const menuCSS = `
   top: calc(100% + 2px); left: 0;
   z-index: var(--z-menu);
   min-width: 180px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  background: var(--ed-surface);
+  border: 1px solid var(--ed-border);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
-  padding: 4px;
+  padding: 6px;
   display: none;
 }
 .app-bar-submenu.open { display: block; animation: menu-in 120ms ease; }
@@ -309,86 +351,115 @@ const menuCSS = `
   display: flex;
   align-items: center;
   padding: 5px 8px;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-sm);
   font-size: var(--text-sm);
-  color: var(--text);
+  color: var(--ed-text);
   cursor: pointer;
   user-select: none;
 }
-.menu-sub-item:hover { background: var(--muted-bg); }
+.menu-sub-item:hover { background: var(--ed-hover); }
 
-.menu-sub-item--muted { color: var(--muted); cursor: default; }
-.menu-sub-item--muted:hover { background: transparent; color: var(--muted); }
+/* ── Second-level (flyout) submenus: Open recent, Export ──────────────── */
+.menu-sub-parent { position: relative; }
+.menu-sub-arrow { display: inline-flex; margin-left: auto; padding-left: 12px; color: var(--ed-muted); }
+.menu-sub-arrow .crumb-icon { width: 13px; height: 13px; stroke-width: 2; }
 
-.menu-sub-item--disabled { color: var(--muted); cursor: default; pointer-events: none; }
+.menu-flyout {
+  top: -7px;            /* align the first flyout item with the parent row */
+  left: 100%;           /* open to the right, touching the parent's edge */
+}
+.menu-sub-parent:hover > .menu-flyout { display: block; animation: menu-in 120ms ease; }
 
-.menu-sub-sep { height: 1px; background: var(--border); margin: 4px 0; }
+.menu-sub-item--muted { color: var(--ed-muted); cursor: default; }
+.menu-sub-item--muted:hover { background: transparent; color: var(--ed-muted); }
+
+.menu-sub-item--disabled { color: var(--ed-muted); cursor: default; pointer-events: none; }
+
+.menu-sub-sep { height: 1px; background: var(--ed-border); margin: 4px 0; }
 `
 
-/* #editor-panel, .editor-textarea, .editor-error-bar — dark Catppuccin Mocha editor panel */
+/* #editor-pane, the edge collapse/expand buttons, #editor-status, .cm-editor */
 const editorCSS = `
-/* ── Editor panel ────────────────────────────────────────────────────── */
-.editor-header {
+/* ── Edge buttons: collapse / expand, inside the editor's top-right corner ── */
+/* Identical opaque circular buttons (opaque so code scrolls behind, never on top
+   of them) — one shown when open (collapse), the other when collapsed (expand).
+   Kept clear of the divider; never overlap the map. */
+.editor-edge-btn {
+  display: none;
+  position: absolute;
+  top: 10px;              /* aligned with the menu pill (same top + height) */
+  right: 10px;            /* inside the editor's top-right corner; clear of the divider */
+  z-index: var(--z-appbar);
+  width: var(--appbar-h);
+  height: var(--appbar-h);
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--ed-surface);
+  color: var(--ed-text);
+  border: 1px solid var(--ed-border);
+  box-shadow: var(--shadow-sidebar);
+  cursor: pointer;
+  transition: background var(--duration);
+}
+.editor-edge-btn:hover { background: var(--ed-hover); }
+.editor-edge-btn .crumb-icon { width: 16px; height: 16px; stroke-width: 2; }
+
+/* Open: show collapse; Collapsed: show expand. */
+#editor-pane:not(.collapsed) > #editor-collapse { display: inline-flex; }
+#editor-pane.collapsed       > #editor-reopen   { display: inline-flex; }
+
+/* ── Collapsed state: a narrow rail still revealing a peek of the code ────── */
+/* The pane shrinks to a strip that keeps a slice of real code visible; the menu
+   pill and status bar hide, and the whole rail click-expands (the code peek is
+   non-interactive so the click always reaches the rail). The expand button stays
+   in its top-right corner. */
+#editor-pane.collapsed {
+  width: 56px;          /* button (--appbar-h, 36px) + ~10px margin each side */
+  min-width: 56px;
+  cursor: pointer;
+}
+#editor-pane.collapsed > #app-bar,
+#editor-pane.collapsed > #editor-status { display: none; }
+#editor-pane.collapsed > .editor-host { pointer-events: none; }
+/* Drop the line-number gutter in the peek — show just code. */
+#editor-pane.collapsed .cm-gutters { display: none; }
+
+/* ── CodeMirror host (fills the pane; scrolls internally) ────────────── */
+.editor-host { flex: 1; min-height: 0; overflow: hidden; }
+.editor-host .cm-editor { height: 100%; background: var(--ed-bg); }
+.editor-host .cm-editor.cm-focused { outline: none; }
+.editor-host .cm-scroller {
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  line-height: 1.7;
+}
+/* Top padding clears the floating menu pill (≈ pill height 36 + 10 margin + gap). */
+.editor-host .cm-content { padding: 56px 0 14px; caret-color: var(--ed-caret); }
+.editor-host .cm-gutters {
+  background: var(--ed-bg);
+  color: var(--ed-muted);
+  border-right: 1px solid var(--ed-border);
+}
+
+/* ── Status bar (always-present; no reflow on error) ─────────────────── */
+#editor-status {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  padding: 6px 10px;
-  border-bottom: 1px solid var(--ed-border);
-  background: var(--ed-bg);
-}
-
-.editor-close-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: transparent;
-  border: none;
+  height: 24px;
+  padding: 0 12px;
+  background: var(--ed-surface);
+  border-top: 1px solid var(--ed-border);
   color: var(--ed-muted);
-  font-size: var(--text-sm);
-  font-family: var(--font);
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: var(--radius-xs);
-  transition: background var(--duration), color var(--duration);
-}
-.editor-close-btn:hover { background: var(--ed-border); color: var(--ed-text); }
-
-.editor-close-btn .crumb-icon { stroke-width: 2; }
-
-.editor-error-bar {
-  flex-shrink: 0;
-  padding: 5px 14px;
-  background: var(--ed-error-bg);
-  border-bottom: 1px solid var(--ed-error-bd);
-  color: var(--ed-error-text);
-  font-size: var(--text-2xs);
   font-family: var(--mono);
-  line-height: 1.4;
+  font-size: var(--text-2xs);
+  line-height: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-.editor-textarea {
-  flex: 1;
-  width: 100%;
-  resize: none;
-  border: none;
-  outline: none;
-  background: var(--ed-bg);
-  color: var(--ed-text);
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  line-height: 1.7;
-  padding: 14px 16px;
-  tab-size: 2;
-  white-space: pre;
-  overflow-wrap: normal;
-  overflow-x: auto;
-  caret-color: var(--ed-caret);
-  min-height: 0;
-}
-.editor-textarea::placeholder { color: var(--ed-placeholder); }
+#editor-status.has-error { color: var(--ed-error-text); }
 `
 
 /* #panel-nav, #panel-content — desktop sidebar panel */
@@ -561,24 +632,24 @@ const modalCSS = `
 .ref-prompt-label { font-size: var(--text-3xs); font-weight: 600; color: var(--muted); letter-spacing: .5px; text-transform: uppercase; margin-bottom: 6px; }
 .ref-prompt-text { font-size: var(--text-xs); color: var(--muted); line-height: 1.6; font-style: italic; }
 
-.new-textarea {
+.embed-snippet {
   width: 100%;
-  min-height: 180px;
+  min-height: 150px;
   resize: vertical;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--text);
   font-family: var(--mono);
-  font-size: var(--text-xs);
-  line-height: 1.7;
+  font-size: var(--text-2xs);
+  line-height: 1.6;
   padding: 10px 12px;
   outline: none;
-  tab-size: 2;
+  white-space: pre;
+  overflow: auto;
   transition: border-color var(--duration);
 }
-.new-textarea:focus { border-color: var(--muted); }
-.new-textarea::placeholder { color: var(--muted); opacity: 0.6; }
+.embed-snippet:focus { border-color: var(--muted); }
 `
 
 /* MapLibre markers: .place-marker, .detail-marker, .place-popup, .detail-popup, route line, .map-status-chip */
@@ -1159,7 +1230,7 @@ const itineraryCSS = `
   padding: 4px 8px 2px;
   font-size: var(--text-3xs);
   font-weight: 600;
-  color: var(--muted);
+  color: var(--ed-muted);
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -1177,8 +1248,9 @@ const mobileCSS = `
   /* Map: full viewport */
   #map { position: fixed; inset: 0; z-index: 0; }
 
-  /* Editor: full-screen overlay */
-  #editor-panel { position: fixed; inset: 0; width: 100%; z-index: var(--z-editor); }
+  /* Editor: full-screen overlay; splitter is desktop-only */
+  #editor-pane { position: fixed; inset: 0; width: 100%; z-index: var(--z-editor); }
+  #editor-splitter { display: none; }
 
   /* Sidebar becomes a bottom sheet. Fixed full height; JS slides it between
      snap states with transform: translateY (GPU-composited — no per-frame reflow).

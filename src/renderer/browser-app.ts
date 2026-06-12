@@ -567,6 +567,10 @@ document.addEventListener("crumb:map-click", () => {
 })
 
 // ─── Editor doc-updated ───────────────────────────────────────────────────────
+// Fired by the editor bundle when the editor/map split is resized or toggled —
+// the map must repaint to fill its new width (editor never imports the map).
+window.addEventListener("crumb:layout-resized", () => state.map?.resize())
+
 // Fired by the editor bundle after a successful re-parse (or on clear).
 
 window.addEventListener("crumb:doc-updated", () => {

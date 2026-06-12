@@ -15,3 +15,4 @@
 
 import "./renderer/app-editor"
 import "./renderer/app-menus"
+import "./renderer/app-layout"

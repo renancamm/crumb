@@ -39,6 +39,7 @@ async function bundle(entry: string, globalName?: string): Promise<string> {
     bundle:      true,
     format:      "iife",
     platform:    "browser",
+    minify:      true,
     write:       false,
     logLevel:    "silent",
     ...(globalName ? { globalName } : {}),

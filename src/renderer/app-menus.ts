@@ -1,12 +1,13 @@
-import { editorEl, render } from "./app-editor"
+import { getValue, setValue, focusEditor, refreshEditorLayout, render, editorUndo, editorRedo } from "./app-editor"
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
 
-const editorPanel       = document.getElementById("editor-panel")         as HTMLElement
-const newModal          = document.getElementById("new-modal")             as HTMLElement
-const newTextarea       = document.getElementById("new-textarea")          as HTMLTextAreaElement
+const editorPane        = document.getElementById("editor-pane")           as HTMLElement
+const editorReopen      = document.getElementById("editor-reopen")          as HTMLElement | null
+const openFileInput     = document.getElementById("open-file-input")        as HTMLInputElement
+const embedModal        = document.getElementById("embed-modal")            as HTMLElement
+const embedSnippet      = document.getElementById("embed-snippet")          as HTMLTextAreaElement
 const generateModal     = document.getElementById("generate-modal")        as HTMLElement
-const aboutModal        = document.getElementById("about-modal")           as HTMLElement
 const deleteConfirmModal= document.getElementById("delete-confirm-modal")  as HTMLElement
 const deleteConfirmDesc = document.getElementById("delete-confirm-desc")   as HTMLElement
 const recentList        = document.getElementById("recent-list")           as HTMLElement
@@ -25,39 +26,32 @@ function bindModal(
   return { open, close }
 }
 
-// ─── Multi-menu open/close ────────────────────────────────────────────────────
+// ─── File menu open/close ───────────────────────────────────────────────────
 
-type MenuId = "file" | "examples" | "about"
-
-const menus: Record<MenuId, { trigger: HTMLElement; sub: HTMLElement }> = {
-  file:     { trigger: document.getElementById("menu-file")!,     sub: document.getElementById("file-sub")! },
-  examples: { trigger: document.getElementById("menu-examples")!, sub: document.getElementById("examples-sub")! },
-  about:    { trigger: document.getElementById("menu-about")!,    sub: document.getElementById("about-sub")! },
-}
+const fileTrigger = document.getElementById("menu-file")!
+const fileSub     = document.getElementById("file-sub")!
 
 function closeAll(): void {
-  for (const { trigger, sub } of Object.values(menus)) {
-    trigger.classList.remove("open")
-    sub.classList.remove("open")
-  }
+  fileTrigger.classList.remove("open")
+  fileSub.classList.remove("open")
 }
 
-function toggleMenu(id: MenuId, e: Event): void {
+fileTrigger.addEventListener("click", e => {
   e.stopPropagation()
-  const { trigger, sub } = menus[id]
-  const wasOpen = sub.classList.contains("open")
+  const wasOpen = fileSub.classList.contains("open")
   closeAll()
   if (!wasOpen) {
-    trigger.classList.add("open")
-    sub.classList.add("open")
+    fileTrigger.classList.add("open")
+    fileSub.classList.add("open")
   }
-}
-
-for (const [id, { trigger }] of Object.entries(menus) as [MenuId, { trigger: HTMLElement; sub: HTMLElement }][]) {
-  trigger.addEventListener("click", e => toggleMenu(id, e))
-}
+})
 
 document.addEventListener("click", closeAll)
+
+// Clicks inside the dropdown shouldn't reach the trigger/document close handlers:
+// actionable items close the menu explicitly via closeAll(), so disabled items,
+// empty padding, and the hover-only flyout parents leave the menu open.
+fileSub.addEventListener("click", e => e.stopPropagation())
 
 // ─── localStorage itinerary persistence ──────────────────────────────────────
 
@@ -82,7 +76,19 @@ function deleteEntry(name: string): void {
 // The name under which the current doc is saved (null if not saved yet).
 let currentSavedName: string | null = null
 
+// What "Revert changes" restores: the document as it was when it was loaded
+// (Open / Open recent / example / initial source). null when nothing has been
+// loaded this session (a blank New) — Revert is then disabled. Save does NOT
+// move this baseline; revert always returns to the loaded state.
+let loadedBaseline: string | null =
+  window.__CRUMB_SOURCE && window.__CRUMB_SOURCE.trim() ? window.__CRUMB_SOURCE : null
+
 const deleteMenuItem = document.getElementById("menu-delete")!
+const revertMenuItem = document.getElementById("menu-revert")!
+
+function setRevertEnabled(enabled: boolean): void {
+  revertMenuItem.classList.toggle("menu-sub-item--disabled", !enabled)
+}
 
 function setCurrentSavedName(name: string | null): void {
   currentSavedName = name
@@ -91,6 +97,16 @@ function setCurrentSavedName(name: string | null): void {
   } else {
     deleteMenuItem.classList.add("menu-sub-item--disabled")
   }
+}
+
+// Load a document into the editor. `asBaseline` true for real loads (a file /
+// recent / example) → sets the revert baseline; false for a blank New → clears it.
+function loadDoc(source: string, savedName: string | null, asBaseline: boolean): void {
+  setValue(source)
+  setCurrentSavedName(savedName)
+  loadedBaseline = asBaseline ? source : null
+  setRevertEnabled(loadedBaseline !== null)
+  render()
 }
 
 function refreshRecentList(): void {
@@ -108,10 +124,7 @@ function refreshRecentList(): void {
     el.className = "menu-sub-item"
     el.textContent = entry.name
     el.addEventListener("click", () => {
-      editorEl.value    = entry.source
-      setCurrentSavedName(entry.name)
-      render()
-      closeEditor()
+      loadDoc(entry.source, entry.name, true)
       closeAll()
     })
     recentList.appendChild(el)
@@ -120,53 +133,64 @@ function refreshRecentList(): void {
 
 refreshRecentList()
 setCurrentSavedName(null)
+setRevertEnabled(loadedBaseline !== null)
 
 // ─── Editor open/close ────────────────────────────────────────────────────────
 
-export function openEditor(): void {
-  if (editorEl.value === "") editorEl.value = window.__CRUMB_SOURCE ?? ""
-  editorPanel.style.display = "flex"
-  editorEl.focus()
+export function openEditor(focus = true): void {
+  if (getValue() === "") setValue(window.__CRUMB_SOURCE ?? "")
+  editorPane.classList.remove("collapsed")
+  refreshEditorLayout()
+  window.dispatchEvent(new CustomEvent("crumb:layout-resized"))
+  if (focus) focusEditor()
 }
 
-export function closeEditor(): void {
-  editorPanel.style.display = "none"
+// Hide (not close) — the editor collapses to a narrow rail that still shows a
+// peek of the code; content is preserved. The splitter stays draggable so the
+// rail can be dragged back out (see app-layout.ts).
+export function hideEditor(): void {
+  editorPane.classList.add("collapsed")
+  refreshEditorLayout()
+  window.dispatchEvent(new CustomEvent("crumb:layout-resized"))
 }
 
-document.getElementById("editor-close-btn")!.addEventListener("click", closeEditor)
-
-// ─── File → Edit ──────────────────────────────────────────────────────────────
-
-document.getElementById("menu-edit")!.addEventListener("click", () => {
-  closeAll()
-  openEditor()
+document.getElementById("editor-collapse")!.addEventListener("click", hideEditor)
+editorReopen?.addEventListener("click", () => openEditor())
+// The whole collapsed rail is a hit target for expanding. Ignore the edge
+// buttons themselves — they own their click, and bubbling here would otherwise
+// undo a just-applied collapse.
+editorPane.addEventListener("click", e => {
+  if ((e.target as HTMLElement).closest(".editor-edge-btn")) return
+  if (editorPane.classList.contains("collapsed")) openEditor()
 })
 
-// ─── File → New ───────────────────────────────────────────────────────────────
-
-const newModalCtrl = bindModal(newModal, ["new-close-x", "new-cancel"], () => { newTextarea.value = "" })
+// ─── File → New (blank document) ───────────────────────────────────────────────
 
 document.getElementById("menu-new")!.addEventListener("click", () => {
   closeAll()
-  newModalCtrl.open()
-  setTimeout(() => newTextarea.focus(), 50)
+  loadDoc("", null, false)
+  focusEditor()
 })
 
-document.getElementById("new-load")!.addEventListener("click", () => {
-  const src = newTextarea.value.trim()
-  if (!src) return
-  editorEl.value   = src
-  setCurrentSavedName(null)
-  render()
-  closeEditor()
-  newModalCtrl.close()
+// ─── File → Open… (a .crumb file from disk) ────────────────────────────────────
+
+document.getElementById("menu-open")!.addEventListener("click", () => {
+  closeAll()
+  openFileInput.click()
 })
 
-// ─── File → Save ──────────────────────────────────────────────────────────────
+openFileInput.addEventListener("change", async () => {
+  const file = openFileInput.files?.[0]
+  openFileInput.value = ""   // allow re-opening the same file
+  if (!file) return
+  loadDoc(await file.text(), null, true)
+})
+
+// ─── File → Save (to browser storage) ──────────────────────────────────────────
 
 document.getElementById("menu-save")!.addEventListener("click", () => {
   closeAll()
-  const source = editorEl.value.trim()
+  const source = getValue().trim()
   if (!source) return
   const name = window.__CRUMB_DATA?.trip?.name ?? "Untitled"
   saveEntry(name, source)
@@ -174,11 +198,11 @@ document.getElementById("menu-save")!.addEventListener("click", () => {
   refreshRecentList()
 })
 
-// ─── File → Save as… ─────────────────────────────────────────────────────────
+// ─── File → Export → Download .crumb ───────────────────────────────────────────
 
-document.getElementById("menu-save-as")!.addEventListener("click", async () => {
+document.getElementById("menu-download")!.addEventListener("click", async () => {
   closeAll()
-  const source = editorEl.value.trim()
+  const source = getValue().trim()
   if (!source) return
   const name     = window.__CRUMB_DATA?.trip?.name ?? "itinerary"
   const filename = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") + ".crumb"
@@ -204,6 +228,47 @@ document.getElementById("menu-save-as")!.addEventListener("click", async () => {
   URL.revokeObjectURL(url)
 })
 
+// ─── File → Export → Generate map embed ────────────────────────────────────────
+
+const embedCtrl = bindModal(embedModal, ["embed-close-x", "embed-close"])
+
+// An <iframe> pointing at this site's embed.html, with a tiny script that passes
+// the current crumb in via the embed-boot handshake (crumb:ready → crumb:load).
+// The closing tag is written as <\/script> so this literal never breaks out of
+// the editor.html <script> it is inlined into.
+function buildEmbedSnippet(): string {
+  const embedUrl = new URL("embed.html", location.href).href
+  const crumb    = getValue()
+  return `<iframe src="${embedUrl}" width="100%" height="480" loading="lazy" style="border:0;border-radius:12px"></iframe>
+<script>
+(function(){var f=document.currentScript.previousElementSibling,c=${JSON.stringify(crumb)};
+window.addEventListener("message",function(e){if(e.source===f.contentWindow&&e.data&&e.data.type==="crumb:ready")
+f.contentWindow.postMessage({type:"crumb:load",crumb:c},"*");});})();
+<\/script>`
+}
+
+document.getElementById("menu-embed")!.addEventListener("click", () => {
+  closeAll()
+  if (!getValue().trim()) return
+  embedSnippet.value = buildEmbedSnippet()
+  embedCtrl.open()
+  setTimeout(() => { embedSnippet.focus(); embedSnippet.select() }, 50)
+})
+
+document.getElementById("embed-copy-btn")!.addEventListener("click", e => {
+  const btn = e.currentTarget as HTMLButtonElement
+  copyText(embedSnippet.value, () => flashCopied(btn))
+})
+
+// ─── File → Revert changes ─────────────────────────────────────────────────────
+
+revertMenuItem.addEventListener("click", () => {
+  closeAll()
+  if (loadedBaseline === null) return
+  setValue(loadedBaseline)
+  render()
+})
+
 // ─── File → Delete ────────────────────────────────────────────────────────────
 
 const deleteCtrl = bindModal(deleteConfirmModal, ["delete-cancel"])
@@ -218,55 +283,31 @@ deleteMenuItem.addEventListener("click", () => {
 document.getElementById("delete-confirm-btn")!.addEventListener("click", () => {
   if (currentSavedName) {
     deleteEntry(currentSavedName)
-    setCurrentSavedName(null)
     refreshRecentList()
   }
-  editorEl.value = ""
-  render()
+  loadDoc("", null, false)
   deleteCtrl.close()
 })
 
-// ─── Examples menu ────────────────────────────────────────────────────────────
+// ─── Undo / Redo ───────────────────────────────────────────────────────────────
 
-document.querySelectorAll<HTMLElement>("[data-example]").forEach(el => {
-  el.addEventListener("click", () => {
-    const src = (window.__CRUMB_EXAMPLES ?? {})[el.dataset.example!]
-    if (!src) return
-    editorEl.value   = src
-    setCurrentSavedName(null)
-    render()
-    closeEditor()
-    closeAll()
-  })
-})
+document.getElementById("menu-undo")!.addEventListener("click", () => { editorUndo(); focusEditor() })
+document.getElementById("menu-redo")!.addEventListener("click", () => { editorRedo(); focusEditor() })
 
-// Deep link: editor.html?example=<file> opens the live editor pre-loaded with
-// that example (the landing page's cards link here). Renders straight to the map;
-// the editor textarea stays one click away via File → Edit.
+// ─── Deep link: editor.html?example=<file> ─────────────────────────────────────
+// Pre-loads the live editor with a bundled example (the landing page's cards link
+// here). Renders straight to the map; the editor stays one click away.
 {
   const exParam = new URLSearchParams(location.search).get("example")
   const src = exParam ? (window.__CRUMB_EXAMPLES ?? {})[exParam] : undefined
-  if (src) {
-    editorEl.value = src
-    setCurrentSavedName(null)
-    render()
-  }
+  if (src) loadDoc(src, null, true)
 }
 
-// ─── About → What is a Crumb ──────────────────────────────────────────────────
-
-const aboutCtrl = bindModal(aboutModal, ["about-close-x", "about-close-btn"])
-
-document.getElementById("about-what")!.addEventListener("click", () => {
-  closeAll()
-  aboutCtrl.open()
-})
-
-// ─── About → How to generate ──────────────────────────────────────────────────
+// ─── File → Generate with AI ───────────────────────────────────────────────────
 
 const generateCtrl = bindModal(generateModal, ["generate-close-x", "generate-close"])
 
-document.getElementById("about-generate")!.addEventListener("click", () => {
+document.getElementById("menu-generate")!.addEventListener("click", () => {
   closeAll()
   generateCtrl.open()
 })
@@ -295,16 +336,26 @@ document.getElementById("dl-guide-btn")!.addEventListener("click", () => {
   URL.revokeObjectURL(url)
 })
 
-document.getElementById("copy-prompt-btn")!.addEventListener("click", (e) => {
+document.getElementById("copy-prompt-btn")!.addEventListener("click", e => {
   const btn = e.currentTarget as HTMLButtonElement
-  const done = () => { const t = btn.textContent; btn.textContent = "Copied!"; setTimeout(() => { btn.textContent = t }, 1500) }
-  const text = aiPrompt()
+  copyText(aiPrompt(), () => flashCopied(btn))
+})
+
+// ─── Clipboard helpers ─────────────────────────────────────────────────────────
+
+function flashCopied(btn: HTMLButtonElement): void {
+  const t = btn.textContent
+  btn.textContent = "Copied!"
+  setTimeout(() => { btn.textContent = t }, 1500)
+}
+
+function copyText(text: string, done: () => void): void {
   if (navigator.clipboard?.writeText) {
     navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done))
   } else {
     fallbackCopy(text, done)
   }
-})
+}
 
 function fallbackCopy(text: string, done: () => void): void {
   const ta = document.createElement("textarea")
