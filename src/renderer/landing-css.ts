@@ -131,12 +131,42 @@ body.landing {
 }
 
 /* ── "It's just text" — copy column beside a fixed-height code block ──────── */
-.text-cols { display: grid; gap: 32px; }
+/* Four grid children — heading, lede (1st paragraph), body (rest), visual —
+   placed by named areas. On mobile the visual sits between the lede and the body
+   (title → lede → visual → body); on desktop heading + lede + body stack on the
+   left and the visual spans the right. */
+.text-cols {
+  display: grid;
+  gap: 32px;
+  grid-template-areas: "title" "lede" "visual" "body";
+}
+.text-cols > .landing-h2  { grid-area: title; margin: 0 0 8px; }
+.text-cols > .text-body-p { grid-area: lede; }
+.text-cols > .text-col    { grid-area: body; }
+.text-cols > .yaml-block,
+.text-cols > .card-stack  { grid-area: visual; }
 @media (min-width: 820px) {
-  .text-cols { grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+  .text-cols {
+    grid-template-columns: 1fr 1fr;
+    /* Trailing 1fr spacer row absorbs the visual's extra height, so the text rows
+       stay at content size and their gaps don't stretch with the visual. */
+    grid-template-rows: auto auto auto 1fr;
+    grid-template-areas:
+      "title visual"
+      "lede  visual"
+      "body  visual"
+      ".     visual";
+    column-gap: 56px;
+    row-gap: 16px;
+    align-items: start;
+  }
+}
+/* Mobile: tuck the first paragraph closer to the heading (the other stacked gaps
+   keep the 24px grid gap). */
+@media (max-width: 819px) {
+  .text-cols > .landing-h2 { margin-bottom: -10px; }
 }
 .text-col { display: flex; flex-direction: column; align-items: flex-start; }
-.text-col .landing-h2 { margin-bottom: 28px; }
 .text-body-p { font-size: clamp(17px, 2.2vw, 21px); color: var(--text-secondary); line-height: 1.6; margin: 0; max-width: 46ch; }
 .text-body-p + .text-body-p { margin-top: 16px; }
 .text-doc-btn {

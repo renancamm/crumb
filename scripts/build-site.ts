@@ -112,7 +112,7 @@ async function main() {
     { key: "japan-planning", label: "Planned"  },
     { key: "japan-detailed", label: "Detailed" },
   ]
-  const DEFAULT_STAGE = 0   // Sketch — leads with the "even this is valid" floor
+  const DEFAULT_STAGE = 1   // Planned — the middle, most representative detail level
   const sources   = STAGES.map(s => readExample(`${s.key}.crumb`))
   const stageGeos = STAGES.map(s => readGeo(`${s.key}.geo.json`))
   const GALLERY = ["lisbon-guide", "copenhagen-weekend", "southeast-asia"]

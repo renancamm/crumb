@@ -67,13 +67,13 @@ export function renderLandingHtml(opts: LandingOptions): string {
       desc: "A crumb is just plain text with a simple vocabulary, so an AI can write a whole itinerary from a chat. Give it the format guide and describe your trip.",
       link: { label: "The authoring guide", href: opts.links.aiGuide } },
     { icon: ICON_PENCIL, title: "Open it in the live editor",
-      desc: "Paste a crumb, yours or one an AI wrote, and watch it turn into a live map and timeline as you type. Open existing files and save your edits back out.",
+      desc: "Paste a crumb, yours or one an AI wrote, and watch it turn into a live map and timeline as you type. Load existing files and save your edits back out.",
       link: { label: "Live editor", href: opts.links.editor } },
     { icon: ICON_CODE, title: "Embed it anywhere",
       desc: "A crumb's interactive map is fully self-contained, so you can drop it into your own site or blog as a single HTML embed, with nothing to set up.",
       link: { label: "How to embed", href: null } },
     { icon: ICON_WRENCH, title: "Build your own view",
-      desc: "The format is open and fully specified, so you can build a new way to display a crumb, or extend an existing one into the view you have in mind.",
+      desc: "Build a brand-new way to display a crumb, or extend an existing one into the view you have in mind. The format is fully specified, with a reference parser to build on.",
       link: { label: "Spec & parser reference", href: opts.links.spec } },
   ].map(t => {
     const link = `<span class="try-link">${escape(t.link.label)} (coming soon)</span>`
@@ -105,7 +105,7 @@ ${landingCSS}</style>
     <div class="landing-wrap hero-head">
       <div class="hero-nav"><span class="landing-brand">crumb</span></div>
       <h1 class="landing-h1">An open format for trip itineraries</h1>
-      <p class="landing-lede">A list of a few cities, or a fully-timed schedule with every activity. You add detail as plans take shape.</p>
+      <p class="landing-lede">A list of a few cities, or a fully timed schedule with every activity. You add detail as plans take shape.</p>
 
       <div class="pill-wrap">
         <span class="pill-scale pill-scale--left" aria-hidden="true">
@@ -131,9 +131,9 @@ ${landingCSS}</style>
   <section class="landing-section" id="sec-text">
     <div class="landing-wrap">
       <div class="text-cols">
+        <h2 class="landing-h2">It's just text</h2>
+        <p class="text-body-p">The map above comes from this plain-text file, written in YAML with a handful of simple fields.</p>
         <div class="text-col">
-          <h2 class="landing-h2">It's just text</h2>
-          <p class="text-body-p">The map above comes from this plain-text file, written in YAML with a handful of simple fields.</p>
           <p class="text-body-p">You can read it in any text editor, keep it in a folder, or send it to a friend like any other message.</p>
           <p class="text-body-p">The format was designed with half-formed plans in mind, so details and dates can stay as vague as yours, and it still works out a timeline.</p>
           <span class="text-doc-btn">Check the documentation (coming soon)</span>
@@ -150,9 +150,9 @@ ${landingCSS}</style>
   <section class="landing-section">
     <div class="landing-wrap">
       <div class="text-cols ways-cols">
+        <h2 class="landing-h2">Different ways of using it</h2>
+        <p class="text-body-p">The same format carries a city guide, a weekend away, or months on the road.</p>
         <div class="text-col">
-          <h2 class="landing-h2">Different ways of using it</h2>
-          <p class="text-body-p">The same format carries a city guide, a weekend away, or months on the road.</p>
           <p class="text-body-p">And it isn't bound to one look. The same crumb can be displayed as one large interactive map, or a list of small cards like these.</p>
           <p class="text-body-p">Because the format is open, you can build any other view you imagine.</p>
         </div>
