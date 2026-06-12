@@ -1316,45 +1316,77 @@ const embedCSS = `
   }
 }
 
-/* Card embed (embed.html?...&card): a self-contained trip card — the map on top,
-   a compact trip header (name + note) below; no panel or controls. */
+/* Card embed (embed.html?...&card): a self-contained trip card — the map on the
+   left, the trip-overview panel as a static legend on the right; no controls. */
 body.embed-card #sidebar,
 body.embed-card .embed-expand-btn,
 body.embed-card #map-status,
 body.embed-card .embed-scrim,
 body.embed-card .maplibregl-control-container { display: none !important; }
-/* The trip header is a caption bar overlaying the bottom of the map. (maplibre's
-   #map doesn't shrink as a normal flex/grid child — its canvas is absolutely
-   positioned — so an absolute bar is the robust layout.) */
-body.embed-card #main { position: relative; }
-#embed-card-caption { display: none; }
-body.embed-card #embed-card-caption {
+
+/* #main is already a flex row; #map (flex:1, min-width:0) takes the left, the
+   legend is a fixed-width right column. The map sizes into the left column at
+   init (the embed-card class is set before the map renders).
+   The card iframe is narrower than the 767px mobile breakpoint, so the app's
+   mobile rule (#map: position:fixed, full-bleed) would otherwise pull the map
+   out of flow and drop the legend on the left — keep #map a relative flex child. */
+body.embed-card #map { position: relative; inset: auto; z-index: auto; flex: 1; height: 100%; }
+/* Smaller markers — the card map is a miniature, so the pins shrink with it. */
+body.embed-card .place-marker { width: 20px; height: 20px; border-width: 2px; }
+body.embed-card .place-marker-num { font-size: 9px; }
+body.embed-card.map-zoom-medium .detail-marker { width: 10px; height: 10px; }
+body.embed-card.map-zoom-close .detail-marker { width: 22px; height: 22px; }
+#embed-card-legend { display: none; }
+body.embed-card #embed-card-legend {
   display: block;
+  position: relative;
+  flex: 0 0 50%;
+  min-width: 0;
+  height: 100%;
+  padding: 20px 22px;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  overflow: hidden;   /* no scroll */
+}
+body.embed-card #embed-card-legend:empty { display: none; }
+/* No scroll: a short white fade at the very bottom hints there's more list below. */
+body.embed-card #embed-card-legend::after {
+  content: "";
   position: absolute;
   left: 0; right: 0; bottom: 0;
-  z-index: 5;
-  padding: 10px 14px;
-  background: var(--bg);
-  border-top: 1px solid var(--border);
+  height: 36px;
+  background: linear-gradient(to bottom, transparent, var(--bg));
+  pointer-events: none;
 }
-body.embed-card #embed-card-caption:empty { display: none; }
-.panel-trip-header--compact { margin: 0; }
-.panel-trip-header--compact .panel-trip-name { font-size: var(--text-sm); font-weight: 600; margin: 0; line-height: 1.25; }
-.panel-trip-header--compact .note {
-  margin: 3px 0 0;
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+/* The legend reuses the trip-overview panel: drop the floating sticky bar (a
+   duplicate of the name) and the timeline connector; read it as a compact list. */
+body.embed-card #embed-card-legend .panel-sticky-bar,
+body.embed-card #embed-card-legend .tags { display: none; }
+body.embed-card #embed-card-legend .panel-trip-header { padding: 0; }
+body.embed-card #embed-card-legend .panel-list { padding: 6px 0 0; }
+body.embed-card #embed-card-legend .panel-list::before { display: none; }
+
+/* Smaller type + tighter rows — the card legend is a miniature of the big map
+   embed: a list of content, not the full-size sidebar panel. */
+/* Eyebrow/metadata reads as muted caption, set apart from the title below it. */
+body.embed-card #embed-card-legend .trip-eyebrow { font-size: var(--text-xs); margin-bottom: 7px; }
+body.embed-card #embed-card-legend .trip-eyebrow-logo { color: var(--muted); }
+body.embed-card #embed-card-legend .panel-trip-name { font-size: var(--text-lg); letter-spacing: -0.02em; margin-bottom: 6px; }
+body.embed-card #embed-card-legend .note { font-size: var(--text-xs); }
+body.embed-card #embed-card-legend .note-more { display: none; }
+body.embed-card #embed-card-legend .list-item {
+  min-height: 0;
+  margin: 0 4px;
+  width: calc(100% - 8px);
+  padding: 4px 8px;
+  gap: 5px;
+  font-size: var(--text-xs);
 }
-/* Inline the panel's own truncation box + the markdown paragraph so the outer
-   .note's -webkit-line-clamp (2 lines) drives the "…"; drop the "more" toggle. */
-.panel-trip-header--compact .note-trunc { display: inline; }
-.panel-trip-header--compact .note p { display: inline; margin: 0; }
-.panel-trip-header--compact .note-more { display: none; }
+body.embed-card #embed-card-legend .list-item .list-item-label { font-size: var(--text-sm); }
+body.embed-card #embed-card-legend .list-item-meta { font-size: var(--text-2xs); }
+body.embed-card #embed-card-legend .place-num--sm { width: 20px; height: 20px; }
+body.embed-card #embed-card-legend .transport-icon-wrap,
+body.embed-card #embed-card-legend .stay-icon-wrap { width: 20px; height: 20px; }
 `
 
 export const CSS = [

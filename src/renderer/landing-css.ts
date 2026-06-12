@@ -28,10 +28,10 @@ body.landing {
 .landing-brand { font-family: var(--mono); font-size: 20px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); }
 
 /* ── Section rhythm — airy, no hairline dividers ──────────────────────────── */
-.landing-section { padding: 96px 0; }
+.landing-section { padding: 140px 0; }
 .landing-hero    { padding: 56px 0 48px; }
 @media (max-width: 767px) {
-  .landing-section { padding: 64px 0; }
+  .landing-section { padding: 88px 0; }
 }
 
 /* ── Hero ─────────────────────────────────────────────────────────────────── */
@@ -136,15 +136,15 @@ body.landing {
   .text-cols { grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
 }
 .text-col { display: flex; flex-direction: column; align-items: flex-start; }
-#sec-text .landing-h2 { margin-bottom: 28px; }
+.text-col .landing-h2 { margin-bottom: 28px; }
 .text-body-p { font-size: clamp(17px, 2.2vw, 21px); color: var(--text-secondary); line-height: 1.6; margin: 0; max-width: 46ch; }
 .text-body-p + .text-body-p { margin-top: 16px; }
 .text-doc-btn {
   display: inline-flex;
   align-items: center;
   margin-top: 24px;
-  padding: 9px 20px;
-  font-size: var(--text-sm);
+  padding: 11px 24px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--primary-fg);
   text-decoration: none;
@@ -194,7 +194,10 @@ body.landing {
 .yml-s { color: var(--text-secondary); }   /* block-scalar body (note text), not parsed as YAML */
 
 /* ── Example cards ────────────────────────────────────────────────────────── */
-.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 28px; }
+/* Section splits in two: heading + copy in the left column, a vertical stack of
+   cards on the right. Inherits .text-cols' 1fr 1fr so the cards column lines up
+   with the "It's just text" code block. */
+.card-stack { display: flex; flex-direction: column; gap: 12px; }
 .example-card {
   display: block;
   border: 1px solid var(--border);
@@ -206,41 +209,43 @@ body.landing {
   transition: transform var(--duration), border-color var(--duration), background var(--duration);
 }
 .example-card:hover { transform: translateY(-2px); border-color: var(--primary); background: var(--surface); }
-/* The whole card is one real embed (embed.html?…&card): map + compact trip
-   header. Inert so the card stays a single link to the editor. */
+/* The whole card is one real embed (embed.html?…&card): map on the left, the
+   trip-overview panel as a legend on the right. Inert so the card stays a single
+   link to the editor. */
 .example-card-frame {
   display: block;
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 7 / 2;
   border: 0;
   pointer-events: none;
   background: var(--muted-bg);
 }
 
 /* ── "Give it a try" paths ────────────────────────────────────────────────── */
-.try-list { display: grid; gap: 28px; margin-top: 28px; }
-@media (min-width: 768px) { .try-list { grid-template-columns: 1fr 1fr; gap: 28px 40px; } }
+.try-list { display: grid; gap: 56px; margin-top: 40px; }
+@media (min-width: 768px) { .try-list { grid-template-columns: 1fr 1fr; gap: 56px 40px; } }
 .try-item-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
+  background: var(--bg);
   color: var(--text);
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
-.try-item-icon .crumb-icon { width: 18px; height: 18px; }
-.try-item-title { font-size: var(--text-lg); font-weight: 600; margin-bottom: 6px; }
-.try-item-desc  { font-size: var(--text-base); color: var(--text-secondary); line-height: 1.6; }
+.try-item-icon .crumb-icon { width: 19px; height: 19px; }
+.try-item-title { font-size: clamp(18px, 2.1vw, 20px); font-weight: 600; margin-bottom: 8px; }
+.try-item-desc  { font-size: clamp(15px, 1.7vw, 16px); color: var(--text-secondary); line-height: 1.6; }
 .try-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-top: 16px;
-  padding: 8px 18px;
-  font-size: var(--text-sm);
+  margin-top: 18px;
+  padding: 9px 20px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--primary-fg);
   text-decoration: none;
@@ -252,8 +257,30 @@ body.landing {
 .try-link:hover { transform: translateY(-1px); background: var(--primary-hover); border-color: var(--primary-hover); }
 .try-link.is-disabled { color: var(--muted); background: var(--muted-bg); border-color: var(--muted-bg); pointer-events: none; }
 
+/* Light-gray band from "Give it a try" through the footer to the page end. */
+.section-tint, .landing-footer { background: var(--muted-bg); }
+/* Soft, uneven transition into the gray band. A full-width linear fade is the base
+   (uniform across the width, so it never seams at the sides); two soft radials lift
+   it unevenly — taller on the left, a gentle bump on the right — and all layers fade
+   to transparent, so nothing reads as a hard edge. Gradient falloff, not blur(). */
+.section-tint { position: relative; margin-top: 160px; padding-top: 8px; }
+.section-tint > .landing-wrap { position: relative; z-index: 1; }
+.section-tint::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: -300px;
+  height: 304px;   /* bottom lands on the section's top edge so solid meets solid — no step */
+  background:
+    radial-gradient(95% 135% at 15% 100%, var(--muted-bg) 22%, transparent 70%),
+    radial-gradient(48% 62% at 78% 100%, var(--muted-bg) 20%, transparent 60%),
+    linear-gradient(to top, var(--muted-bg) 0%, var(--muted-bg) 5%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
 /* ── Footer ───────────────────────────────────────────────────────────────── */
-.landing-footer { padding: 40px 0; }
+.landing-footer { padding: 80px 0; }
 .landing-footer-inner { display: flex; justify-content: center; text-align: center; }
-.footer-brand { font-family: var(--mono); font-size: var(--text-sm); letter-spacing: -0.02em; color: var(--muted); }
+.footer-brand { font-family: var(--mono); font-size: clamp(15px, 1.8vw, 17px); letter-spacing: -0.02em; color: var(--muted); }
 `

@@ -64,16 +64,16 @@ export function renderLandingHtml(opts: LandingOptions): string {
 
   const tryItems = [
     { icon: ICON_SPARKLES, title: "Generate one with AI",
-      desc: "Because a crumb is just plain text with a simple vocabulary, an AI can write a whole itinerary from a chat and tweak it when plans change. Give it the format guide, describe your trip, and see what comes back.",
+      desc: "A crumb is just plain text with a simple vocabulary, so an AI can write a whole itinerary from a chat. Give it the format guide and describe your trip.",
       link: { label: "The authoring guide", href: opts.links.aiGuide } },
     { icon: ICON_PENCIL, title: "Open it in the live editor",
-      desc: "Paste a crumb, yours or one an AI wrote, and watch it turn into a map and a timeline as you type.",
+      desc: "Paste a crumb, yours or one an AI wrote, and watch it turn into a live map and timeline as you type. Open existing files and save your edits back out.",
       link: { label: "Live editor", href: opts.links.editor } },
     { icon: ICON_CODE, title: "Embed it anywhere",
-      desc: "A crumb's interactive map is self-contained, so you can drop it straight into your own site or blog as a single HTML embed.",
+      desc: "A crumb's interactive map is fully self-contained, so you can drop it into your own site or blog as a single HTML embed, with nothing to set up.",
       link: { label: "How to embed", href: null } },
-    { icon: ICON_WRENCH, title: "Build your own",
-      desc: "The format is open and fully specified. This parser is just one implementation, so read the spec and build your own viewer, exporter, or whatever you need.",
+    { icon: ICON_WRENCH, title: "Build your own view",
+      desc: "The format is open and fully specified, so you can build a new way to display a crumb, or extend an existing one into the view you have in mind.",
       link: { label: "Spec & parser reference", href: opts.links.spec } },
   ].map(t => {
     const link = `<span class="try-link">${escape(t.link.label)} (coming soon)</span>`
@@ -130,9 +130,9 @@ ${landingCSS}</style>
   <!-- It's just text -->
   <section class="landing-section" id="sec-text">
     <div class="landing-wrap">
-      <h2 class="landing-h2">It's just text</h2>
       <div class="text-cols">
         <div class="text-col">
+          <h2 class="landing-h2">It's just text</h2>
           <p class="text-body-p">The map above comes from this plain-text file, written in YAML with a handful of simple fields.</p>
           <p class="text-body-p">You can read it in any text editor, keep it in a folder, or send it to a friend like any other message.</p>
           <p class="text-body-p">The format was designed with half-formed plans in mind, so details and dates can stay as vague as yours, and it still works out a timeline.</p>
@@ -149,18 +149,25 @@ ${landingCSS}</style>
   <!-- Different ways of using it -->
   <section class="landing-section">
     <div class="landing-wrap">
-      <h2 class="landing-h2">Different ways of using it</h2>
-      <p class="text-body-p">The same format works for a single afternoon or months of travel, as these few examples show.</p>
-      <div class="card-grid">
-      ${cards}
+      <div class="text-cols ways-cols">
+        <div class="text-col">
+          <h2 class="landing-h2">Different ways of using it</h2>
+          <p class="text-body-p">The same format carries a city guide, a weekend away, or months on the road.</p>
+          <p class="text-body-p">And it isn't bound to one look. The same crumb can be displayed as one large interactive map, or a list of small cards like these.</p>
+          <p class="text-body-p">Because the format is open, you can build any other view you imagine.</p>
+        </div>
+        <div class="card-stack">
+        ${cards}
+        </div>
       </div>
     </div>
   </section>
 
   <!-- Give it a try -->
-  <section class="landing-section">
+  <section class="landing-section section-tint">
     <div class="landing-wrap">
       <h2 class="landing-h2">Give it a try</h2>
+      <p class="text-body-p">A few ways in, for travelers and builders alike.</p>
       <div class="try-list">
       ${tryItems}
       </div>

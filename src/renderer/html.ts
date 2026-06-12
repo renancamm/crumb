@@ -710,7 +710,7 @@ ${editorDom}
         <div id="panel-content">${panelBody}</div>
         <div id="panel-footer"></div>
       </div>
-    </div>${options.embed ? `\n    <div id="embed-card-caption"></div>` : ""}
+    </div>${options.embed ? `\n    <div id="embed-card-legend"></div>` : ""}
 
   </div>
 ${modalsDom}

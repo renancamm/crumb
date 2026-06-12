@@ -413,12 +413,12 @@ export async function updateMap(doc: CrumbDocument | null): Promise<void> {
  * camera-padding state never drifts between calls.
  */
 export function mapPadding(inner = 60) {
-  // Card embeds (?card) hide the sidebar/sheet and overlay a caption bar at the
-  // bottom: frame tighter than the viewer, with extra bottom room so the route
-  // clears the caption. (A card skips the sidebar/sheet branches below.)
+  // Card embeds (?card) hide the sidebar/sheet; the legend is an opaque column
+  // beside the map (not over it), so the map frames with symmetric, tighter
+  // padding. (A card skips the sidebar/sheet branches below.)
   if (document.body.classList.contains("embed-card")) {
     const m = Math.round(inner * 0.5)
-    return { top: m, right: m, bottom: m + 60, left: m }
+    return { top: m, right: m, bottom: m, left: m }
   }
   if (window.innerWidth < MOBILE_MAX_W) {
     const raw    = document.documentElement.style.getPropertyValue("--sheet-h")
