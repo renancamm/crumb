@@ -842,6 +842,10 @@ const itineraryCSS = `
 .panel-trip-header {
   padding: 16px 16px 14px;
 }
+/* Legend variant (card embed): owns its spacing (the legend container pads it) and
+   drops the inert note "more" toggle. */
+.panel-trip-header--legend { padding: 0; }
+.panel-trip-header--legend .note-more { display: none; }
 .trip-eyebrow {
   font-size: var(--text-sm);
   font-weight: 500;
@@ -1005,7 +1009,7 @@ const itineraryCSS = `
 
 /* ── Panel list ──────────────────────────────────────────────────────── */
 .panel-list { list-style: none; padding: 6px 0; position: relative; }
-.panel-trip-header + .panel-list::before {
+.panel-trip-header + .panel-list:not(.panel-list--flat)::before {
   content: '';
   position: absolute;
   left: calc(8px + 10px + 12px);
@@ -1358,22 +1362,19 @@ body.embed-card #embed-card-legend::after {
   background: linear-gradient(to bottom, transparent, var(--bg));
   pointer-events: none;
 }
-/* The legend reuses the trip-overview panel: drop the floating sticky bar (a
-   duplicate of the name) and the timeline connector; read it as a compact list. */
-body.embed-card #embed-card-legend .panel-sticky-bar,
-body.embed-card #embed-card-legend .tags { display: none; }
-body.embed-card #embed-card-legend .panel-trip-header { padding: 0; }
+/* The legend renders the trip panel in its "legend" variant
+   (renderTripPanel(doc, { variant: "legend" })): the renderer already drops the
+   sticky bar, tags, and timeline connector structurally — so all that's left here is
+   sizing the miniature down. */
 body.embed-card #embed-card-legend .panel-list { padding: 6px 0 0; }
-body.embed-card #embed-card-legend .panel-list::before { display: none; }
 
 /* Smaller type + tighter rows — the card legend is a miniature of the big map
    embed: a list of content, not the full-size sidebar panel. */
-/* Eyebrow/metadata reads as muted caption, set apart from the title below it. */
+/* Eyebrow ("crumb · duration") reads as a muted caption above the title. */
 body.embed-card #embed-card-legend .trip-eyebrow { font-size: var(--text-xs); margin-bottom: 7px; }
 body.embed-card #embed-card-legend .trip-eyebrow-logo { color: var(--muted); }
 body.embed-card #embed-card-legend .panel-trip-name { font-size: var(--text-lg); letter-spacing: -0.02em; margin-bottom: 6px; }
 body.embed-card #embed-card-legend .note { font-size: var(--text-xs); }
-body.embed-card #embed-card-legend .note-more { display: none; }
 body.embed-card #embed-card-legend .list-item {
   min-height: 0;
   margin: 0 4px;

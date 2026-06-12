@@ -5,8 +5,8 @@
  *
  * The page is a normal scrolling document (not the app shell) — it reuses the
  * design tokens via CSS + landingCSS and ships only the small landing bundle. The
- * live map lives in embed.html, loaded in the hero <iframe>. Copy is the source of
- * truth in LANDING_PAGE.md.
+ * live map lives in embed.html, loaded in the hero <iframe>. The copy in the markup
+ * below is the source of truth.
  */
 
 import { CSS }           from "./css"

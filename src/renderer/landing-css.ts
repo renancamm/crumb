@@ -4,12 +4,26 @@
  * type, a scrolling page layout, the hero card, the detail-level pill, example
  * cards, the YAML block, and the footer.
  *
- * Visual direction (see LANDING_PAGE.md): technical, minimal, humble; Vercel-
- * referenced; colour only from the embedded map; hairline borders over shadows;
- * dark mode inherited from the app tokens.
+ * Visual direction: technical, minimal, humble; Vercel-referenced; colour only from
+ * the embedded map; hairline borders over shadows; dark mode inherited from the app
+ * tokens.
  */
 
 export const landingCSS = `
+/* ── Landing-local type scale ─────────────────────────────────────────────────
+   The landing needs display type beyond the app's --text-* ceiling (--text-xl is
+   30px). These tokens are scoped to .landing (NOT css.ts's :root) so the app's
+   scale is untouched; colours still come from the shared tokens. One place to tune
+   the landing's sizes, and one definition of the shared body clamp. */
+.landing {
+  --lp-display: clamp(38px, 7vw, 64px);   /* hero h1 */
+  --lp-h2:      clamp(24px, 4vw, 34px);   /* section headings */
+  --lp-lede:    clamp(17px, 2.2vw, 21px); /* hero lede + body paragraphs */
+  --lp-title:   clamp(18px, 2.1vw, 20px); /* "try" item titles */
+  --lp-desc:    clamp(15px, 1.7vw, 16px); /* "try" item descriptions */
+  --lp-brand:   clamp(15px, 1.8vw, 17px); /* footer brand */
+}
+
 /* ── Page document: override the app's full-height app-shell base ──────────── */
 html.landing, body.landing { height: auto; overflow: visible; }
 body.landing {
@@ -21,9 +35,9 @@ body.landing {
 .landing-wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
 
 /* Landing display type — beyond the app's --text-xl (30px) ceiling. */
-.landing-h1   { font-size: clamp(38px, 7vw, 64px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; margin: 0 auto; max-width: 20ch; text-wrap: balance; }
-.landing-lede { font-size: clamp(17px, 2.2vw, 21px); color: var(--text-secondary); line-height: 1.55; max-width: 46ch; margin: 16px auto 0; text-wrap: balance; }
-.landing-h2   { font-size: clamp(24px, 4vw, 34px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; margin: 0 0 12px; }
+.landing-h1   { font-size: var(--lp-display); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; margin: 0 auto; max-width: 20ch; text-wrap: balance; }
+.landing-lede { font-size: var(--lp-lede); color: var(--text-secondary); line-height: 1.55; max-width: 46ch; margin: 16px auto 0; text-wrap: balance; }
+.landing-h2   { font-size: var(--lp-h2); font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; margin: 0 0 12px; }
 
 .landing-brand { font-family: var(--mono); font-size: 20px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); }
 
@@ -167,7 +181,7 @@ body.landing {
   .text-cols > .landing-h2 { margin-bottom: -10px; }
 }
 .text-col { display: flex; flex-direction: column; align-items: flex-start; }
-.text-body-p { font-size: clamp(17px, 2.2vw, 21px); color: var(--text-secondary); line-height: 1.6; margin: 0; max-width: 46ch; }
+.text-body-p { font-size: var(--lp-lede); color: var(--text-secondary); line-height: 1.6; margin: 0; max-width: 46ch; }
 .text-body-p + .text-body-p { margin-top: 16px; }
 .text-doc-btn {
   display: inline-flex;
@@ -267,8 +281,8 @@ body.landing {
   margin-bottom: 16px;
 }
 .try-item-icon .crumb-icon { width: 19px; height: 19px; }
-.try-item-title { font-size: clamp(18px, 2.1vw, 20px); font-weight: 600; margin-bottom: 8px; }
-.try-item-desc  { font-size: clamp(15px, 1.7vw, 16px); color: var(--text-secondary); line-height: 1.6; }
+.try-item-title { font-size: var(--lp-title); font-weight: 600; margin-bottom: 8px; }
+.try-item-desc  { font-size: var(--lp-desc); color: var(--text-secondary); line-height: 1.6; }
 .try-link {
   display: inline-flex;
   align-items: center;
@@ -312,5 +326,5 @@ body.landing {
 /* ── Footer ───────────────────────────────────────────────────────────────── */
 .landing-footer { padding: 80px 0; }
 .landing-footer-inner { display: flex; justify-content: center; text-align: center; }
-.footer-brand { font-family: var(--mono); font-size: clamp(15px, 1.8vw, 17px); letter-spacing: -0.02em; color: var(--muted); }
+.footer-brand { font-family: var(--mono); font-size: var(--lp-brand); letter-spacing: -0.02em; color: var(--muted); }
 `

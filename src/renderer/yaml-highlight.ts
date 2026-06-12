@@ -2,7 +2,7 @@
  * Tiny, build-time YAML → HTML highlighter for the landing page's "it's just
  * text" block. Deliberately minimal (keys / values / list dashes / comments) and
  * monochrome by design — colour on the landing page comes only from the map.
- * No dependency; see the no-deps rule in LANDING_PAGE.md.
+ * No dependency, by design (see invariant 11 in CLAUDE.md).
  *
  * Token classes (styled in landing-css.ts): yml-k (key), yml-v (value),
  * yml-c (comment), yml-p (punctuation: dashes/colons).

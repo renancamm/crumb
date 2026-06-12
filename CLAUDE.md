@@ -16,7 +16,11 @@ Crumb is a **spec-first** open format for travel itineraries. The format is the 
 | Icons | `src/renderer/icons.ts` | Every UI icon is a Lucide SVG built by the `icon()` factory (`class="crumb-icon"`, styled only by CSS). Never hand-roll inline `<svg>` in renderers — add an `ICON_*` here. |
 | Viewer bundle | `src/viewer-entry.ts` → `src/renderer/browser-app.ts` + `app-map.ts` + `app-focus.ts` + `app-sheet.ts` | Standalone map + panel UI. No editor dependency. Listens for `crumb:doc-updated` event. |
 | Editor bundle | `src/editor-entry.ts` → `src/renderer/app-editor.ts` + `app-menus.ts` | YAML editor overlay, menus, dialogs. Fires `crumb:doc-updated` after re-parse. |
+| Landing page | `src/renderer/html-landing.ts` (→ `landing-css.ts` + `yaml-highlight.ts`), bundle `src/landing-entry.ts` | Standalone scrolling `index.html` (not the app shell). Reuses the design tokens; drives the hero/example embeds via `postMessage` (see invariant 5). Copy lives in the `html-landing.ts` markup; visual direction is in its header comment. |
+| Embed page | `src/embed-entry.ts` → `browser-app.ts` + `src/renderer/embed-boot.ts` | Generic, content-agnostic `embed.html`: a viewer that loads a crumb at runtime by `?src=` (fetch) or inline `postMessage`. `?card` is the compact map+legend card variant. |
+| Render-API bundles | `src/viewer-render-entry.ts` (no parser) · `src/browser-entry.ts` (+ `parse`) | The `window.Crumb` render fns. Viewer-only output ships the parser-free one (tree-shakes js-yaml); the editor **and** embed ship the `+parse` one for live/runtime re-parsing. |
 | Format helpers | `src/renderer/format.ts` | Pure functions, no HTML — reusable by any renderer |
+| Geo targets | `src/renderer/geo-targets.ts` | DOM-free collection of geocoding queries from a doc. Shared by `app-map.ts` (viewer) and `scripts/gen-geocache.ts` so both issue byte-identical queries. |
 | Geocoding | `src/renderer/geocoder.ts` | Nominatim integration, localStorage cache, sequential request queue |
 
 ### Parser passes
@@ -61,7 +65,12 @@ src/parser/
    - `window.__CRUMB_SPEC` — `CRUMB_SPEC.md` text (embedded for AI use)
    - `window.__CRUMB_FOR_AI` — `CRUMB_FOR_AI.md` authoring guide (for the "Generate with AI" prompt)
 
-   The two bundles communicate via a `crumb:doc-updated` CustomEvent: the editor writes the new value to `window.__CRUMB_DATA`, then fires the event; the viewer re-renders in response.
+   Two more modes set their own globals:
+   - `window.__CRUMB_EMBED` (embed only) — flips the viewer into a locked-preview map with an expand→fullscreen control (`setupEmbedMode` in `browser-app.ts`). The doc is loaded at runtime, not baked.
+   - `window.__CRUMB_LANDING` (landing only, set by `html-landing.ts`) — the per-stage YAML + crumb + geo the landing bundle posts into its embeds.
+   - `window.__CRUMB_GEO_DATA` / `__CRUMB_GEO_MODE` — optional baked geo-cache seeded into localStorage before any geocoding runs (see `gen-geocache.ts`).
+
+   The two bundles communicate via a `crumb:doc-updated` CustomEvent: the editor writes the new value to `window.__CRUMB_DATA`, then fires the event; the viewer re-renders in response. **Embeds load documents at runtime, not via globals**: `embed.html` takes a crumb either by `?src=<url>` (fetch) or inline via `postMessage({ type: "crumb:load", crumb, geo })`, then drives the same `crumb:doc-updated` path. An embed that boots before its host is wired up posts `crumb:ready` to its parent and waits — robust for lazy iframes (`embed-boot.ts`).
 
 6. **Geocoding requests are strictly sequential with a 1100ms gap** (Nominatim ToS: ≤1 req/sec). The `geoQueue` promise chain in `geocoder.ts` enforces this. Never parallelize these fetches.
 
@@ -72,6 +81,8 @@ src/parser/
 9. **Geocoding cache uses versioned localStorage keys** (`"crumb-geo-v4:"`). If geocoding query logic changes in a way that would produce different results for the same place name, bump `GEO_CACHE_VERSION` in `geocoder.ts` and update `migrateGeoCache()`.
 
 10. **Every colour goes through a token; the `:root` theme/static split is the dark-theme seam.** No raw hex/rgb in component CSS — use a `var(--…)` token. Colours and shadows that invert in dark mode live in the **theme-token** group at the top of `tokensCSS`; radius, type scale, fonts, motion, layout, and z-index live in the **static-token** group and must not be duplicated per-theme. Dark mode is a single `@media (prefers-color-scheme: dark) { :root { … } }` block (right after `tokensCSS`) that re-declares **only** the theme group — system-preference driven, no toggle. So a new themed colour means: add the token to the theme group **and** its dark value to that `@media` block. Three deliberate exceptions stay fixed in both themes: the `--marker-*` (fill/ring/fg, dark-on-light over the always-light map — `--marker-bg` matches `ROUTE_COLOR` in `app-state.ts`) and `--chip-*` map-overlay tokens, and the `--ed-*` editor surface (self-contained Catppuccin Mocha).
+
+11. **Shipped output stays dependency-light; hand-roll before reaching for a library.** Two surfaces are kept lean: the **browser bundle / rendered HTML** (it inlines into every self-contained crumb file, so every byte counts) and the **spec-critical parser** (its only runtime dependency is `js-yaml`). This is why the YAML highlighter (`yaml-highlight.ts`), `renderMarkdown()` (invariant 8), the icons, and the CSS are all hand-rolled rather than pulled from a library. Build-time tooling (esbuild, ts-node, vitest) is pragmatic and may take a dependency that clearly pays off. Before adding any dependency, ask: (1) does it ship into every output? (2) does it touch the parser? (3) is the hand-rolled version genuinely small?
 
 ## Where to put things
 
@@ -107,12 +118,17 @@ src/parser/
 ```bash
 npm run build          # build the site → dist/{index,editor,embed}.html (scripts/build-site.ts)
 npm run build:viewer   # render examples/japan-detailed.crumb → dist/viewer.html (single viewer, dev)
+npm run gen:geocache   # regenerate examples/*.geo.json baked caches (hits Nominatim, ToS-paced)
 npm run typecheck      # tsc --noEmit (zero errors required)
 npm run test           # vitest run (single pass, used in CI)
 npm run test:watch     # vitest (watch mode for development)
 npm run render -- examples/japan-detailed.crumb /tmp/out.html            # viewer-only (default)
 npm run render -- examples/japan-detailed.crumb /tmp/out.html --editor   # with editor shell
 ```
+
+The CLI/build stay no-I/O at parse time (invariant 2); `gen:geocache` is the one
+script that hits the network, offline and ahead of time, baking `examples/*.geo.json`
+so embeds resolve known places with zero requests.
 
 ## Test targets
 

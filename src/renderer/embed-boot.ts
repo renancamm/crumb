@@ -44,7 +44,7 @@ async function loadCrumb(o: LoadOpts): Promise<void> {
     window.__CRUMB_DATA = doc
     if (isCard) {
       const legend = document.getElementById("embed-card-legend")
-      if (legend) legend.innerHTML = window.Crumb.renderTripPanel(doc)
+      if (legend) legend.innerHTML = window.Crumb.renderTripPanel(doc, { variant: "legend" })
     }
     window.dispatchEvent(new CustomEvent("crumb:doc-updated"))
   } catch (e) {

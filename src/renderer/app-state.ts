@@ -29,11 +29,13 @@ declare global {
     // embed.html?src=… or postMessage({ type: "crumb:load", src, geo }).
     __CRUMB_EMBED?:      boolean
     Crumb: {
-      // Present only in editor-mode output; the viewer-only bundle omits `parse`.
-      // Safe because the editor bundle (its sole caller) ships only alongside it.
+      // Present in editor and embed output; the plain viewer-only bundle omits
+      // `parse` (it renders pre-parsed __CRUMB_DATA and never re-parses). Its
+      // callers — the editor bundle (live re-parse) and embed-boot (parse a
+      // fetched/posted crumb) — ship only alongside a bundle that provides it.
       parse:               (src: string) => CrumbDocument
-      renderTripHeader:       (doc: CrumbDocument, opts?: { compact?: boolean }) => string
-      renderTripPanel:        (doc: CrumbDocument) => string
+      renderTripHeader:       (doc: CrumbDocument, opts?: { legend?: boolean }) => string
+      renderTripPanel:        (doc: CrumbDocument, opts?: { variant?: "legend" }) => string
       renderPlacePanel:       (doc: CrumbDocument, placeIdx: number) => string
       renderSinglePlacePanel: (doc: CrumbDocument) => string
       renderTransportPanel:   (doc: CrumbDocument, transportIdx: number) => string

@@ -99,21 +99,20 @@ function renderNote(text?: string, opts: { boxed?: boolean } = {}): string {
 
 // ─── Trip level renders ───────────────────────────────────────────────────────
 
-/** Sticky bar + trip header block (crumb eyebrow, name, tags, note, author). Shared by the trip and single-place panels. */
-export function renderTripHeader(doc: CrumbDocument, opts: { compact?: boolean } = {}): string {
-  if (opts.compact) {
-    // Card embeds: the trip header trimmed to name + note (both optional). Returns
-    // "" when there's nothing to show, so a header-less crumb renders just the map.
-    const name     = doc.trip?.name
-    const nameHtml = name ? `<h1 class="panel-trip-name">${escape(name)}</h1>` : ""
-    const noteHtml = renderNote(doc.trip?.note)
-    if (!nameHtml && !noteHtml) return ""
-    return `<div class="panel-trip-header panel-trip-header--compact">${nameHtml}${noteHtml}</div>`
-  }
-
+/**
+ * Sticky bar + trip header block (crumb eyebrow, name, tags, note, author). Shared
+ * by the trip and single-place panels.
+ *
+ * `legend: true` is the static card-embed variant: it drops the floating sticky bar
+ * (a scroll duplicate that's meaningless in a non-scrolling card) and the tags, but
+ * keeps the eyebrow + name + note. The `--legend` class lets the panel suppress the
+ * timeline connector and lets CSS size the miniature down.
+ */
+export function renderTripHeader(doc: CrumbDocument, opts: { legend?: boolean } = {}): string {
+  const legend = opts.legend === true
   const parts: string[] = []
 
-  if (doc.trip) {
+  if (doc.trip && !legend) {
     const { name, duration } = doc.trip
     const stickyDur = duration && duration.type !== "unknown" ? `<span class="sticky-bar-meta">${escape(formatDuration(duration))}</span>` : ""
     parts.push(`<div class="panel-sticky-bar"><div class="panel-sticky-inner"><span class="sticky-bar-name">${escape(name ?? "Itinerary")}</span>${stickyDur}</div></div>`)
@@ -125,12 +124,12 @@ export function renderTripHeader(doc: CrumbDocument, opts: { compact?: boolean }
     : dur?.type === "unknown"
     ? `<span class="trip-eyebrow-sep">·</span><span class="value-unknown">${escape(dur.label)}</span>`
     : ""
-  parts.push(`<div class="panel-trip-header">`)
+  parts.push(`<div class="panel-trip-header${legend ? " panel-trip-header--legend" : ""}">`)
   parts.push(`  <div class="trip-eyebrow"><span class="trip-eyebrow-logo">crumb</span>${durSuffix}</div>`)
   if (doc.trip) {
     const { name, author, note, tags } = doc.trip
     parts.push(`  <h1 class="panel-trip-name">${escape(name ?? "Itinerary")}</h1>`)
-    const tagsHtml = renderTags(tags)
+    const tagsHtml = legend ? "" : renderTags(tags)
     if (tagsHtml) parts.push(`  ${tagsHtml}`)
     const noteHtml = renderNote(note)
     if (noteHtml) parts.push(`  ${noteHtml}`)
@@ -140,12 +139,19 @@ export function renderTripHeader(doc: CrumbDocument, opts: { compact?: boolean }
   return parts.join("\n")
 }
 
-/** Desktop panel content for the trip level. */
-export function renderTripPanel(doc: CrumbDocument): string {
+/**
+ * Desktop panel content for the trip level.
+ *
+ * `variant: "legend"` is the static card-embed legend (see embedCSS): it renders the
+ * legend trip header (no sticky bar / tags) and flags the list `--flat` to drop the
+ * timeline connector. Everything else is the same markup, sized down by CSS.
+ */
+export function renderTripPanel(doc: CrumbDocument, opts: { variant?: "legend" } = {}): string {
+  const legend = opts.variant === "legend"
   const parts: string[] = []
-  parts.push(renderTripHeader(doc))
+  parts.push(renderTripHeader(doc, legend ? { legend: true } : {}))
 
-  parts.push(`<ul class="panel-list">`)
+  parts.push(`<ul class="panel-list${legend ? " panel-list--flat" : ""}">`)
   const itin = doc.itinerary
   let pIdx = 0, tIdx = 0
   for (let ii = 0; ii < itin.length; ii++) {
