@@ -11,7 +11,7 @@
 
 import { CSS }           from "./css"
 import { landingCSS }    from "./landing-css"
-import { escape }        from "./format"
+import { escape, jsonForScript } from "./format"
 import { highlightYaml } from "./yaml-highlight"
 import { ICON_SPARKLES, ICON_PENCIL, ICON_CODE, ICON_WRENCH, ICON_CHEVRON_LEFT, ICON_CHEVRON_RIGHT, ICON_FILE } from "./icons"
 
@@ -183,11 +183,11 @@ ${landingCSS}</style>
 
   <script>
     window.__CRUMB_LANDING = {
-      yaml: ${JSON.stringify(yamlHtml)},
-      files: ${JSON.stringify(opts.stages.map(s => s.file))},
+      yaml: ${jsonForScript(yamlHtml)},
+      files: ${jsonForScript(opts.stages.map(s => s.file))},
       defaultStage: ${def},
-      hero: ${JSON.stringify(opts.stages.map(s => ({ crumb: s.source, geo: s.geo })))},
-      cards: ${JSON.stringify(opts.examples.map(e => ({ crumb: e.source, geo: e.geo })))}
+      hero: ${jsonForScript(opts.stages.map(s => ({ crumb: s.source, geo: s.geo })))},
+      cards: ${jsonForScript(opts.examples.map(e => ({ crumb: e.source, geo: e.geo })))}
     };
   </script>
   <script>${opts.landingBundle}</script>

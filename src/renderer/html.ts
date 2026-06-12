@@ -27,6 +27,7 @@ import { CSS } from "./css"
 import { ICON_STAY, ICON_ARRIVES, ICON_DEPARTS, ICON_CLOCK, ICON_PIN_OFF, ICON_PRIORITY_MUST, ICON_PRIORITY_MAYBE, ICON_CLOSE, ICON_CHEVRON_DOWN, modeIconSvg } from "./icons"
 import {
   escape,
+  jsonForScript,
   formatDuration,
   formatDurValue,
   formatMode,
@@ -530,7 +531,7 @@ export function renderHtml(doc: CrumbDocument | null, options: AppOptions): stri
   const includeEditor  = options.includeEditor !== false
   const title          = "Crumb" + (doc?.trip?.name ? " — " + escape(doc.trip.name) : "")
   const panelBody      = includeEditor || !doc ? "" : renderTripPanel(doc)
-  const docJson        = includeEditor || !doc ? "null" : JSON.stringify(doc)
+  const docJson        = includeEditor || !doc ? "null" : jsonForScript(doc)
 
   const editorDom = includeEditor ? `
     <!-- Editor panel (left split, hidden by default) -->
@@ -678,14 +679,14 @@ export function renderHtml(doc: CrumbDocument | null, options: AppOptions): stri
 
   const editorGlobals = includeEditor ? `
     window.__CRUMB_SOURCE   = "";
-    window.__CRUMB_SPEC     = ${JSON.stringify(options.specContent ?? "")};
-    window.__CRUMB_FOR_AI   = ${JSON.stringify(options.aiGuideContent ?? "")};
-    window.__CRUMB_EXAMPLES = ${JSON.stringify(options.examples ?? {})};` : ""
+    window.__CRUMB_SPEC     = ${jsonForScript(options.specContent ?? "")};
+    window.__CRUMB_FOR_AI   = ${jsonForScript(options.aiGuideContent ?? "")};
+    window.__CRUMB_EXAMPLES = ${jsonForScript(options.examples ?? {})};` : ""
 
   const editorScript = includeEditor ? `\n  <script>${options.editorBundle}</script>` : ""
 
   const geoGlobals = options.geoData ? `
-    window.__CRUMB_GEO_DATA = ${JSON.stringify(options.geoData)};${options.geoMode ? `\n    window.__CRUMB_GEO_MODE = ${JSON.stringify(options.geoMode)};` : ""}` : ""
+    window.__CRUMB_GEO_DATA = ${jsonForScript(options.geoData)};${options.geoMode ? `\n    window.__CRUMB_GEO_MODE = ${jsonForScript(options.geoMode)};` : ""}` : ""
 
   const embedGlobals = options.embed ? `
     window.__CRUMB_EMBED = true;` : ""
@@ -699,7 +700,7 @@ export function renderHtml(doc: CrumbDocument | null, options: AppOptions): stri
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" />
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" integrity="sha384-MinO0mNliZ3vwppuPOUnGa+iq619pfMhLVUXfC4LHwSCvF9H+6P/KO4Q7qBOYV5V" crossorigin="anonymous" />
   <style>${CSS}</style>
 </head>
 <body>
@@ -723,7 +724,7 @@ ${modalsDom}
   <!-- Geocoding status chip -->
   <div id="map-status" class="map-status-chip"></div>
 
-  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" integrity="sha384-SYKAG6cglRMN0RVvhNeBY0r3FYKNOJtznwA0v7B5Vp9tr31xAHsZC0DqkQ/pZDmj" crossorigin="anonymous"></script>
   <script>${options.crumbBundle}</script>
   <script>
     window.__CRUMB_DATA   = ${docJson};${editorGlobals}${geoGlobals}${embedGlobals}

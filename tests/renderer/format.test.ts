@@ -6,6 +6,7 @@ import {
   formatDuration,
   formatPlainDateRange,
   escape,
+  jsonForScript,
   formatShortDate,
   formatISODate,
 } from "../../src/renderer/format"
@@ -67,6 +68,33 @@ describe("escape", () => {
   it("escapes double quotes",  () => expect(escape('"quoted"')).toBe("&quot;quoted&quot;"))
   it("escapes single quotes",  () => expect(escape("it's")).toBe("it&#39;s"))
   it("passes safe text through", () => expect(escape("Hello World")).toBe("Hello World"))
+})
+
+// ─── jsonForScript ─────────────────────────────────────────────────────────────
+
+describe("jsonForScript", () => {
+  it("escapes < so </script> cannot break out of an inline script", () => {
+    const out = jsonForScript("</script><img src=x onerror=alert(1)>")
+    expect(out).not.toContain("<")
+    expect(out).toContain("\\u003c")
+  })
+
+  it("escapes the U+2028 / U+2029 line separators", () => {
+    const out = jsonForScript("a\u2028b\u2029c")
+    expect(out).toContain("\\u2028")
+    expect(out).toContain("\\u2029")
+    expect(out).not.toContain("\u2028")
+    expect(out).not.toContain("\u2029")
+  })
+
+  it("round-trips back to the original value via JSON.parse", () => {
+    const doc = { trip: { name: "</script>\u2028end", tags: ["<b>", "x & y"] } }
+    expect(JSON.parse(jsonForScript(doc))).toEqual(doc)
+  })
+
+  it("leaves safe payloads unchanged from JSON.stringify", () => {
+    expect(jsonForScript({ a: 1, b: "hi" })).toBe(JSON.stringify({ a: 1, b: "hi" }))
+  })
 })
 
 // ─── formatShortDate / formatISODate ─────────────────────────────────────────

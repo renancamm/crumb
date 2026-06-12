@@ -110,6 +110,20 @@ export function escape(s: string): string {
     .replace(/'/g, "&#39;")
 }
 
+/**
+ * Serialize a value for safe embedding inside an inline `<script>` element.
+ * `JSON.stringify` does not escape `<`, so a string containing `</script>` would
+ * close the script element and allow arbitrary markup to execute. Escaping `<`
+ * defeats that (and `<!--`); the U+2028/U+2029 escapes keep the result a valid
+ * JS string literal in older engines. Output still round-trips via `JSON.parse`.
+ */
+export function jsonForScript(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, "\\u003c")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029")
+}
+
 // ─── Activity labels ─────────────────────────────────────────────────────────
 
 /** Activity label: A–Z then A2–Z2, A3–Z3… */
