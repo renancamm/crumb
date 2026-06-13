@@ -58,7 +58,7 @@ export function renderLandingHtml(opts: LandingOptions): string {
   // a11y label since the visible title lives inside the iframe.
   const cards = opts.examples.map(e => {
     const label = e.key.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
-    return `<a class="example-card" href="${escape(opts.links.editor)}?example=${encodeURIComponent(e.file)}" aria-label="Open ${escape(label)} in the editor">
+    return `<a class="example-card" href="${escape(opts.links.editor)}?example=${encodeURIComponent(e.file)}&view=map" aria-label="Open ${escape(label)} in the editor">
         <iframe class="example-card-frame" src="embed.html?card" title="${escape(label)} map" loading="lazy" tabindex="-1"></iframe>
       </a>`
   }).join("\n      ")

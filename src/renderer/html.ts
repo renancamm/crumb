@@ -674,7 +674,7 @@ export function renderHtml(doc: CrumbDocument | null, options: AppOptions): stri
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" integrity="sha384-MinO0mNliZ3vwppuPOUnGa+iq619pfMhLVUXfC4LHwSCvF9H+6P/KO4Q7qBOYV5V" crossorigin="anonymous" />
   <style>${CSS}</style>
 </head>
-<body>
+<body${options.embed ? ` class="embed"` : ""}>
   <!-- Main split view: editor pane (menus + code) | draggable splitter | map -->
   <div id="main">${includeEditor ? `
     <!-- Editor pane (left split): menus sit only atop the code side -->

@@ -143,6 +143,20 @@ body.landing {
 @media (max-width: 767px) {
   .hero-card { height: 70vh; border-radius: var(--radius-xl); }
 }
+/* Universal "fullscreen": the hero embed has no native fullscreen (iframe/iOS), so
+   on its expand request we grow the card to cover the viewport. 100dvh tracks iOS
+   Safari's dynamic toolbar; body scroll is locked while expanded. */
+.hero-card.is-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  border: 0;
+  border-radius: 0;
+}
+body.hero-expanded { overflow: hidden; }
 
 /* ── "It's just text" — copy column beside a fixed-height code block ──────── */
 /* Four grid children — heading, lede (1st paragraph), body (rest), visual —

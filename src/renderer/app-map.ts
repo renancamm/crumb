@@ -43,13 +43,18 @@ const mapStatusEl = document.getElementById("map-status") as HTMLElement
 
 // ─── MapLibre GL init ─────────────────────────────────────────────────────────
 
-// Handlers toggled together by setMapInteractive(). In embed mode they start
-// disabled so the map is a static preview that a host page can scroll past;
-// the expand→fullscreen control re-enables them.
+// Handlers toggled by setMapInteraction(). In embed mode they start disabled so
+// the map is a static preview that a host page can scroll past; the expand control
+// and the desktop preview re-enable them (see setMapInteraction).
 const INTERACTION_HANDLERS = [
   "scrollZoom", "boxZoom", "dragRotate", "dragPan",
   "keyboard", "doubleClickZoom", "touchZoomRotate", "touchPitch",
 ] as const
+
+// Desktop preview allows mouse pan only — click-drag doesn't collide with page
+// scroll (unlike touch pan or wheel-zoom), so the locked card can still be panned
+// without trapping the wheel. Mobile preview stays fully locked (scrim scrolls host).
+const PREVIEW_HANDLERS: readonly string[] = ["dragPan"]
 
 state.map = new maplibregl.Map({
   container:          "map",
@@ -60,13 +65,36 @@ state.map = new maplibregl.Map({
   ...(EMBED ? Object.fromEntries(INTERACTION_HANDLERS.map(h => [h, false])) : {}),
 })
 
-/** Enable/disable all map interaction handlers at once (used by embed fullscreen). */
-export function setMapInteractive(on: boolean): void {
+/**
+ * Set the embed map's interaction level.
+ *   "preview" — locked card: desktop gets mouse dragPan, mobile gets nothing.
+ *   "full"    — expanded: every handler on.
+ */
+export function setMapInteraction(mode: "preview" | "full"): void {
+  const mobile = window.innerWidth < MOBILE_MAX_W
   for (const h of INTERACTION_HANDLERS) {
+    const on = mode === "full" || (mode === "preview" && !mobile && PREVIEW_HANDLERS.includes(h))
     const handler = (state.map as any)[h]
     if (handler) on ? handler.enable() : handler.disable()
   }
 }
+
+// Keep the map canvas matched to its container through every late reflow — the
+// card legend loading in, the editor split-width restore, CodeMirror laying out,
+// a web-font swap, window resizes. maplibre's own trackResize is async and races
+// the initial fitBounds, so we own this: a ResizeObserver that resizes only on a
+// real dimension change, batched to a frame to avoid the "ResizeObserver loop"
+// warning. Generic — applies in viewer, editor, embed and card alike.
+const mapEl = document.getElementById("map")!
+let lastW = 0, lastH = 0, resizePending = false
+new ResizeObserver(entries => {
+  const box = entries[0]?.contentRect
+  if (!box || (box.width === lastW && box.height === lastH)) return
+  lastW = box.width; lastH = box.height
+  if (resizePending) return
+  resizePending = true
+  requestAnimationFrame(() => { resizePending = false; if (state.map) state.map.resize() })
+}).observe(mapEl)
 const attribution = new maplibregl.AttributionControl({ compact: true })
 state.map.addControl(attribution)
 setTimeout(() => {
@@ -428,6 +456,19 @@ export function mapPadding(inner = 60) {
   return { top: inner, right: inner, bottom: inner, left: 332 + inner }
 }
 
+/**
+ * Re-measure the container before framing. A fit can run in the same tick as a
+ * reflow (e.g. baked-geo card: legend inserted → fitBounds, before the
+ * ResizeObserver callback fires), so a synchronous resize here guarantees the
+ * camera frames against the live container size rather than a stale one.
+ * Pass the same padding to every camera op so MapLibre's stored padding never drifts.
+ */
+function fitToBounds(bounds: any): void {
+  state.map.resize()
+  state.map.setPadding(mapPadding())
+  state.map.fitBounds(bounds, { maxZoom: 10 })
+}
+
 // ─── Map marker rendering ─────────────────────────────────────────────────────
 
 export function drawPlaceMarkers(points: Array<{ name: string; lat: number; lng: number }>): void {
@@ -462,8 +503,7 @@ export function drawPlaceMarkers(points: Array<{ name: string; lat: number; lng:
   if (points.length) {
     const bounds = new maplibregl.LngLatBounds()
     points.forEach(p => bounds.extend([p.lng, p.lat]))
-    state.map.setPadding(mapPadding())
-    state.map.fitBounds(bounds, { maxZoom: 10 })
+    fitToBounds(bounds)
     applyZoomClass()
   }
 }
@@ -532,8 +572,7 @@ export function fitAllPlaces(): void {
   if (!state.mapReady || !state.placeMarkers.length) return
   const bounds = new maplibregl.LngLatBounds()
   state.placeMarkers.forEach((m: any) => bounds.extend(m.getLngLat()))
-  state.map.setPadding(mapPadding())
-  state.map.fitBounds(bounds, { maxZoom: 10 })
+  fitToBounds(bounds)
 }
 
 export function fitTransportPoints(
@@ -569,8 +608,7 @@ export function fitTransportPoints(
     const bounds = new maplibregl.LngLatBounds()
     bounds.extend([fromGeo.lng, fromGeo.lat])
     bounds.extend([toGeo.lng,   toGeo.lat])
-    state.map.setPadding(mapPadding())
-    state.map.fitBounds(bounds, { maxZoom: 10 })
+    fitToBounds(bounds)
   } else {
     // One or both place geocodes not yet available (geocoding still in progress).
     // Fall back to the trip overview fit so the map stays coherent.

@@ -303,13 +303,19 @@ document.getElementById("delete-confirm-btn")!.addEventListener("click", () => {
 document.getElementById("menu-undo")!.addEventListener("click", () => { editorUndo(); focusEditor() })
 document.getElementById("menu-redo")!.addEventListener("click", () => { editorRedo(); focusEditor() })
 
-// ─── Deep link: editor.html?example=<file> ─────────────────────────────────────
+// ─── Deep link: editor.html?example=<file>[&view=map] ──────────────────────────
 // Pre-loads the live editor with a bundled example (the landing page's cards link
-// here). Renders straight to the map; the editor stays one click away.
+// here). `view=map` opens map-first on mobile (the editor a tap away) — otherwise
+// the full-screen code overlay would cover the map. Desktop shows the split either
+// way, so the param is mobile-only.
 {
-  const exParam = new URLSearchParams(location.search).get("example")
+  const params = new URLSearchParams(location.search)
+  const exParam = params.get("example")
   const src = exParam ? (window.__CRUMB_EXAMPLES ?? {})[exParam] : undefined
   if (src) loadDoc(src, null, true)
+  if (params.get("view") === "map" && window.matchMedia("(max-width: 767px)").matches) {
+    hideEditor()
+  }
 }
 
 // ─── File → Generate with AI ───────────────────────────────────────────────────

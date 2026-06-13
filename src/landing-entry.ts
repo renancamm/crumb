@@ -68,8 +68,19 @@ window.addEventListener("resize", reservePillSpace)
 // "crumb:ready" message; we reply with the inline crumb + geo. Timing-safe for the
 // lazy card iframes — no reliance on catching their load event.
 const cardFrames = Array.from(document.querySelectorAll<HTMLIFrameElement>(".example-card-frame"))
+const heroCard   = frame?.closest(".hero-card") ?? null
 window.addEventListener("message", (e: MessageEvent) => {
-  if (!DATA || !e.data || e.data.type !== "crumb:ready") return
+  if (!e.data) return
+
+  // The hero embed has no native fullscreen (iframe/iOS): it asks us to grow it to
+  // the full viewport. Toggle the overlay class on the card and lock body scroll.
+  if (e.data.type === "crumb:fullscreen" && frame && e.source === frame.contentWindow) {
+    heroCard?.classList.toggle("is-fullscreen", !!e.data.full)
+    document.body.classList.toggle("hero-expanded", !!e.data.full)
+    return
+  }
+
+  if (!DATA || e.data.type !== "crumb:ready") return
   if (frame && e.source === frame.contentWindow) { loadStage(current); return }
   const i = cardFrames.findIndex(f => f.contentWindow === e.source)
   const c = i >= 0 ? DATA.cards[i] : undefined

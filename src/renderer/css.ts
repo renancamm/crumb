@@ -1299,7 +1299,6 @@ const mobileCSS = `
 
   /* Sidebar becomes a bottom sheet. Fixed full height; JS slides it between
      snap states with transform: translateY (GPU-composited — no per-frame reflow).
-     The pre-JS transform shows roughly the medium state until initSheet() runs.
      90vh / 40vh mirror SHEET_FULL_RATIO (0.9) and full−medium (0.9−0.5) in
      app-state.ts — keep them in sync by hand (CSS can't read the JS constant). */
   #sidebar {
@@ -1315,6 +1314,13 @@ const mobileCSS = `
     overflow: hidden;
     z-index: var(--z-sheet);
   }
+  /* The pre-JS transform above shows roughly the medium state until initSheet()
+     runs — right for the viewer, but in an embed it would flash the un-initialized
+     sheet while the render-blocking maplibre script downloads (the card iframe is
+     sub-767px). So an embed starts with the sheet fully off-screen; the embed owns
+     when it appears (setupEmbedMode reveals the non-card peek; embed-card keeps it
+     hidden), instead of leaking the viewer's placeholder. */
+  body.embed #sidebar { transform: translateY(100%); }
 
   /* Sheet handle: a visual grabber only — expansion is scroll-driven, not draggable.
      Floated out of flow (over the sheet top) so it adds no row: #panel-content reaches

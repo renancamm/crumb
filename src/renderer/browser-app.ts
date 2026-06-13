@@ -15,7 +15,7 @@
  */
 
 import { setupListClickHandler, clearFocus, highlightMarker } from "./app-focus"
-import { updateMap, fitAllPlaces, applyDetailMarkerFilter, fitTransportPoints, mapPadding, applyGeoState, setMapInteractive } from "./app-map"
+import { updateMap, fitAllPlaces, applyDetailMarkerFilter, fitTransportPoints, mapPadding, applyGeoState, setMapInteraction } from "./app-map"
 import { state, ZOOM_PLACE_FLY, ZOOM_DETAIL_FLY, MOBILE_MAX_W, FLY_DURATION, EMBED } from "./app-state"
 import { initSheet, exitSheet, goMedium } from "./app-sheet"
 import { seedGeoCache } from "./geocoder"
@@ -613,11 +613,12 @@ window.addEventListener("crumb:doc-updated", () => {
 function setupEmbedMode(mobileQuery: MediaQueryList): void {
   document.body.classList.add("embed")
 
-  const mapEl = document.getElementById("map")!
+  const mapEl  = document.getElementById("map")!
+  const sidebar = document.getElementById("sidebar")!
 
   // Scroll scrim (shown on mobile preview via CSS): a transparent layer with
   // touch-action: pan-y, so a vertical swipe scrolls the *host* page instead of
-  // being trapped by the locked map or the bottom sheet. Removed in fullscreen,
+  // being trapped by the locked map or the bottom sheet. Hidden when expanded,
   // where real interaction (pan, sheet) is wanted.
   const scrim = document.createElement("div")
   scrim.className = "embed-scrim"
@@ -629,29 +630,51 @@ function setupEmbedMode(mobileQuery: MediaQueryList): void {
   btn.innerHTML = ICON_MAXIMIZE
   mapEl.appendChild(btn)
 
-  // Fullscreen escapes the host <iframe> (which sets allow="fullscreen"). Handle
-  // the WebKit-prefixed API too so Safari works.
-  const doc: any = document
-  const root: any = document.documentElement
-  const isFull = () => !!(doc.fullscreenElement || doc.webkitFullscreenElement)
-  btn.addEventListener("click", () => {
-    if (isFull()) (doc.exitFullscreen || doc.webkitExitFullscreen)?.call(doc)
-    else          (root.requestFullscreen || root.webkitRequestFullscreen)?.call(root)
-  })
+  // Single source of truth for the embed bottom sheet:
+  //   expanded + mobile → the interactive sheet; otherwise the static peek
+  //   (mobile preview) or the desktop floating sidebar (no transform).
+  // An embed starts with its mobile sheet off-screen (css.ts: body.embed #sidebar),
+  // so it never flashes pre-JS; this reveals the right state once JS runs. A ?card
+  // page keeps `#sidebar { display:none }` (embed-card) regardless.
+  const syncEmbedSheet = (full: boolean): void => {
+    if (full && mobileQuery.matches) {
+      initSheet()
+    } else {
+      exitSheet()
+      sidebar.style.transform = mobileQuery.matches ? "translateY(40vh)" : ""
+    }
+  }
 
-  const onFsChange = () => {
-    const full = isFull()
+  // Apply the local expanded/preview state. The host (if any) grows the iframe to
+  // fill the viewport on expand; here we only flip our own UI: icon, interaction
+  // level (desktop preview keeps mouse pan; expanded unlocks everything), the
+  // sheet, and a re-measure.
+  const applyExpanded = (full: boolean): void => {
     document.body.classList.toggle("embed-full", full)
     btn.innerHTML = full ? ICON_MINIMIZE : ICON_MAXIMIZE
-    btn.setAttribute("aria-label", full ? "Exit fullscreen" : "Expand map")
-    setMapInteractive(full)          // free pan/zoom while fullscreen; locked otherwise
-    // The interactive bottom sheet only makes sense once fullscreen on mobile;
-    // in preview the sheet is a static peek behind the scrim (no scroll trap).
-    if (mobileQuery.matches) full ? initSheet() : exitSheet()
+    btn.setAttribute("aria-label", full ? "Collapse map" : "Expand map")
+    setMapInteraction(full ? "full" : "preview")
+    syncEmbedSheet(full)
     state.map.resize()
   }
-  document.addEventListener("fullscreenchange", onFsChange)
-  document.addEventListener("webkitfullscreenchange", onFsChange)
+
+  // No native Fullscreen API (unreliable in iframes, absent on iPhone Safari): the
+  // expand button asks the host page to grow the iframe to the full viewport and
+  // applies the expanded state locally. A standalone embed (parent === self) posts
+  // to itself harmlessly and still unlocks — it already fills its own page.
+  btn.addEventListener("click", () => {
+    const willFull = !document.body.classList.contains("embed-full")
+    window.parent?.postMessage({ type: "crumb:fullscreen", full: willFull }, "*")
+    applyExpanded(willFull)
+  })
+
+  // Re-sync when the available width crosses the breakpoint — e.g. the iframe grows
+  // on expand, or the window is resized — so the layout follows the real width
+  // (mobile sheet ↔ desktop sidebar) and the interaction set stays correct.
+  mobileQuery.addEventListener("change", () =>
+    applyExpanded(document.body.classList.contains("embed-full")))
+
+  applyExpanded(false)   // establish the preview state (desktop pan, static peek)
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
@@ -667,7 +690,7 @@ const mobileQuery = window.matchMedia(`(max-width: ${MOBILE_MAX_W - 1}px)`)
 
 if (EMBED) {
   // Embed preview shows a static sheet behind a scroll scrim; the interactive
-  // sheet is wired only on entering fullscreen (see onFsChange).
+  // sheet is wired only when expanded on mobile (see syncEmbedSheet).
   setupEmbedMode(mobileQuery)
 } else {
   if (mobileQuery.matches) initSheet()
