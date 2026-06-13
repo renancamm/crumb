@@ -1,4 +1,5 @@
 import { getValue, setValue, focusEditor, refreshEditorLayout, render, editorUndo, editorRedo } from "./app-editor"
+import { copyText } from "./clipboard"
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
 
@@ -355,21 +356,4 @@ function flashCopied(btn: HTMLButtonElement): void {
   const t = btn.textContent
   btn.textContent = "Copied!"
   setTimeout(() => { btn.textContent = t }, 1500)
-}
-
-function copyText(text: string, done: () => void): void {
-  if (navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done))
-  } else {
-    fallbackCopy(text, done)
-  }
-}
-
-function fallbackCopy(text: string, done: () => void): void {
-  const ta = document.createElement("textarea")
-  ta.value = text
-  ta.style.position = "fixed"; ta.style.opacity = "0"
-  document.body.appendChild(ta)
-  ta.select()
-  try { document.execCommand("copy"); done() } finally { document.body.removeChild(ta) }
 }

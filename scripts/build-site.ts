@@ -17,10 +17,13 @@ import * as path     from "path"
 import { parse }              from "../src/parser"
 import { renderHtml }         from "../src/renderer/html"
 import { renderLandingHtml }  from "../src/renderer/html-landing"
+import { renderDocsHtml }     from "../src/renderer/html-docs"
+import { renderDoc, DOCS }    from "../src/renderer/markdown"
 
 const GITHUB = "https://github.com/renancamm/crumb"
 const LINKS = {
   editor:  "editor.html",
+  docs:    "docs.html",
   spec:    `${GITHUB}/blob/main/spec/CRUMB_SPEC.md`,
   aiGuide: `${GITHUB}/blob/main/spec/CRUMB_FOR_AI.md`,
   github:  GITHUB,
@@ -132,7 +135,24 @@ async function main() {
   })
   fs.writeFileSync(path.join(DIST, "index.html"), landingHtml)
 
-  console.error("Built: dist/index.html, dist/editor.html, dist/embed.html")
+  // ── docs.html — the documentation site, generated from the spec Markdown ──
+  // The spec/*.md files are the single source of truth: rendered to HTML here at
+  // build time (markdown.ts) so the docs can never drift. See docs-build.test.ts.
+  const docsBundle = await bundle("docs-entry.ts")
+  const docs = DOCS.map(d => {
+    const md = fs.readFileSync(path.join(ROOT, d.file), "utf8")
+    const { html, toc } = renderDoc(md, d.id)
+    return {
+      id: d.id, label: d.label, kicker: d.kicker, description: d.description, group: d.group,
+      html, toc,
+      sourceUrl: `${GITHUB}/blob/main/${d.file}`,
+      download:  d.download,
+      raw:       d.download ? md : undefined,   // only baked where Copy/Download is offered
+    }
+  })
+  fs.writeFileSync(path.join(DIST, "docs.html"), renderDocsHtml({ docsBundle, docs }))
+
+  console.error("Built: dist/index.html, dist/editor.html, dist/embed.html, dist/docs.html")
 }
 
 main().catch(e => { console.error(e); process.exit(1) })

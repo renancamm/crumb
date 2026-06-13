@@ -231,11 +231,7 @@ body.landing {
   color: var(--text);
   white-space: pre;
 }
-.yml-k { color: var(--text); font-weight: 500; }
-.yml-v { color: var(--text-secondary); }
-.yml-c { color: var(--muted); font-style: italic; }
-.yml-p { color: var(--muted); }
-.yml-s { color: var(--text-secondary); }   /* block-scalar body (note text), not parsed as YAML */
+/* .yml-* highlight classes now live in css.ts (shared with the docs page). */
 
 /* ── Example cards ────────────────────────────────────────────────────────── */
 /* Section splits in two: heading + copy in the left column, a vertical stack of

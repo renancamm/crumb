@@ -24,6 +24,7 @@ export interface LandingStage {
 
 export interface LandingLinks {
   editor:  string  // live editor page (cards deep-link with ?example=)
+  docs:    string  // documentation page (docs.html; deep-linked with #doc-… anchors)
   spec:    string  // CRUMB_SPEC.md
   aiGuide: string  // CRUMB_FOR_AI.md
   github:  string
@@ -65,18 +66,20 @@ export function renderLandingHtml(opts: LandingOptions): string {
   const tryItems = [
     { icon: ICON_SPARKLES, title: "Generate one with AI",
       desc: "A crumb is just plain text with a simple vocabulary, so an AI can write a whole itinerary from a chat. Give it the format guide and describe your trip.",
-      link: { label: "The authoring guide", href: opts.links.aiGuide } },
+      link: { label: "The AI authoring guide", href: `${opts.links.docs}#doc-ai-guide` } },
     { icon: ICON_PENCIL, title: "Open it in the live editor",
       desc: "Paste a crumb, yours or one an AI wrote, and watch it turn into a live map and timeline as you type. Load existing files and save your edits back out.",
       link: { label: "Live editor", href: opts.links.editor } },
     { icon: ICON_CODE, title: "Embed it anywhere",
       desc: "A crumb's interactive map is fully self-contained, so you can drop it into your own site or blog as a single HTML embed, with nothing to set up.",
-      link: { label: "How to embed", href: null } },
+      link: { label: "How to embed", href: `${opts.links.docs}#doc-embedding` } },
     { icon: ICON_WRENCH, title: "Build your own view",
       desc: "Build a brand-new way to display a crumb, or extend an existing one into the view you have in mind. The format is fully specified, with a reference parser to build on.",
-      link: { label: "Spec & parser reference", href: opts.links.spec } },
+      link: { label: "Spec & parser reference", href: `${opts.links.docs}#doc-parser` } },
   ].map(t => {
-    const link = `<span class="try-link">${escape(t.link.label)} (coming soon)</span>`
+    const link = t.link.href
+      ? `<a class="try-link" href="${escape(t.link.href)}">${escape(t.link.label)}</a>`
+      : `<span class="try-link is-disabled">${escape(t.link.label)} (coming soon)</span>`
     return `<div class="try-item">
         <div class="try-item-icon" aria-hidden="true">${t.icon}</div>
         <div class="try-item-title">${escape(t.title)}</div>
@@ -136,7 +139,7 @@ ${landingCSS}</style>
         <div class="text-col">
           <p class="text-body-p">You can read it in any text editor, keep it in a folder, or send it to a friend like any other message.</p>
           <p class="text-body-p">The format was designed with half-formed plans in mind, so details and dates can stay as vague as yours, and it still works out a timeline.</p>
-          <span class="text-doc-btn">Check the documentation (coming soon)</span>
+          <a class="text-doc-btn" href="${escape(opts.links.docs)}">Read the documentation</a>
         </div>
         <div class="yaml-block">
           <div class="yaml-head">${ICON_FILE}<span id="yaml-file">${escape(opts.stages[def].file)}</span></div>

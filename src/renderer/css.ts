@@ -212,6 +212,18 @@ const iconsCSS = `
 .geo-no-loc .crumb-icon { width: 12px; height: 12px; }
 `
 
+/* Token classes emitted by highlightYaml() (yaml-highlight.ts). Shared so BOTH the
+   landing's "it's just text" block and the docs page's fenced YAML are styled the
+   same way. Monochrome by design — see invariant 11. */
+const highlightCSS = `
+/* ── YAML highlighting ──────────────────────────────────────────────── */
+.yml-k { color: var(--text); font-weight: 500; }
+.yml-v { color: var(--text-secondary); }
+.yml-c { color: var(--muted); font-style: italic; }
+.yml-p { color: var(--muted); }
+.yml-s { color: var(--text-secondary); }   /* block-scalar body (note text), not parsed as YAML */
+`
+
 /* #main split layout: editor-pane | splitter | map (sidebar floats inside map) */
 const layoutCSS = `
 /* ── Layout ─────────────────────────────────────────────────────────── */
@@ -1495,6 +1507,7 @@ export const CSS = [
   resetCSS,
   tokensCSS,
   iconsCSS,
+  highlightCSS,
   layoutCSS,
   menuCSS,
   editorCSS,
