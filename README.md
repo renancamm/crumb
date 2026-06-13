@@ -63,6 +63,22 @@ See [`spec/CRUMB_FOR_AI.md`](spec/CRUMB_FOR_AI.md) for the full set of kinds, fi
 
 ---
 
+## Files & editors
+
+A `.crumb` file is **plain UTF-8 text — it's just YAML** (MIME type `application/yaml`). It opens and reads cleanly in *any* text editor; no special tool or YAML support is required.
+
+If you'd like syntax highlighting, point your editor at YAML:
+
+- **VS Code** — add to your user or workspace `settings.json` (this repo already ships it in [`.vscode/settings.json`](.vscode/settings.json)):
+
+  ```jsonc
+  { "files.associations": { "*.crumb": "yaml" } }
+  ```
+
+- **Vim / others** — set the filetype to `yaml`.
+
+---
+
 ## Render a crumb
 
 This repository is the reference implementation. It takes any crumb file and produces a self-contained HTML file with an interactive map and a visual itinerary — no server, no build step in the output.

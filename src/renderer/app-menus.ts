@@ -218,7 +218,7 @@ document.getElementById("menu-download")!.addEventListener("click", async () => 
     try {
       const fh = await (window as any).showSaveFilePicker({
         suggestedName: filename,
-        types: [{ description: "Crumb file", accept: { "text/plain": [".crumb"] } }],
+        types: [{ description: "Crumb file", accept: { "application/yaml": [".crumb"] } }],
       })
       const writable = await fh.createWritable()
       await writable.write(source)
@@ -229,7 +229,7 @@ document.getElementById("menu-download")!.addEventListener("click", async () => 
       console.warn("showSaveFilePicker failed, falling back to download:", e)
     }
   }
-  const blob = new Blob([source], { type: "text/plain" })
+  const blob = new Blob([source], { type: "application/yaml" })
   const url  = URL.createObjectURL(blob)
   const a    = document.createElement("a")
   a.href = url; a.download = filename; a.click()
