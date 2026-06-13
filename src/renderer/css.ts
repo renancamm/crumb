@@ -425,6 +425,33 @@ const editorCSS = `
 /* Drop the line-number gutter in the peek — show just code. */
 #editor-pane.collapsed .cm-gutters { display: none; }
 
+/* ── Mobile editor/map toggle (top-right of the screen; desktop hides it) ── */
+#editor-mobile-toggle {
+  display: none;
+  position: fixed;
+  top: 10px; right: 10px;            /* aligned with the menu pill (top:10) */
+  z-index: var(--z-chip);            /* above the full-screen editor */
+  width: var(--appbar-h);            /* same height as the menu pill */
+  height: var(--appbar-h);
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--ed-surface);     /* always-dark, matching the editor chrome */
+  color: var(--ed-text);
+  border: 1px solid var(--ed-border);
+  box-shadow: var(--shadow-sidebar);
+  cursor: pointer;
+}
+#editor-mobile-toggle:hover { background: var(--ed-hover); }
+#editor-mobile-toggle .crumb-icon { width: 18px; height: 18px; stroke-width: 2; }
+#editor-mobile-toggle .ic-map,
+#editor-mobile-toggle .ic-code { display: none; align-items: center; }
+#editor-mobile-toggle .ic-map { display: inline-flex; }   /* editor open → offer the map */
+/* Map view: tuck behind the bottom-sheet panel and swap to the code icon. */
+body.editor-collapsed #editor-mobile-toggle { z-index: var(--z-sidebar); }
+body.editor-collapsed #editor-mobile-toggle .ic-map  { display: none; }
+body.editor-collapsed #editor-mobile-toggle .ic-code { display: inline-flex; }
+
 /* ── CodeMirror host (fills the pane; scrolls internally) ────────────── */
 .editor-host { flex: 1; min-height: 0; overflow: hidden; }
 .editor-host .cm-editor { height: 100%; background: var(--ed-bg); }
@@ -1252,6 +1279,12 @@ const mobileCSS = `
   #editor-pane { position: fixed; inset: 0; width: 100%; z-index: var(--z-editor); }
   #editor-splitter { display: none; }
 
+  /* Collapse fully hides the editor (the map shows); the in-pane edge buttons are
+     replaced by the single top-right screen toggle. */
+  #editor-pane.collapsed { display: none; }
+  #editor-collapse, #editor-reopen { display: none; }
+  #editor-mobile-toggle { display: inline-flex; }
+
   /* Sidebar becomes a bottom sheet. Fixed full height; JS slides it between
      snap states with transform: translateY (GPU-composited — no per-frame reflow).
      The pre-JS transform shows roughly the medium state until initSheet() runs.
@@ -1345,10 +1378,6 @@ const mobileCSS = `
     transition: bottom var(--sheet-anim, 0ms);
   }
   .map-status-chip { right: 12px; }
-
-  /* App bar: pin to top and push map down so it doesn't slide under the bar */
-  body:has(#app-bar) #app-bar { position: fixed; top: 0; left: 0; right: 0; z-index: var(--z-appbar); }
-  body:has(#app-bar) #map { top: var(--appbar-h); }
 }
 `
 

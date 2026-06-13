@@ -140,6 +140,7 @@ setRevertEnabled(loadedBaseline !== null)
 export function openEditor(focus = true): void {
   if (getValue() === "") setValue(window.__CRUMB_SOURCE ?? "")
   editorPane.classList.remove("collapsed")
+  document.body.classList.remove("editor-collapsed")
   refreshEditorLayout()
   window.dispatchEvent(new CustomEvent("crumb:layout-resized"))
   if (focus) focusEditor()
@@ -147,15 +148,22 @@ export function openEditor(focus = true): void {
 
 // Hide (not close) — the editor collapses to a narrow rail that still shows a
 // peek of the code; content is preserved. The splitter stays draggable so the
-// rail can be dragged back out (see app-layout.ts).
+// rail can be dragged back out (see app-layout.ts). On mobile the rail is hidden
+// entirely and the map shows (the body class drives the mobile toggle's icon/z).
 export function hideEditor(): void {
   editorPane.classList.add("collapsed")
+  document.body.classList.add("editor-collapsed")
   refreshEditorLayout()
   window.dispatchEvent(new CustomEvent("crumb:layout-resized"))
 }
 
 document.getElementById("editor-collapse")!.addEventListener("click", hideEditor)
 editorReopen?.addEventListener("click", () => openEditor())
+
+// Mobile: a single top-right toggle swaps between editor (code) and map views.
+document.getElementById("editor-mobile-toggle")?.addEventListener("click", () => {
+  editorPane.classList.contains("collapsed") ? openEditor() : hideEditor()
+})
 // The whole collapsed rail is a hit target for expanding. Ignore the edge
 // buttons themselves — they own their click, and bubbling here would otherwise
 // undo a just-applied collapse.

@@ -24,7 +24,7 @@ import {
   placeActivityItems,
 } from "./plan-view"
 import { CSS } from "./css"
-import { ICON_STAY, ICON_ARRIVES, ICON_DEPARTS, ICON_CLOCK, ICON_PIN_OFF, ICON_PRIORITY_MUST, ICON_PRIORITY_MAYBE, ICON_CLOSE, ICON_CHEVRON_DOWN, ICON_CHEVRON_LEFT, ICON_CHEVRON_RIGHT, ICON_UNDO, ICON_REDO, ICON_HELP, modeIconSvg } from "./icons"
+import { ICON_STAY, ICON_ARRIVES, ICON_DEPARTS, ICON_CLOCK, ICON_PIN_OFF, ICON_PRIORITY_MUST, ICON_PRIORITY_MAYBE, ICON_CLOSE, ICON_CHEVRON_DOWN, ICON_CHEVRON_LEFT, ICON_CHEVRON_RIGHT, ICON_UNDO, ICON_REDO, ICON_HELP, ICON_CODE, ICON_MAP, modeIconSvg } from "./icons"
 import {
   escape,
   jsonForScript,
@@ -690,7 +690,11 @@ export function renderHtml(doc: CrumbDocument | null, options: AppOptions): stri
         <div id="panel-content">${panelBody}</div>
         <div id="panel-footer"></div>
       </div>
-    </div>${options.embed ? `\n    <div id="embed-card-legend"></div>` : ""}
+    </div>${options.embed ? `\n    <div id="embed-card-legend"></div>` : ""}${includeEditor ? `
+    <!-- Mobile-only editor/map toggle (top-right of the screen) -->
+    <button id="editor-mobile-toggle" aria-label="Toggle editor / map">
+      <span class="ic-map">${ICON_MAP}</span><span class="ic-code">${ICON_CODE}</span>
+    </button>` : ""}
 
   </div>
 ${modalsDom}
