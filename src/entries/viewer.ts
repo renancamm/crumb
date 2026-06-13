@@ -10,4 +10,4 @@
  * (if present) updates window.__CRUMB_DATA.
  */
 
-import "./renderer/browser-app"
+import "../app/viewer/viewer-app"

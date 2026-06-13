@@ -1,5 +1,5 @@
-import type { CrumbDocument } from "../types/resolved"
-import type { GeoResult } from "./geocoder"
+import type { CrumbDocument } from "../../types/resolved"
+import type { GeoResult } from "../../geo/geocoder"
 
 export interface ModalRef {
   type: "trip" | "transport" | "stay" | "activity"

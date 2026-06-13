@@ -9,7 +9,7 @@ import {
   jsonForScript,
   formatShortDate,
   formatISODate,
-} from "../../src/renderer/format"
+} from "../../src/shared/format"
 import type { ResolvedMoment } from "../../src/types/resolved"
 
 // ─── formatHHMM ──────────────────────────────────────────────────────────────

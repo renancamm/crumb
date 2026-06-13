@@ -2,7 +2,7 @@
 //
 // Omitting `parse` lets esbuild tree-shake js-yaml + the three parser passes
 // out of the bundle — the viewer receives the document pre-parsed as
-// window.__CRUMB_DATA and never re-parses. The editor build uses browser-entry.ts
+// window.__CRUMB_DATA and never re-parses. The editor build uses render-full.ts
 // instead, which additionally exports `parse` for live re-parsing.
 export {
   renderTripHeader,
@@ -11,4 +11,4 @@ export {
   renderSinglePlacePanel,
   renderTransportPanel,
   renderModalContent,
-} from "./renderer/html"
+} from "../generate/html"

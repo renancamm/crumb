@@ -15,17 +15,17 @@ import * as esbuild from "esbuild"
 import * as fs       from "fs"
 import * as path     from "path"
 import { parse }              from "../src/parser"
-import { renderHtml }         from "../src/renderer/html"
-import { renderLandingHtml }  from "../src/renderer/html-landing"
-import { renderDocsHtml }     from "../src/renderer/html-docs"
-import { renderDoc, DOCS }    from "../src/renderer/markdown"
+import { renderHtml }         from "../src/generate/html"
+import { renderLandingHtml }  from "../src/generate/landing/html-landing"
+import { renderDocsHtml }     from "../src/generate/docs/html-docs"
+import { renderDoc, DOCS }    from "../src/generate/docs/markdown"
 
 const GITHUB = "https://github.com/renancamm/crumb"
 const LINKS = {
   editor:  "editor.html",
   docs:    "docs.html",
-  spec:    `${GITHUB}/blob/main/spec/CRUMB_SPEC.md`,
-  aiGuide: `${GITHUB}/blob/main/spec/CRUMB_FOR_AI.md`,
+  spec:    `${GITHUB}/blob/main/spec/crumb-spec.md`,
+  aiGuide: `${GITHUB}/blob/main/spec/crumb-for-ai.md`,
   github:  GITHUB,
 }
 
@@ -71,12 +71,12 @@ async function main() {
   fs.mkdirSync(DIST, { recursive: true })
 
   // ── Browser bundles (built once, shared across pages) ──
-  const viewerRenderBundle = await bundle("viewer-render-entry.ts", "Crumb") // render fns, parser-free
-  const editorRenderBundle = await bundle("browser-entry.ts",       "Crumb") // render fns + parse
-  const viewerBundle       = await bundle("viewer-entry.ts")
-  const editorBundle       = await bundle("editor-entry.ts")
-  const embedBundle        = await bundle("embed-entry.ts")
-  const landingBundle      = await bundle("landing-entry.ts")
+  const viewerRenderBundle = await bundle("entries/render-viewer.ts", "Crumb") // render fns, parser-free
+  const editorRenderBundle = await bundle("entries/render-full.ts",       "Crumb") // render fns + parse
+  const viewerBundle       = await bundle("entries/viewer.ts")
+  const editorBundle       = await bundle("entries/editor.ts")
+  const embedBundle        = await bundle("entries/embed.ts")
+  const landingBundle      = await bundle("entries/landing.ts")
 
   // ── embed.html — generic, content-agnostic embed: takes a crumb inline (the
   //    landing posts crumb + geo via postMessage) or by URL (?src=…&geo=…). Ships
@@ -101,8 +101,8 @@ async function main() {
     includeEditor:  true,
     source:         readExample("japan-detailed.crumb"),
     examples,
-    specContent:    readFirst(["spec/CRUMB_SPEC.md", "CRUMB_SPEC.md"]),
-    aiGuideContent: readFirst(["spec/CRUMB_FOR_AI.md", "CRUMB_FOR_AI.md"]),
+    specContent:    readFirst(["spec/crumb-spec.md", "crumb-spec.md"]),
+    aiGuideContent: readFirst(["spec/crumb-for-ai.md", "crumb-for-ai.md"]),
     geoData:        readGeo("japan-detailed.geo.json"),
   })
   fs.writeFileSync(path.join(DIST, "editor.html"), editorHtml)
@@ -138,7 +138,7 @@ async function main() {
   // ── docs.html — the documentation site, generated from the spec Markdown ──
   // The spec/*.md files are the single source of truth: rendered to HTML here at
   // build time (markdown.ts) so the docs can never drift. See docs-build.test.ts.
-  const docsBundle = await bundle("docs-entry.ts")
+  const docsBundle = await bundle("entries/docs.ts")
   const docs = DOCS.map(d => {
     const md = fs.readFileSync(path.join(ROOT, d.file), "utf8")
     const { html, toc } = renderDoc(md, d.id)

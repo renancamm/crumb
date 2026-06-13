@@ -19,8 +19,8 @@
  */
 
 import MarkdownIt from "markdown-it"
-import { escape }         from "./format"
-import { highlightYaml }  from "./yaml-highlight"
+import { escape }         from "../../shared/format"
+import { highlightYaml }  from "../landing/yaml-highlight"
 
 // ── Doc registry ─────────────────────────────────────────────────────────────
 // The ordered set of documents the docs page is built from. `id` is the section
@@ -44,11 +44,11 @@ export const DOCS: readonly DocMeta[] = [
   { id: "doc-overview",   label: "Overview",             file: "spec/reference/overview.md", basename: "overview.md",
     kicker: "Start here", group: "",
     description: "What Crumb is, how these docs are organized, and where to start." },
-  { id: "doc-spec",       label: "Format Specification", file: "spec/CRUMB_SPEC.md",          basename: "crumb_spec.md",
+  { id: "doc-spec",       label: "Format Specification", file: "spec/crumb-spec.md",          basename: "crumb-spec.md",
     kicker: "Specification", group: "The format",
     description: "The complete, authoritative definition of the format — every field, type, and rule." },
-  { id: "doc-ai-guide",   label: "AI Authoring Guide",   file: "spec/CRUMB_FOR_AI.md",        basename: "crumb_for_ai.md",
-    kicker: "Guide", group: "The format", download: "CRUMB_FOR_AI.md",
+  { id: "doc-ai-guide",   label: "AI Authoring Guide",   file: "spec/crumb-for-ai.md",        basename: "crumb-for-ai.md",
+    kicker: "Guide", group: "The format", download: "crumb-for-ai.md",
     description: "A compact prompt that teaches an AI to write valid Crumb — copy it, then describe your trip." },
   { id: "doc-embedding",  label: "Embedding",            file: "spec/reference/embedding.md", basename: "embedding.md",
     kicker: "Guide", group: "Building on it",

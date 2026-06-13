@@ -12,7 +12,7 @@
  *
  * Deep links from the landing (docs.html#doc-embedding, …) are honoured on load.
  */
-import { copyText } from "./clipboard"
+import { copyText } from "../../shared/clipboard"
 
 interface RawDoc { md: string; name: string }
 const RAW: Record<string, RawDoc> =

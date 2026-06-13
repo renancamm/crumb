@@ -22,9 +22,9 @@ import type {
 import {
   placeStays,
   placeActivityItems,
-} from "./plan-view"
+} from "../shared/plan-view"
 import { CSS } from "./css"
-import { ICON_STAY, ICON_ARRIVES, ICON_DEPARTS, ICON_CLOCK, ICON_PIN_OFF, ICON_PRIORITY_MUST, ICON_PRIORITY_MAYBE, ICON_CLOSE, ICON_CHEVRON_DOWN, ICON_CHEVRON_LEFT, ICON_CHEVRON_RIGHT, ICON_UNDO, ICON_REDO, ICON_HELP, ICON_CODE, ICON_MAP, modeIconSvg } from "./icons"
+import { ICON_STAY, ICON_ARRIVES, ICON_DEPARTS, ICON_CLOCK, ICON_PIN_OFF, ICON_PRIORITY_MUST, ICON_PRIORITY_MAYBE, ICON_CLOSE, ICON_CHEVRON_DOWN, ICON_CHEVRON_LEFT, ICON_CHEVRON_RIGHT, ICON_UNDO, ICON_REDO, ICON_HELP, ICON_CODE, ICON_MAP, modeIconSvg } from "../shared/icons"
 import {
   escape,
   jsonForScript,
@@ -39,7 +39,7 @@ import {
   isoFromMoment,
   isInferredMoment,
   activityLabel,
-} from "./format"
+} from "../shared/format"
 
 // ─── AppOptions ───────────────────────────────────────────────────────────────
 
@@ -56,9 +56,9 @@ export interface AppOptions {
   source?: string
   /** Example files keyed by filename. Only used when includeEditor is true. */
   examples?: Record<string, string>
-  /** CRUMB_SPEC.md content (full reference). Only used when includeEditor is true. */
+  /** crumb-spec.md content (full reference). Only used when includeEditor is true. */
   specContent?: string
-  /** CRUMB_FOR_AI.md content — the compact authoring guide used by the "Generate with AI" prompt. Only used when includeEditor is true. */
+  /** crumb-for-ai.md content — the compact authoring guide used by the "Generate with AI" prompt. Only used when includeEditor is true. */
   aiGuideContent?: string
   /** Baked geocoding cache ({ query: {lat,lng} }). When provided, the viewer seeds
    *  localStorage from it so known places resolve with zero network requests. */
@@ -861,7 +861,7 @@ function renderDetailedRoute(
   durationText: string | null,
 ): string {
   // The two .waypoint-name spans (origin, then destination) are decorated by
-  // decorateTransportWaypoints() in browser-app — it owns link/icon/spinner state.
+  // decorateTransportWaypoints() in viewer-app — it owns link/icon/spinner state.
   return `<div class="transport-route-block">
       <div class="tl-row">
         <div class="tl-marker"><div class="tl-dot"></div></div>

@@ -19,7 +19,7 @@ import { yaml, yamlLanguage } from "@codemirror/lang-yaml"
 import { linter, lintGutter, Diagnostic } from "@codemirror/lint"
 import { CompletionContext, CompletionResult } from "@codemirror/autocomplete"
 import { tags as t } from "@lezer/highlight"
-import { GROUP_KINDS, TRANSPORT_MODES } from "../types/primitives"
+import { GROUP_KINDS, TRANSPORT_MODES } from "../../types/primitives"
 import {
   ACTIVITY_FIELDS,
   GROUP_FIELDS,
@@ -28,7 +28,7 @@ import {
   TOP_LEVEL_KEYS,
   TRANSPORT_FIELDS,
   TRIP_FIELDS,
-} from "../parser/vocab"
+} from "../../parser/vocab"
 
 const hostEl   = document.getElementById("editor")        as HTMLElement
 const statusEl = document.getElementById("editor-status") as HTMLElement

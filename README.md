@@ -59,7 +59,7 @@ itinerary:
       - Kinkaku-ji
 ```
 
-See [`spec/CRUMB_FOR_AI.md`](spec/CRUMB_FOR_AI.md) for the full set of kinds, fields, and date forms.
+See [`spec/crumb-for-ai.md`](spec/crumb-for-ai.md) for the full set of kinds, fields, and date forms.
 
 ---
 
@@ -116,8 +116,9 @@ npm run test            # vitest suite (parser + formatters)
 
 The format is the product; this repo is its TypeScript reference implementation.
 
-- **`src/parser`** — `parse(source) → CrumbDocument`. Synchronous, no I/O, three sequential passes: classify structure → resolve values → infer the timeline.
-- **`src/renderer`** — turns a parsed document into a self-contained HTML page: an interactive map + itinerary viewer, an optional editor shell, and an embeddable map card. All styles ship inline.
+- **`src/parser`** + **`src/types`** — `parse(source) → CrumbDocument`. Synchronous, no I/O, three sequential passes: classify structure → resolve values → infer the timeline.
+- **`src/generate`** — build-time HTML/CSS emitters that turn a parsed document into a self-contained page (viewer, landing, docs). All styles ship inline.
+- **`src/app`** — the browser runtime (`viewer`, `editor`, `docs`, `embed`); **`src/geo`** geocoding; **`src/shared`** helpers; **`src/entries`** the bundle entry points.
 - **`examples/`** — sample `.crumb` files, from a bare sketch to a fully detailed trip.
 - **`spec/`** — the format specification and authoring guides (see below).
 - **`scripts/`** — the site builder and the offline geocoding-cache generator.
@@ -126,8 +127,8 @@ The format is the product; this repo is its TypeScript reference implementation.
 
 ## Specification
 
-- [spec/CRUMB_SPEC.md](spec/CRUMB_SPEC.md) — format specification: valid fields, types, and date forms
-- [spec/CRUMB_FOR_AI.md](spec/CRUMB_FOR_AI.md) — compact authoring guide for AI systems writing crumbs
+- [spec/crumb-spec.md](spec/crumb-spec.md) — format specification: valid fields, types, and date forms
+- [spec/crumb-for-ai.md](spec/crumb-for-ai.md) — compact authoring guide for AI systems writing crumbs
 - [spec/reference/parser.md](spec/reference/parser.md) — parsing pipeline, resolution rules, worked example
 - [spec/reference/data-model.md](spec/reference/data-model.md) — output TypeScript interfaces
 

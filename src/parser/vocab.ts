@@ -3,7 +3,7 @@
  *
  * Single source of truth shared by:
  *   — pass1-classify.ts (rejects unknown keys/fields during parsing)
- *   — the editor's autocomplete (src/renderer/app-editor.ts)
+ *   — the editor's autocomplete (src/app/editor/app-editor.ts)
  *
  * Keeping these here means editor completions can never drift from what the
  * parser actually accepts. Transport modes and group kinds live in

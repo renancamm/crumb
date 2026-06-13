@@ -6,7 +6,7 @@
  * script runs:
  *
  *   window.__CRUMB_SOURCE   — original YAML source for the editor
- *   window.__CRUMB_SPEC     — CRUMB_SPEC.md content for "Download spec"
+ *   window.__CRUMB_SPEC     — crumb-spec.md content for "Download spec"
  *   window.__CRUMB_EXAMPLES — example crumb files keyed by filename
  *   window.__CRUMB_DATA     — parsed CrumbDocument (initial render)
  *
@@ -18,9 +18,9 @@ import { setupListClickHandler, clearFocus, highlightMarker } from "./app-focus"
 import { updateMap, fitAllPlaces, applyDetailMarkerFilter, fitTransportPoints, mapPadding, applyGeoState, setMapInteraction } from "./app-map"
 import { state, ZOOM_PLACE_FLY, ZOOM_DETAIL_FLY, MOBILE_MAX_W, FLY_DURATION, EMBED } from "./app-state"
 import { initSheet, exitSheet, goMedium } from "./app-sheet"
-import { seedGeoCache } from "./geocoder"
-import { ICON_PIN_OFF, ICON_CHEVRON_LEFT, ICON_CHEVRON_RIGHT, ICON_MAXIMIZE, ICON_MINIMIZE } from "./icons"
-import { placeStays, placeActivityItems } from "./plan-view"
+import { seedGeoCache } from "../../geo/geocoder"
+import { ICON_PIN_OFF, ICON_CHEVRON_LEFT, ICON_CHEVRON_RIGHT, ICON_MAXIMIZE, ICON_MINIMIZE } from "../../shared/icons"
+import { placeStays, placeActivityItems } from "../../shared/plan-view"
 import type { ModalRef } from "./app-state"
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

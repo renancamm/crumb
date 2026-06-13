@@ -1,7 +1,7 @@
 /**
  * Offline geo-cache generator.
  *
- * Runs the *real* browser geocoder (`src/renderer/geocoder.ts`) in Node behind a
+ * Runs the *real* browser geocoder (`src/geo/geocoder.ts`) in Node behind a
  * tiny in-memory `localStorage` shim, driving it with the same query traversal
  * the viewer uses (`updateMap` in app-map.ts). Whatever the geocoder caches is
  * therefore keyed by the exact `crumb-geo-v4:<query>` strings the viewer looks
@@ -17,7 +17,7 @@
 import * as fs from "fs"
 import * as path from "path"
 import type { CrumbDocument, Place } from "../src/types/resolved"
-import type { GeoResult } from "../src/renderer/geocoder"
+import type { GeoResult } from "../src/geo/geocoder"
 
 // ── Shims: must be installed BEFORE the geocoder module is loaded ──────────────
 
@@ -40,9 +40,9 @@ const realFetch = globalThis.fetch
 // ── Load app modules (they capture the shimmed globals) ───────────────────────
 
 const { parse } = require("../src/parser") as typeof import("../src/parser")
-const geo       = require("../src/renderer/geocoder") as typeof import("../src/renderer/geocoder")
+const geo       = require("../src/geo/geocoder") as typeof import("../src/geo/geocoder")
 const { collectActivityGeoTargets, collectStayGeoTargets } =
-  require("../src/renderer/geo-targets") as typeof import("../src/renderer/geo-targets")
+  require("../src/geo/geo-targets") as typeof import("../src/geo/geo-targets")
 
 const GEO_CACHE_PREFIX = "crumb-geo-v4:"
 const examplesDir = path.resolve(__dirname, "../examples")

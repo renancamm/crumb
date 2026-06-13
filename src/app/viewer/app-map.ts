@@ -1,4 +1,4 @@
-import type { CrumbDocument, Place } from "../types/resolved"
+import type { CrumbDocument, Place } from "../../types/resolved"
 import {
   cachedGeo,
   cacheGeo,
@@ -9,18 +9,18 @@ import {
   geocodeTransportPoints,
   type GeoResult,
   type DetailPoint,
-} from "./geocoder"
+} from "../../geo/geocoder"
 import {
   ICON_STAY, ICON_PLANE, ICON_TRAIN, ICON_BUS, ICON_CAR, ICON_SHIP,
   ICON_WALK, ICON_BIKE, ICON_ROUTE, ICON_PIN_OFF,
-} from "./icons"
-import { escape } from "./format"
+} from "../../shared/icons"
+import { escape } from "../../shared/format"
 import {
   collectActivityGeoTargets,
   collectStayGeoTargets,
   type ActivityGeoTarget,
   type StayGeoTarget,
-} from "./geo-targets"
+} from "../../geo/geo-targets"
 import { state, ZOOM_OVERVIEW, ZOOM_DETAIL, ROUTE_COLOR, MOBILE_MAX_W, SHEET_MEDIUM_RATIO, EMBED } from "./app-state"
 
 declare const maplibregl: any

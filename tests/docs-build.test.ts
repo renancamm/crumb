@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { readFileSync, existsSync } from "node:fs"
 import { resolve } from "node:path"
-import { renderDoc, DOCS } from "../src/renderer/markdown"
+import { renderDoc, DOCS } from "../src/generate/docs/markdown"
 import { parse } from "../src/parser"
 
 // Anti-drift guard for the generated docs page (docs.html). The spec/*.md files are

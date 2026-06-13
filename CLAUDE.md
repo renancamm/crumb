@@ -2,27 +2,33 @@
 
 ## What this repo is
 
-Crumb is a **spec-first** open format for travel itineraries. The format is the product; this TypeScript codebase is the reference implementation. The format spec (`spec/CRUMB_SPEC.md`) and the code are versioned together — a parser change that breaks spec compliance is a bug.
+Crumb is a **spec-first** open format for travel itineraries. The format is the product; this TypeScript codebase is the reference implementation. The format spec (`spec/crumb-spec.md`) and the code are versioned together — a parser change that breaks spec compliance is a bug.
 
 ## Architecture at a glance
+
+`src/` is organised by concern: **`parser/`** + **`types/`** (the format core), **`entries/`**
+(thin esbuild/CLI bundle targets), **`generate/`** (node, build-time HTML/CSS string emitters —
+`generate/landing/` + `generate/docs/`), **`app/`** (browser runtime: `app/viewer/`, `app/editor/`,
+`app/docs/`, `app/embed/`), **`geo/`** (geocoding), and **`shared/`** (used by both node and browser).
+A module's directory tells you whether it runs at build time (`generate/`) or in the browser (`app/`).
 
 | Layer | Files | Role |
 |---|---|---|
 | Raw types | `src/types/raw.ts` | Pass 1 internal representation — never imported outside `src/parser/` |
 | Public types | `src/types/resolved.ts` | The only output contract. Renderer, browser, and tests import from here |
 | Parser | `src/parser/` | Three sequential passes: classify → resolve → infer |
-| Renderer | `src/renderer/html.ts` | `renderHtml()` (full self-contained app shell, used by the CLI) + the panel renderers (`renderTripPanel`, `renderPlacePanel`, `renderSinglePlacePanel`, `renderTransportPanel`, `renderModalContent`) the viewer calls for live re-render |
-| Styles | `src/renderer/css.ts` | All CSS, as concatenated string constants → one `<style>` block. `:root` is split into **theme tokens** (colours/shadows that flip in dark mode) and **static tokens** (radius/type/motion/layout/z-index). See invariant 10. |
-| Icons | `src/renderer/icons.ts` | Every UI icon is a Lucide SVG built by the `icon()` factory (`class="crumb-icon"`, styled only by CSS). Never hand-roll inline `<svg>` in renderers — add an `ICON_*` here. |
-| Viewer bundle | `src/viewer-entry.ts` → `src/renderer/browser-app.ts` + `app-map.ts` + `app-focus.ts` + `app-sheet.ts` | Standalone map + panel UI. No editor dependency. Listens for `crumb:doc-updated` event. |
-| Editor bundle | `src/editor-entry.ts` → `src/renderer/app-editor.ts` (CodeMirror 6) + `app-menus.ts` + `app-layout.ts` | YAML editor (live highlighting, lint, autocomplete) in a resizable split against the map; menus sit atop the code pane. Fires `crumb:doc-updated` after re-parse and `crumb:layout-resized` when the split is dragged/toggled. |
-| Landing page | `src/renderer/html-landing.ts` (→ `landing-css.ts` + `yaml-highlight.ts`), bundle `src/landing-entry.ts` | Standalone scrolling `index.html` (not the app shell). Reuses the design tokens; drives the hero/example embeds via `postMessage` (see invariant 5). Copy lives in the `html-landing.ts` markup; visual direction is in its header comment. |
-| Docs page | `src/renderer/html-docs.ts` (→ `docs-css.ts`) + `src/renderer/markdown.ts`, bundle `src/docs-entry.ts` → `app-docs.ts` | Standalone wiki-style `docs.html` (not the app shell). **Generated at build time from the `spec/*.md` source of truth** (`markdown.ts` = build-time markdown-it wrapper, node-only — never bundled to the browser; it strips each source's leading H1 so the page header owns the title). One self-contained page: a two-region sidebar (grouped doc list + the active doc's TOC), a breadcrumb, and a uniform per-doc header (kicker/description/actions) all driven by the `DOCS` registry in `markdown.ts` — its `kicker/description/group` are **navigational copy only** (no field/type claims) so they can't drift. `spec/reference/overview.md` is the home/orientation doc. Source bodies (spec, AI guide, parser, data-model) are framed by chrome, never edited for the site. `tests/docs-build.test.ts` guards anchor/link/metadata drift. Copy/Download use the shared `src/renderer/clipboard.ts`. |
-| Embed page | `src/embed-entry.ts` → `browser-app.ts` + `src/renderer/embed-boot.ts` | Generic, content-agnostic `embed.html`: a viewer that loads a crumb at runtime by `?src=` (fetch) or inline `postMessage`. `?card` is the compact map+legend card variant. |
-| Render-API bundles | `src/viewer-render-entry.ts` (no parser) · `src/browser-entry.ts` (+ `parse`) | The `window.Crumb` render fns. Viewer-only output ships the parser-free one (tree-shakes js-yaml); the editor **and** embed ship the `+parse` one for live/runtime re-parsing. |
-| Format helpers | `src/renderer/format.ts` | Pure functions, no HTML — reusable by any renderer |
-| Geo targets | `src/renderer/geo-targets.ts` | DOM-free collection of geocoding queries from a doc. Shared by `app-map.ts` (viewer) and `scripts/gen-geocache.ts` so both issue byte-identical queries. |
-| Geocoding | `src/renderer/geocoder.ts` | Nominatim integration, localStorage cache, sequential request queue |
+| Renderer | `src/generate/html.ts` | `renderHtml()` (full self-contained app shell, used by the CLI) + the panel renderers (`renderTripPanel`, `renderPlacePanel`, `renderSinglePlacePanel`, `renderTransportPanel`, `renderModalContent`) the viewer calls for live re-render |
+| Styles | `src/generate/css.ts` | All CSS, as concatenated string constants → one `<style>` block. `:root` is split into **theme tokens** (colours/shadows that flip in dark mode) and **static tokens** (radius/type/motion/layout/z-index). See invariant 10. |
+| Icons | `src/shared/icons.ts` | Every UI icon is a Lucide SVG built by the `icon()` factory (`class="crumb-icon"`, styled only by CSS). Never hand-roll inline `<svg>` in renderers — add an `ICON_*` here. |
+| Viewer bundle | `src/entries/viewer.ts` → `src/app/viewer/viewer-app.ts` + `app-map.ts` + `app-focus.ts` + `app-sheet.ts` | Standalone map + panel UI. No editor dependency. Listens for `crumb:doc-updated` event. |
+| Editor bundle | `src/entries/editor.ts` → `src/app/editor/app-editor.ts` (CodeMirror 6) + `app-menus.ts` + `app-layout.ts` | YAML editor (live highlighting, lint, autocomplete) in a resizable split against the map; menus sit atop the code pane. Fires `crumb:doc-updated` after re-parse and `crumb:layout-resized` when the split is dragged/toggled. |
+| Landing page | `src/generate/landing/html-landing.ts` (→ `landing-css.ts` + `yaml-highlight.ts`), bundle `src/entries/landing.ts` | Standalone scrolling `index.html` (not the app shell). Reuses the design tokens; drives the hero/example embeds via `postMessage` (see invariant 5). Copy lives in the `html-landing.ts` markup; visual direction is in its header comment. |
+| Docs page | `src/generate/docs/html-docs.ts` (→ `docs-css.ts`) + `src/generate/docs/markdown.ts`, bundle `src/entries/docs.ts` → `app-docs.ts` | Standalone wiki-style `docs.html` (not the app shell). **Generated at build time from the `spec/*.md` source of truth** (`markdown.ts` = build-time markdown-it wrapper, node-only — never bundled to the browser; it strips each source's leading H1 so the page header owns the title). One self-contained page: a two-region sidebar (grouped doc list + the active doc's TOC), a breadcrumb, and a uniform per-doc header (kicker/description/actions) all driven by the `DOCS` registry in `markdown.ts` — its `kicker/description/group` are **navigational copy only** (no field/type claims) so they can't drift. `spec/reference/overview.md` is the home/orientation doc. Source bodies (spec, AI guide, parser, data-model) are framed by chrome, never edited for the site. `tests/docs-build.test.ts` guards anchor/link/metadata drift. Copy/Download use the shared `src/shared/clipboard.ts`. |
+| Embed page | `src/entries/embed.ts` → `viewer-app.ts` + `src/app/embed/embed-boot.ts` | Generic, content-agnostic `embed.html`: a viewer that loads a crumb at runtime by `?src=` (fetch) or inline `postMessage`. `?card` is the compact map+legend card variant. |
+| Render-API bundles | `src/entries/render-viewer.ts` (no parser) · `src/entries/render-full.ts` (+ `parse`) | The `window.Crumb` render fns. Viewer-only output ships the parser-free one (tree-shakes js-yaml); the editor **and** embed ship the `+parse` one for live/runtime re-parsing. |
+| Format helpers | `src/shared/format.ts` | Pure functions, no HTML — reusable by any renderer |
+| Geo targets | `src/geo/geo-targets.ts` | DOM-free collection of geocoding queries from a doc. Shared by `app-map.ts` (viewer) and `scripts/gen-geocache.ts` so both issue byte-identical queries. |
+| Geocoding | `src/geo/geocoder.ts` | Nominatim integration, localStorage cache, sequential request queue |
 
 ### Parser passes
 
@@ -63,11 +69,11 @@ src/parser/
    The editor bundle additionally gets (only injected in editor mode):
    - `window.__CRUMB_SOURCE` — original YAML string (pre-fills the editor textarea)
    - `window.__CRUMB_EXAMPLES` — example file contents
-   - `window.__CRUMB_SPEC` — `CRUMB_SPEC.md` text (embedded for AI use)
-   - `window.__CRUMB_FOR_AI` — `CRUMB_FOR_AI.md` authoring guide (for the "Generate with AI" prompt)
+   - `window.__CRUMB_SPEC` — `crumb-spec.md` text (embedded for AI use)
+   - `window.__CRUMB_FOR_AI` — `crumb-for-ai.md` authoring guide (for the "Generate with AI" prompt)
 
    Two more modes set their own globals:
-   - `window.__CRUMB_EMBED` (embed only) — flips the viewer into a locked-preview map with an expand→fullscreen control (`setupEmbedMode` in `browser-app.ts`). The doc is loaded at runtime, not baked.
+   - `window.__CRUMB_EMBED` (embed only) — flips the viewer into a locked-preview map with an expand→fullscreen control (`setupEmbedMode` in `viewer-app.ts`). The doc is loaded at runtime, not baked.
    - `window.__CRUMB_LANDING` (landing only, set by `html-landing.ts`) — the per-stage YAML + crumb + geo the landing bundle posts into its embeds.
    - `window.__CRUMB_GEO_DATA` / `__CRUMB_GEO_MODE` — optional baked geo-cache seeded into localStorage before any geocoding runs (see `gen-geocache.ts`).
 
@@ -89,7 +95,7 @@ src/parser/
 
 **New transport mode** (e.g. "subway"):
 - Add to the `TRANSPORT_MODES` tuple in `src/types/primitives.ts` (the `TransportMode` union and pass 1's `TRANSPORT_MODE_SET` both derive from it)
-- Add the SVG icon and its `modeIconSvg()` mapping in `src/renderer/icons.ts`
+- Add the SVG icon and its `modeIconSvg()` mapping in `src/shared/icons.ts`
 
 **New date expression format** (e.g. "next month"):
 - Add a match branch in `resolveMoment()` in `src/parser/pass2-resolve.ts`
@@ -98,7 +104,7 @@ src/parser/
 **New duration variant**:
 - Add a match branch in `resolveDuration()` in `src/parser/pass2-resolve.ts`
 - Add the new variant to the `ResolvedDuration` union in `src/types/resolved.ts`
-- Add a `formatDuration()` case in `src/renderer/format.ts`
+- Add a `formatDuration()` case in `src/shared/format.ts`
 
 **New YAML field on a place/activity/transport**:
 - Add to the appropriate `Raw*` type in `src/types/raw.ts`
@@ -106,13 +112,13 @@ src/parser/
 - Resolve it in `src/parser/pass2-resolve.ts`
 - Add the resolved field to the appropriate type in `src/types/resolved.ts`
 
-**Pure formatting helper (no HTML)** → `src/renderer/format.ts`
+**Pure formatting helper (no HTML)** → `src/shared/format.ts`
 
-**HTML renderer helper** → private function in `src/renderer/html.ts`
+**HTML renderer helper** → private function in `src/generate/html.ts`
 
-**Viewer-side browser interaction** (map, panel navigation, focus, mobile sheet) → `src/renderer/browser-app.ts` (and the other `app-*.ts` modules imported by `src/viewer-entry.ts`)
+**Viewer-side browser interaction** (map, panel navigation, focus, mobile sheet) → `src/app/viewer/viewer-app.ts` (and the other `app-*.ts` modules imported by `src/entries/viewer.ts`)
 
-**Editor-side browser interaction** (CodeMirror editor, menus, dialogs, split layout) → `src/renderer/app-editor.ts`, `app-menus.ts`, or `app-layout.ts` (imported by `src/editor-entry.ts`)
+**Editor-side browser interaction** (CodeMirror editor, menus, dialogs, split layout) → `src/app/editor/app-editor.ts`, `app-menus.ts`, or `app-layout.ts` (imported by `src/entries/editor.ts`)
 
 ## Dev commands
 
@@ -134,7 +140,7 @@ so embeds resolve known places with zero requests.
 ## Test targets
 
 - **Primary:** Parser functions (`resolveMoment`, `resolveDuration`, `parse()` end-to-end). These contain regex dispatch, 8-variant logic, and the 5-phase inference algorithm — the highest regression risk.
-- **Secondary:** Pure formatting helpers in `src/renderer/format.ts`.
+- **Secondary:** Pure formatting helpers in `src/shared/format.ts`.
 - **Do not test:** Browser DOM behavior or geocoding (network-dependent, too much mocking complexity).
 
 Test files live in `tests/` mirroring `src/` structure:
@@ -147,9 +153,10 @@ tests/
     parse-integration.test.ts
     examples.test.ts          # every examples/*.crumb parses
     regression.test.ts        # determinism / regression cases
-  renderer/
+  shared/
     format.test.ts
-  spec-sync.test.ts           # code constants ↔ CRUMB_FOR_AI.md vocab stay in sync
+  docs-build.test.ts          # docs.html anchor/link/metadata drift guard
+  spec-sync.test.ts           # code constants ↔ crumb-for-ai.md vocab stay in sync
 ```
 
 ## Before touching pass3-infer.ts

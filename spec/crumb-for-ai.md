@@ -231,4 +231,4 @@ itinerary:
 
 ---
 
-Full reference: [`CRUMB_SPEC.md`](CRUMB_SPEC.md).
+Full reference: [`crumb-spec.md`](crumb-spec.md).

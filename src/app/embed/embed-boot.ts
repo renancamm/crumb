@@ -12,7 +12,7 @@
  * announces `crumb:ready` to its parent so the host can hand it inline data
  * regardless of load timing (robust for lazy iframes).
  */
-import { seedGeoCache } from "./geocoder"
+import { seedGeoCache } from "../../geo/geocoder"
 
 type GeoCache = Record<string, { lat: number; lng: number }>
 interface LoadOpts { src?: string; crumb?: string; geo?: string | GeoCache }

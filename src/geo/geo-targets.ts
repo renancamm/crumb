@@ -8,8 +8,8 @@
 
 import type { CrumbDocument } from "../types/resolved"
 import type { GeoTarget } from "./geocoder"
-import { activityLabel } from "./format"
-import { placeStays, placeActivityItems } from "./plan-view"
+import { activityLabel } from "../shared/format"
+import { placeStays, placeActivityItems } from "../shared/plan-view"
 
 export interface ActivityGeoTarget extends GeoTarget {
   priority: string | null

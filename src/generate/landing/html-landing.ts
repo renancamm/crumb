@@ -9,11 +9,11 @@
  * below is the source of truth.
  */
 
-import { CSS }           from "./css"
+import { CSS }           from "../css"
 import { landingCSS }    from "./landing-css"
-import { escape, jsonForScript } from "./format"
+import { escape, jsonForScript } from "../../shared/format"
 import { highlightYaml } from "./yaml-highlight"
-import { ICON_SPARKLES, ICON_PENCIL, ICON_CODE, ICON_WRENCH, ICON_CHEVRON_LEFT, ICON_CHEVRON_RIGHT, ICON_FILE } from "./icons"
+import { ICON_SPARKLES, ICON_PENCIL, ICON_CODE, ICON_WRENCH, ICON_CHEVRON_LEFT, ICON_CHEVRON_RIGHT, ICON_FILE } from "../../shared/icons"
 
 export interface LandingStage {
   label:  string   // "Sketch" | "Planned" | "Detailed"
@@ -25,8 +25,8 @@ export interface LandingStage {
 export interface LandingLinks {
   editor:  string  // live editor page (cards deep-link with ?example=)
   docs:    string  // documentation page (docs.html; deep-linked with #doc-… anchors)
-  spec:    string  // CRUMB_SPEC.md
-  aiGuide: string  // CRUMB_FOR_AI.md
+  spec:    string  // crumb-spec.md
+  aiGuide: string  // crumb-for-ai.md
   github:  string
 }
 
@@ -54,7 +54,7 @@ export function renderLandingHtml(opts: LandingOptions): string {
   ).join("")
 
   // Each card is one shared embed (embed.html?card) fed its crumb + geo inline via
-  // postMessage (landing-entry) — no external .crumb fetch. The <a> carries the
+  // postMessage (entries/landing) — no external .crumb fetch. The <a> carries the
   // a11y label since the visible title lives inside the iframe.
   const cards = opts.examples.map(e => {
     const label = e.key.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")

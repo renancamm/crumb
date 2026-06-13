@@ -942,4 +942,4 @@ time: Saturday night
 
 - [Parser Reference](reference/parser.md) — parsing pipeline, field resolution rules, worked example
 - [Output Data Model](reference/data-model.md) — CrumbDocument TypeScript interfaces
-- [Authoring Guide](CRUMB_FOR_AI.md) — compact format reference for AI systems generating crumbs
+- [Authoring Guide](crumb-for-ai.md) — compact format reference for AI systems generating crumbs

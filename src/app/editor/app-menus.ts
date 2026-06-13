@@ -1,5 +1,5 @@
 import { getValue, setValue, focusEditor, refreshEditorLayout, render, editorUndo, editorRedo } from "./app-editor"
-import { copyText } from "./clipboard"
+import { copyText } from "../../shared/clipboard"
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
 
@@ -347,7 +347,7 @@ document.getElementById("dl-guide-btn")!.addEventListener("click", () => {
   const blob = new Blob([guide], { type: "text/markdown" })
   const url  = URL.createObjectURL(blob)
   const a    = document.createElement("a")
-  a.href = url; a.download = "CRUMB_FOR_AI.md"; a.click()
+  a.href = url; a.download = "crumb-for-ai.md"; a.click()
   URL.revokeObjectURL(url)
 })
 

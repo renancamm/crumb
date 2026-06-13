@@ -1,12 +1,12 @@
 # Crumb Spec Editorial Style Guide
 
-This document is the single editorial authority for the two format documents — `CRUMB_SPEC.md` (the full reference) and `CRUMB_FOR_AI.md` (the compact authoring guide). Include it as context whenever asking an AI to update either document. Apply the [Verification Checklist](#verification-checklist) to verify that any proposed change stays within scope and remains useful to all reader types.
+This document is the single editorial authority for the two format documents — `crumb-spec.md` (the full reference) and `crumb-for-ai.md` (the compact authoring guide). Include it as context whenever asking an AI to update either document. Apply the [Verification Checklist](#verification-checklist) to verify that any proposed change stays within scope and remains useful to all reader types.
 
-Most of this guide concerns `CRUMB_SPEC.md`. The [Rules for `CRUMB_FOR_AI.md`](#rules-for-crumb_for_aimd) section and the [Anti-drift strategy](#anti-drift-strategy) govern the compact doc and the relationship between the two.
+Most of this guide concerns `crumb-spec.md`. The [Rules for `crumb-for-ai.md`](#rules-for-crumb-for-aimd) section and the [Anti-drift strategy](#anti-drift-strategy) govern the compact doc and the relationship between the two.
 
 ---
 
-## What CRUMB_SPEC.md Is
+## What crumb-spec.md Is
 
 - A **format specification**: defines what makes a document a valid crumb
 - **Implementation-agnostic**: a team in any language should be able to build a compliant parser and renderer from it alone, without reading any code in this repository
@@ -46,7 +46,7 @@ Both reader types share the same needs: no implementation language, example-led 
 
 ## Required Structure
 
-These sections must appear in `CRUMB_SPEC.md` in this order:
+These sections must appear in `crumb-spec.md` in this order:
 
 | # | Section | Constraint |
 |---|---|---|
@@ -85,7 +85,7 @@ State what a value *means*, not what an implementation *does* with it. The SPEC 
 
 ### Rule 3 — No implementation vocabulary
 
-These words and phrases must not appear in `CRUMB_SPEC.md`:
+These words and phrases must not appear in `crumb-spec.md`:
 
 `parse phase` · `render phase` · `resolve` · `resolved dates` · `infer` · `inferred` · `geocoding service` · `date sequencing` · `display-only` · `used as-is` · `pass 1/2/3` · `output type` · `data model`
 
@@ -124,7 +124,7 @@ Every enum, keyword list, or fixed vocabulary must be listed completely. Never u
 
 Pick one word for each element type and use it consistently throughout the SPEC. Never introduce a synonym for a concept already named. An AI system that sees "place", "city", "destination", and "stop" used interchangeably will use all of them interchangeably in its output.
 
-Canonical terms in `CRUMB_SPEC.md`:
+Canonical terms in `crumb-spec.md`:
 
 | Concept | Canonical term |
 |---|---|
@@ -166,7 +166,7 @@ Every field table has exactly three columns with these headers: `Field`, `Type`,
 
 ## Verification Checklist
 
-Apply before committing any change to `CRUMB_SPEC.md`.
+Apply before committing any change to `crumb-spec.md`.
 
 **Scope**
 - [ ] No sentence uses "the parser", "the renderer", "the tool", "automatically", "Crumb understands", or "Crumb resolves" as its framing
@@ -191,7 +191,7 @@ Apply before committing any change to `CRUMB_SPEC.md`.
 
 ## Anti-patterns
 
-These are real drift instances found in `CRUMB_SPEC.md`. They serve as named examples of the rules above.
+These are real drift instances found in `crumb-spec.md`. They serve as named examples of the rules above.
 
 ---
 
@@ -251,17 +251,17 @@ These are real drift instances found in `CRUMB_SPEC.md`. They serve as named exa
 
 ---
 
-## Rules for `CRUMB_FOR_AI.md`
+## Rules for `crumb-for-ai.md`
 
-`CRUMB_FOR_AI.md` is the compact authoring guide: the document handed to an AI system (with no access to a parser) as context for generating or editing a crumb in one shot. It is a deliberate **compression** of `CRUMB_SPEC.md`, not a second source of truth. Everything in the [Editorial Rules](#editorial-rules) above still applies; these rules are additional.
+`crumb-for-ai.md` is the compact authoring guide: the document handed to an AI system (with no access to a parser) as context for generating or editing a crumb in one shot. It is a deliberate **compression** of `crumb-spec.md`, not a second source of truth. Everything in the [Editorial Rules](#editorial-rules) above still applies; these rules are additional.
 
 ### Rule AI-1 — The spec is authoritative
 
-`CRUMB_FOR_AI.md` never contradicts `CRUMB_SPEC.md` and never defines anything the spec does not. When the two could disagree, the spec wins, and the compact doc is the document that changes. The compact doc ends with a pointer to `CRUMB_SPEC.md` as the full reference.
+`crumb-for-ai.md` never contradicts `crumb-spec.md` and never defines anything the spec does not. When the two could disagree, the spec wins, and the compact doc is the document that changes. The compact doc ends with a pointer to `crumb-spec.md` as the full reference.
 
 ### Rule AI-2 — Vocabularies are exhaustive and code-derived
 
-Every closed set printed in `CRUMB_FOR_AI.md` — item kinds (`place, transport, activity, group, stay`), transport modes, group kinds, priorities, named periods, seasons — must be listed in full and must match the code constants exactly (see [Anti-drift strategy](#anti-drift-strategy)). This is Rule 6 applied with no exceptions: a compact doc has even less room for "e.g." than the spec, because an AI reading only this doc has nowhere else to learn the complete set.
+Every closed set printed in `crumb-for-ai.md` — item kinds (`place, transport, activity, group, stay`), transport modes, group kinds, priorities, named periods, seasons — must be listed in full and must match the code constants exactly (see [Anti-drift strategy](#anti-drift-strategy)). This is Rule 6 applied with no exceptions: a compact doc has even less room for "e.g." than the spec, because an AI reading only this doc has nowhere else to learn the complete set.
 
 ### Rule AI-3 — Lead with the one rule, then drill the error-prone forms
 
@@ -273,15 +273,15 @@ A single realistic, mixed-precision example that exercises every construct teach
 
 ### Rule AI-5 — Examples are transcluded, never duplicated
 
-Any YAML example that also appears in `CRUMB_SPEC.md` or is otherwise shared lives as a real `.crumb` file under `examples/snippets/` and is included into the doc by reference. The example text has exactly one source on disk.
+Any YAML example that also appears in `crumb-spec.md` or is otherwise shared lives as a real `.crumb` file under `examples/snippets/` and is included into the doc by reference. The example text has exactly one source on disk.
 
 ### Rule AI-6 — Dates by principle, bounded sets in full
 
-The free-form date grammar is summarized by principle plus a handful of anchors (`2026-09-15`, `September 2026`, `early October`, `morning`, `9am`, `Day 3`, `last day`); the exhaustive grammar stays in `CRUMB_SPEC.md`. The genuinely bounded temporal vocabularies (named periods, seasons, relative anchors) are still listed in full, per Rule AI-2.
+The free-form date grammar is summarized by principle plus a handful of anchors (`2026-09-15`, `September 2026`, `early October`, `morning`, `9am`, `Day 3`, `last day`); the exhaustive grammar stays in `crumb-spec.md`. The genuinely bounded temporal vocabularies (named periods, seasons, relative anchors) are still listed in full, per Rule AI-2.
 
 ### Rule AI-7 — Length budget
 
-`CRUMB_FOR_AI.md` stays under roughly 200 lines. Its value is token efficiency; prose that merely restates the spec's semantics is cut. If a section grows past the budget, compress or move it to the spec.
+`crumb-for-ai.md` stays under roughly 200 lines. Its value is token efficiency; prose that merely restates the spec's semantics is cut. If a section grows past the budget, compress or move it to the spec.
 
 ---
 
@@ -289,7 +289,7 @@ The free-form date grammar is summarized by principle plus a handful of anchors 
 
 Two documents describing one format will drift unless drift is made structurally hard. The defence has two layers.
 
-**Layer A — editorial (this guide).** `SPEC_STYLE.md` is the single rulebook for both documents. There is no third governing doc to keep in sync. Prose drift is caught by applying the [Verification Checklist](#verification-checklist) and the [Rules for `CRUMB_FOR_AI.md`](#rules-for-crumb_for_aimd) to every change.
+**Layer A — editorial (this guide).** `crumb-style-guide.md` is the single rulebook for both documents. There is no third governing doc to keep in sync. Prose drift is caught by applying the [Verification Checklist](#verification-checklist) and the [Rules for `crumb-for-ai.md`](#rules-for-crumb-for-aimd) to every change.
 
 **Layer B — automated (tests).** Fact drift in the two highest-risk areas is caught by CI:
 

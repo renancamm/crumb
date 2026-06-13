@@ -5,4 +5,4 @@
  * no parser, no markdown-it — the Markdown is rendered to HTML at build time
  * (markdown.ts) and baked into the page.
  */
-import "./renderer/app-docs"
+import "../app/docs/app-docs"

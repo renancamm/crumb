@@ -6,5 +6,5 @@
  * into embed.html, which ships window.Crumb *with* parse (the editor render
  * bundle) so a fetched document can be parsed client-side.
  */
-import "./renderer/browser-app"
-import "./renderer/embed-boot"
+import "../app/viewer/viewer-app"
+import "../app/embed/embed-boot"

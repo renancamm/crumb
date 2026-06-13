@@ -12,10 +12,10 @@
  * build-site.ts and markdown.ts.
  */
 
-import { CSS }                  from "./css"
+import { CSS }                  from "../css"
 import { docsCSS }              from "./docs-css"
-import { escape, jsonForScript } from "./format"
-import { ICON_MENU }            from "./icons"
+import { escape, jsonForScript } from "../../shared/format"
+import { ICON_MENU }            from "../../shared/icons"
 import type { TocEntry }        from "./markdown"
 
 export interface DocsDoc {

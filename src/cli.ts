@@ -20,7 +20,7 @@ import * as esbuild from "esbuild"
 import * as fs      from "fs"
 import * as path    from "path"
 import { parse }    from "./parser"
-import { renderHtml, AppOptions } from "./renderer/html"
+import { renderHtml, AppOptions } from "./generate/html"
 
 async function main() {
   const args      = process.argv.slice(2)
@@ -64,7 +64,7 @@ async function main() {
   // 2 — Bundle the window.Crumb API for the browser. Editor mode needs `parse`
   // (live re-parsing); viewer-only mode uses a render-only entry so esbuild drops
   // js-yaml + the parser passes as dead code.
-  const crumbEntry = withEditor ? "browser-entry.ts" : "viewer-render-entry.ts"
+  const crumbEntry = withEditor ? "entries/render-full.ts" : "entries/render-viewer.ts"
   const crumbResult = await esbuild.build({
     entryPoints: [path.resolve(__dirname, crumbEntry)],
     bundle:      true,
@@ -78,7 +78,7 @@ async function main() {
 
   // 3 — Bundle viewer (map, geocoding, panel navigation, mobile sheet)
   const viewerResult = await esbuild.build({
-    entryPoints: [path.resolve(__dirname, "viewer-entry.ts")],
+    entryPoints: [path.resolve(__dirname, "entries/viewer.ts")],
     bundle:      true,
     format:      "iife",
     platform:    "browser",
@@ -89,7 +89,7 @@ async function main() {
 
   // 4 — Bundle editor (YAML editor, menus, dialogs) — only needed in editor mode
   const editorResult = await esbuild.build({
-    entryPoints: [path.resolve(__dirname, "editor-entry.ts")],
+    entryPoints: [path.resolve(__dirname, "entries/editor.ts")],
     bundle:      true,
     format:      "iife",
     platform:    "browser",
@@ -109,16 +109,16 @@ async function main() {
 
   // 6 — Load spec for the "Download spec for AI" button
   const specCandidates = [
-    path.resolve(__dirname, "../spec/CRUMB_SPEC.md"),
-    path.resolve(__dirname, "../CRUMB_SPEC.md"),
+    path.resolve(__dirname, "../spec/crumb-spec.md"),
+    path.resolve(__dirname, "../crumb-spec.md"),
   ]
   const specPath    = specCandidates.find(p => fs.existsSync(p))
   const specContent = specPath ? fs.readFileSync(specPath, "utf8") : undefined
 
   // 6b — Load the compact authoring guide for the "Generate with AI" prompt
   const aiGuideCandidates = [
-    path.resolve(__dirname, "../spec/CRUMB_FOR_AI.md"),
-    path.resolve(__dirname, "../CRUMB_FOR_AI.md"),
+    path.resolve(__dirname, "../spec/crumb-for-ai.md"),
+    path.resolve(__dirname, "../crumb-for-ai.md"),
   ]
   const aiGuidePath    = aiGuideCandidates.find(p => fs.existsSync(p))
   const aiGuideContent = aiGuidePath ? fs.readFileSync(aiGuidePath, "utf8") : undefined

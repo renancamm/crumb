@@ -7,7 +7,7 @@
  * single "ungrouped" block for display.
  *
  * All three consumers — html.ts (static render), app-map.ts (markers), and
- * browser-app.ts (runtime modal navigation) — derive their stay/activity lists
+ * viewer-app.ts (runtime modal navigation) — derive their stay/activity lists
  * here, so the flat indices they assign stay consistent with one another.
  */
 

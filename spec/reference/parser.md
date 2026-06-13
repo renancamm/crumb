@@ -97,7 +97,7 @@ Recognised fields on a `RawStay` node: `arrives`, `departs`, `duration`, `locati
 
 Every field value is resolved independently. Resolution never inspects neighbouring nodes — that is the job of Pass 3. The original string is always preserved in `label` on `ResolvedMoment` and in `label` on `ResolvedDuration`, regardless of whether resolution succeeds.
 
-Valid input forms for all field types are defined in CRUMB_SPEC.md. This section defines how each form is classified and what output type it produces.
+Valid input forms for all field types are defined in crumb-spec.md. This section defines how each form is classified and what output type it produces.
 
 ### 2.1 `Moment` → `ResolvedMoment`
 
