@@ -127,7 +127,6 @@ src/parser/
 
 ```bash
 npm run build          # build the site → dist/{index,editor,embed,docs}.html + dist/examples/ (scripts/build-site.ts)
-npm run build:viewer   # render examples/japan-detailed.crumb → dist/viewer.html (single viewer, dev)
 npm run gen:geocache   # regenerate examples/*.geo.json baked caches (hits Nominatim, ToS-paced)
 npm run typecheck      # tsc --noEmit (zero errors required)
 npm run test           # vitest run (single pass, used in CI)
@@ -167,4 +166,4 @@ tests/
 The 5-phase timeline algorithm is the most complex part of the codebase. Before changing it:
 1. Read `spec/reference/parser.md` section 3.4 for the full algorithm description
 2. Run `npm run test` to establish a baseline
-3. After your change, render `examples/japan-detailed.crumb` and `examples/southeast-asia.crumb` and verify that dates are correct in the output (e.g. `npm run build:viewer`)
+3. After your change, render both `examples/japan-detailed.crumb` and `examples/southeast-asia.crumb` (e.g. `npm run render -- examples/japan-detailed.crumb /tmp/out.html`) and verify that dates are correct in the output
