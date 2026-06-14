@@ -28,7 +28,13 @@ function isSinglePlace(doc: typeof state.DATA): boolean {
   return doc?.itinerary?.length === 1 && doc.itinerary[0]?.type === "place"
 }
 
-const EMPTY_STATE_HTML = `<div class="panel-empty"><span class="panel-empty-title">No itinerary loaded</span></div>`
+// Brand mark + a short instruction + a placeholder the editor bundle fills with
+// recently-saved itineraries (left empty in viewer/embed mode, which has no editor).
+const EMPTY_STATE_HTML = `<div class="panel-empty">
+  <span class="trip-eyebrow-logo panel-empty-brand">crumb</span>
+  <p class="panel-empty-message">Start typing in the editor to build your itinerary.</p>
+  <div id="panel-empty-recents"></div>
+</div>`
 
 // ─── DOM references ───────────────────────────────────────────────────────────
 

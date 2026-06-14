@@ -1,5 +1,6 @@
 import { getValue, setValue, focusEditor, refreshEditorLayout, render, editorUndo, editorRedo } from "./app-editor"
 import { copyText } from "../../shared/clipboard"
+import { ICON_FILE } from "../../shared/icons"
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
 
@@ -74,6 +75,14 @@ function deleteEntry(name: string): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(getSaved().filter(e => e.name !== name)))
 }
 
+// Saved crumbs live in localStorage, not on disk, so they have no real filename.
+// Derive a stable .crumb one from the trip name (same slug Download uses), so they
+// read as files. Names that slug to nothing (blank / "Untitled") become untitled.crumb.
+function toCrumbFilename(name: string): string {
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+  return (slug || "untitled") + ".crumb"
+}
+
 // The name under which the current doc is saved (null if not saved yet).
 let currentSavedName: string | null = null
 
@@ -123,7 +132,7 @@ function refreshRecentList(): void {
   for (const entry of entries) {
     const el = document.createElement("div")
     el.className = "menu-sub-item"
-    el.textContent = entry.name
+    el.textContent = toCrumbFilename(entry.name)
     el.addEventListener("click", () => {
       loadDoc(entry.source, entry.name, true)
       closeAll()
@@ -132,7 +141,45 @@ function refreshRecentList(): void {
   }
 }
 
+// Fill the panel's empty-state with the last 3 saved itineraries (name only),
+// each a shortcut back into the editor. The container only exists when the panel
+// is showing its empty state (no document loaded); bail otherwise. Left empty
+// when nothing has been saved yet.
+function renderEmptyRecents(): void {
+  const host = document.getElementById("panel-empty-recents")
+  if (!host) return
+  host.innerHTML = ""
+  const entries = getSaved()
+  if (entries.length === 0) return
+
+  // Fold the "pick up where you left off" hint into the instruction paragraph,
+  // but only now that we know there are recents to pick up (the viewer's default
+  // message stands when there are none).
+  const msg = document.querySelector(".panel-empty-message")
+  if (msg) msg.textContent = "Start typing in the editor, or pick up where you left off."
+
+  const box = document.createElement("div")
+  box.className = "panel-empty-recents-box"
+  for (const entry of entries) {
+    const el = document.createElement("button")
+    el.className = "panel-empty-recent"
+    el.innerHTML = `${ICON_FILE}<span class="panel-empty-recent-name"></span>`
+    el.querySelector(".panel-empty-recent-name")!.textContent = toCrumbFilename(entry.name)
+    el.addEventListener("click", () => loadDoc(entry.source, entry.name, true))
+    box.appendChild(el)
+  }
+  host.appendChild(box)
+}
+
+// The viewer rebuilds the panel (incl. the empty state) on every doc update, and
+// its bundle runs before this one, so this listener fires after that rebuild and
+// re-fills the recents. No-op while a real document is showing.
+window.addEventListener("crumb:doc-updated", () => {
+  if (!window.__CRUMB_DATA) renderEmptyRecents()
+})
+
 refreshRecentList()
+renderEmptyRecents()
 setCurrentSavedName(null)
 setRevertEnabled(loadedBaseline !== null)
 
@@ -213,8 +260,7 @@ document.getElementById("menu-download")!.addEventListener("click", async () => 
   closeAll()
   const source = getValue().trim()
   if (!source) return
-  const name     = window.__CRUMB_DATA?.trip?.name ?? "itinerary"
-  const filename = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") + ".crumb"
+  const filename = toCrumbFilename(window.__CRUMB_DATA?.trip?.name ?? "itinerary")
   if ("showSaveFilePicker" in window) {
     try {
       const fh = await (window as any).showSaveFilePicker({

@@ -988,8 +988,27 @@ const itineraryCSS = `
 .info-item .info-val { color: var(--text-secondary); }
 
 /* ── Empty state ─────────────────────────────────────────────────────── */
-.panel-empty { display: flex; align-items: center; justify-content: center; height: 100%; }
+.panel-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; gap: 14px; padding: 32px 28px; text-align: center;
+}
 .panel-empty-title { font-size: var(--text-2xl); font-weight: 700; letter-spacing: -0.02em; color: var(--muted); }
+.panel-empty-brand { font-size: var(--text-2xl); letter-spacing: -0.02em; }
+.panel-empty-message { margin: 0; font-size: var(--text-sm); color: var(--muted); max-width: 28ch; line-height: 1.5; }
+.panel-empty-recents { display: flex; flex-direction: column; width: 100%; max-width: 280px; margin-top: 4px; text-align: left; }
+.panel-empty-recents-box {
+  background: var(--surface); border-radius: var(--radius-md); overflow: hidden;
+}
+.panel-empty-recent {
+  display: flex; align-items: center; gap: 9px; overflow: hidden;
+  width: 100%; text-align: left; font-family: var(--mono); font-size: var(--text-xs); color: var(--text-secondary);
+  padding: 9px 11px; background: transparent; border: none; cursor: pointer;
+  transition: background var(--duration);
+}
+.panel-empty-recent + .panel-empty-recent { border-top: 1px solid var(--muted-bg); }
+.panel-empty-recent:hover { background: var(--muted-bg); }
+.panel-empty-recent .crumb-icon { flex: none; color: var(--muted); width: 15px; height: 15px; }
+.panel-empty-recent-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ── Trip panel header ───────────────────────────────────────────────── */
 .panel-trip-header {
@@ -1420,6 +1439,10 @@ const mobileCSS = `
     overscroll-behavior: contain;
     padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
   }
+
+  /* The sheet is 90vh, so vertically centring the empty state strands it far down
+     the sheet with a big gap above. Top-align it instead, just under the grabber. */
+  .panel-empty { height: auto; justify-content: flex-start; padding-top: 48px; }
 
   /* Sticky header is pinned to the sheet (#sidebar is the containing block via its
      transform), not to the scroll container — so the content can still rubber-band
