@@ -95,6 +95,7 @@ body.landing {
 .detail-pill {
   grid-column: 2;   /* stay in the centre track even when the scales are display:none (mobile) */
   justify-self: center;
+  position: relative;   /* containing block for the sliding thumb */
   display: inline-flex;
   gap: 2px;
   padding: 4px;
@@ -103,8 +104,22 @@ body.landing {
   background: var(--surface);
   transition: background var(--duration), box-shadow var(--duration), opacity 0.25s ease;
 }
+/* The active fill is a single thumb that slides between options (positioned in JS:
+   transform + width track the active .pill-opt). Options sit above it; their label
+   colour cross-fades as the thumb arrives. */
+.pill-thumb {
+  position: absolute;
+  top: 4px; bottom: 4px; left: 0;
+  width: 0;
+  border-radius: var(--radius-full);
+  background: var(--primary);
+  transition: transform 0.25s ease, width 0.25s ease;
+  pointer-events: none;
+}
 .pill-opt {
   appearance: none;
+  position: relative;   /* paint above the thumb */
+  z-index: 1;
   border: 0;
   background: transparent;
   color: var(--text-secondary);
@@ -114,10 +129,10 @@ body.landing {
   padding: 7px 18px;
   border-radius: var(--radius-full);
   cursor: pointer;
-  transition: background var(--duration), color var(--duration);
+  transition: color var(--duration);
 }
 .pill-opt:hover { color: var(--text); }
-.pill-opt.is-active { background: var(--primary); color: var(--primary-fg); }
+.pill-opt.is-active { color: var(--primary-fg); }
 
 /* Pinned: detached, compact, floating at the top edge. */
 .detail-pill.is-pinned {

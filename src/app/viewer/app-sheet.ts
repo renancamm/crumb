@@ -74,6 +74,8 @@ function setSheetH(h: number): void {
   curH = h
   if (sheet) sheet.style.transform = `translateY(${fullH() - h}px)`
   root.style.setProperty("--sheet-h", `${h}px`)
+  // Fully expanded → map is a sliver; let CSS hide the attribution "i" until it collapses.
+  document.body.classList.toggle("sheet-full", h >= fullH() - 1)
 }
 
 function animate(h: number): void {
@@ -118,6 +120,7 @@ export function exitSheet(): void {
   }
   root.style.removeProperty("--sheet-h")
   root.style.removeProperty("--sheet-anim")
+  document.body.classList.remove("sheet-full")
   if (content) {
     content.removeEventListener("touchstart", onTouchStart)
     content.removeEventListener("touchmove",  onTouchMove)

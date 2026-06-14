@@ -661,10 +661,17 @@ function setupEmbedMode(mobileQuery: MediaQueryList): void {
   // expand button asks the host page to grow the iframe to the full viewport and
   // applies the expanded state locally. A standalone embed (parent === self) posts
   // to itself harmlessly and still unlocks — it already fills its own page.
-  btn.addEventListener("click", () => {
-    const willFull = !document.body.classList.contains("embed-full")
-    window.parent?.postMessage({ type: "crumb:fullscreen", full: willFull }, "*")
-    applyExpanded(willFull)
+  const setFull = (full: boolean): void => {
+    window.parent?.postMessage({ type: "crumb:fullscreen", full }, "*")
+    applyExpanded(full)
+  }
+  btn.addEventListener("click", () => setFull(!document.body.classList.contains("embed-full")))
+
+  // Esc collapses an expanded embed. The fullscreen iframe covers the viewport, so it
+  // owns keyboard focus — this listener (inside the iframe) is what receives the press;
+  // posting full:false shrinks the host iframe via the same crumb:fullscreen path.
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && document.body.classList.contains("embed-full")) setFull(false)
   })
 
   // Re-sync when the available width crosses the breakpoint — e.g. the iframe grows

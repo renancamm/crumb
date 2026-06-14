@@ -97,9 +97,37 @@ new ResizeObserver(entries => {
 }).observe(mapEl)
 const attribution = new maplibregl.AttributionControl({ compact: true })
 state.map.addControl(attribution)
-setTimeout(() => {
-  attribution._container?.querySelector(".maplibregl-ctrl-attrib-button")?.click()
-}, 5000)
+// Shorten to the compliant minimum. OpenFreeMap's TileJSON ships "OpenFreeMap ©
+// OpenMapTiles Data from OpenStreetMap"; OpenFreeMap says its own credit is optional, so
+// we drop it and keep the two mandatory ones — OpenMapTiles and OpenStreetMap (the latter
+// linked to the licence, satisfying ODbL disclosure). maplibre lets an explicit source
+// attribution override the TileJSON's, so we set it once the source metadata has loaded.
+const SHORT_ATTRIB =
+  '<a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">&copy; OpenMapTiles</a> ' +
+  '&middot; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
+const shortenAttribution = (e: { sourceId?: string }) => {
+  if (e.sourceId !== "openmaptiles") return
+  const src = state.map.getSource("openmaptiles")
+  if (!src?.attribution || src.attribution === SHORT_ATTRIB) return
+  src.attribution = SHORT_ATTRIB
+  attribution._updateAttributions()
+}
+state.map.on("sourcedata", shortenAttribution)
+// Compliant show-then-collapse (OSM attribution guidelines): maplibre shows the full
+// attribution on load; we collapse it on the user's first real map interaction (pan /
+// zoom / click) — an explicitly permitted trigger — with a 5s fallback for users who
+// never interact. The originalEvent guard ignores the initial programmatic fitBounds so
+// it doesn't count as interaction. The "(i)" keeps "© OpenStreetMap contributors"
+// findable afterwards.
+const ATTRIB_EVENTS = ["dragstart", "zoomstart", "click"] as const
+const collapseAttribution = () => {
+  ;(attribution._container as HTMLElement | undefined)?.classList.remove("maplibregl-compact-show")
+  clearTimeout(attribTimer)
+  for (const ev of ATTRIB_EVENTS) state.map.off(ev, onAttribInteract)
+}
+const onAttribInteract = (e: { originalEvent?: unknown }) => { if (e?.originalEvent) collapseAttribution() }
+const attribTimer = setTimeout(collapseAttribution, 5000)
+for (const ev of ATTRIB_EVENTS) state.map.on(ev, onAttribInteract)
 
 function applyZoomClass(): void {
   const z = state.map.getZoom()

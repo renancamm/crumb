@@ -83,6 +83,7 @@ const tokensCSS = `
   --marker-fg:       #fff;
   --chip-bg:         rgba(0,0,0,.6);
   --chip-fg:         #fff;
+  --attrib-halo:     rgba(255,255,255,.7);   /* white outline keeping the bg-less attribution legible over busy map detail */
   --spinner-track:   var(--border);
 
   /* ===================== STATIC TOKENS (theme-independent) ============== */
@@ -693,6 +694,48 @@ const modalCSS = `
 
 /* MapLibre markers: .place-marker, .detail-marker, .place-popup, .detail-popup, route line, .map-status-chip */
 const mapCSS = `
+/* Attribution: no pill — rest as a muted "i" glyph straight on the map (mobile
+   especially), and reveal the text with no background box. Full opacity on hover/focus
+   or once expanded. Tap still reveals "© OpenStreetMap contributors" — attribution
+   stays one tap away. */
+.maplibregl-ctrl-attrib.maplibregl-compact {
+  opacity: .5;
+  margin: 16px;
+  background: none;
+  transition: opacity var(--duration);
+}
+.maplibregl-ctrl-attrib.maplibregl-compact .maplibregl-ctrl-attrib-button,
+.maplibregl-ctrl-attrib.maplibregl-compact-show .maplibregl-ctrl-attrib-button {
+  background-color: transparent;
+}
+/* Inner credit text. No background box, so a thin translucent-white outline keeps it
+   legible over busy/gray map detail (cities) — doubled shadow = a slightly stronger halo.
+   Single line, ellipsis-truncated on narrow maps (right-anchored + LTR, so the tail trims
+   and the "© OpenMapTiles" prefix stays visible). Collapse/expand is a fade: opacity
+   animates over --duration while the width snaps behind it (max-width 0s, delayed on
+   collapse) so it reads as a fade rather than a slide. display:block overrides maplibre's
+   display:none, which can't transition. */
+.maplibregl-ctrl-attrib.maplibregl-compact .maplibregl-ctrl-attrib-inner {
+  display: block;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-shadow: 0 0 2px var(--attrib-halo), 0 0 2px var(--attrib-halo);
+  transition: opacity var(--duration), max-width 0s var(--duration);
+}
+.maplibregl-ctrl-attrib.maplibregl-compact-show .maplibregl-ctrl-attrib-inner {
+  max-width: calc(100vw - 32px);
+  opacity: 1;
+  transition: opacity var(--duration), max-width 0s;
+}
+.maplibregl-ctrl-attrib.maplibregl-compact:hover,
+.maplibregl-ctrl-attrib.maplibregl-compact:focus-within,
+.maplibregl-ctrl-attrib.maplibregl-compact-show {
+  opacity: 1;
+}
+
 /* ── Geocoding status chip ───────────────────────────────────────────── */
 .map-status-chip {
   position: fixed;
@@ -1015,6 +1058,14 @@ const itineraryCSS = `
   gap: 12px;
   padding: 16px 16px 14px;
 }
+/* No meta subtitle (transport panels, meta-less places) → the title is a single
+   short line; center it (and the badge) against the taller close button instead
+   of top-aligning. Zero the row's bottom margin so the title sits at true centre. */
+.panel-header:not(:has(.trip-duration)) { align-items: center; }
+.panel-header:not(:has(.trip-duration)) .panel-title-row {
+  align-items: center;
+  margin-bottom: 0;
+}
 /* single-place flat view: more air above the place title, tighter below */
 .panel-header--flat { padding: 28px 16px 2px; }
 .panel-header--flat .panel-title-row { margin-bottom: 4px; }
@@ -1297,6 +1348,19 @@ const mobileCSS = `
   #editor-collapse, #editor-reopen { display: none; }
   #editor-mobile-toggle { display: inline-flex; }
 
+  /* Bigger touch targets for the editor chrome (mirrors the viewer's 44px mobile
+     buttons). On mobile only the pill and the toggle consume --appbar-h (the edge
+     buttons + collapsed strip are display:none above), so bumping the token grows
+     both and keeps them the same height. */
+  :root { --appbar-h: 44px; }
+  #editor-mobile-toggle .crumb-icon { width: 20px; height: 20px; }
+  .app-bar-item     { padding: 7px 12px; font-size: var(--text-base); }
+  .app-bar-icon-btn { width: 36px; height: 36px; }
+  .app-bar-icon-btn .crumb-icon { width: 18px; height: 18px; }
+  #menu-help .crumb-icon { width: 26px; height: 26px; }
+  /* Clear the now-taller pill so code isn't hidden behind it. */
+  .editor-host .cm-content { padding-top: 64px; }
+
   /* Sidebar becomes a bottom sheet. Fixed full height; JS slides it between
      snap states with transform: translateY (GPU-composited — no per-frame reflow).
      90vh / 40vh mirror SHEET_FULL_RATIO (0.9) and full−medium (0.9−0.5) in
@@ -1396,6 +1460,16 @@ const mobileCSS = `
     transition: bottom var(--sheet-anim, 0ms);
   }
   .map-status-chip { right: 12px; }
+
+  /* Tighter margin on mobile — the 16px desktop inset is too much next to the sheet. */
+  .maplibregl-ctrl-attrib.maplibregl-compact { margin: 8px; }
+
+  /* Fully-expanded sheet covers all but a sliver of map — fade the attribution out (it
+     reads as findable again the moment the sheet collapses). Set in app-sheet.ts. */
+  body.sheet-full .maplibregl-ctrl-attrib.maplibregl-compact {
+    opacity: 0;
+    pointer-events: none;
+  }
 }
 `
 

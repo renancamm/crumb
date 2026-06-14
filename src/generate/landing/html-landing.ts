@@ -116,7 +116,7 @@ ${landingCSS}</style>
           <span class="pill-arrow pill-arrow--left">${ICON_CHEVRON_LEFT}</span>
           <span class="pill-sign">&minus;</span>
         </span>
-        <div class="detail-pill" id="detail-pill" role="tablist" aria-label="Level of detail">${pillOpts}</div>
+        <div class="detail-pill" id="detail-pill" role="tablist" aria-label="Level of detail"><span class="pill-thumb" aria-hidden="true"></span>${pillOpts}</div>
         <span class="pill-scale pill-scale--right" aria-hidden="true">
           <span class="pill-sign">+</span>
           <span class="pill-arrow pill-arrow--right">${ICON_CHEVRON_RIGHT}</span>

@@ -21,6 +21,7 @@ const DATA = (window as unknown as { __CRUMB_LANDING?: LandingData }).__CRUMB_LA
 const pill    = document.getElementById("detail-pill")
 const wrap    = pill?.parentElement ?? null                 // .pill-wrap keeps flow space when pinned
 const options = pill ? Array.from(pill.querySelectorAll<HTMLButtonElement>(".pill-opt")) : []
+const thumb   = pill?.querySelector<HTMLElement>(".pill-thumb") ?? null
 const yamlEl  = document.getElementById("yaml-code")
 const fileEl  = document.getElementById("yaml-file")
 const frame   = document.getElementById("hero-frame") as HTMLIFrameElement | null
@@ -35,6 +36,22 @@ function loadStage(i: number): void {
   frame.contentWindow?.postMessage({ type: "crumb:load", crumb: s.crumb, geo: s.geo }, "*")
 }
 
+// Slide the thumb under the active option. transform + width come from the option's
+// live box relative to the pill, so it's accurate when the pill is pinned (the pill's
+// translateX(-50%) cancels) and across resizes/font swaps. `animate: false` snaps it
+// (initial placement, resize) so it doesn't slide from a stale position.
+function positionThumb(animate = true): void {
+  if (!thumb || !pill) return
+  const active = options[current]
+  if (!active) return
+  if (!animate) thumb.style.transition = "none"
+  const pr = pill.getBoundingClientRect()
+  const ar = active.getBoundingClientRect()
+  thumb.style.width = `${ar.width}px`
+  thumb.style.transform = `translateX(${ar.left - pr.left - pill.clientLeft}px)`
+  if (!animate) { void thumb.offsetWidth; thumb.style.transition = "" }   // flush, then re-enable
+}
+
 function setStage(i: number): void {
   current = i
   options.forEach((b, idx) => {
@@ -42,12 +59,14 @@ function setStage(i: number): void {
     b.classList.toggle("is-active", on)
     b.setAttribute("aria-selected", String(on))
   })
+  positionThumb()
   if (yamlEl && DATA) yamlEl.innerHTML = DATA.yaml[i]
   if (fileEl && DATA) fileEl.textContent = DATA.files[i]
   loadStage(i)
 }
 
 options.forEach((b, i) => b.addEventListener("click", () => setStage(i)))
+positionThumb(false)   // place under the default stage before first paint (no slide)
 
 // Reserve the pill's height on its wrapper so detaching it (position: fixed when
 // pinned) doesn't collapse the wrapper and jolt the scroll. Re-measure on resize.
@@ -59,6 +78,7 @@ function reservePillSpace(): void {
   // place when the pill detaches (position: fixed) — otherwise the auto column
   // collapses to 0 and the scales slide inward mid-fade.
   wrap.style.gridTemplateColumns = `1fr ${r.width}px 1fr`
+  positionThumb(false)   // option widths may have shifted (font swap / breakpoint)
 }
 reservePillSpace()
 window.addEventListener("load", reservePillSpace)
