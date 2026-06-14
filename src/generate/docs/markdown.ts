@@ -6,9 +6,9 @@
  * import this). Per invariant 11, markdown-it is a build-time dependency — it never
  * ships into the viewer/embed output or touches the parser.
  *
- * The five spec Markdown files in `spec/` are the single source of truth; the docs
- * site is generated from them at build time, so it cannot drift (see build-site.ts
- * and tests/docs-build.test.ts).
+ * The Markdown files in `spec/` are the single source of truth; the docs site is
+ * generated from them at build time, so it cannot drift (see build-site.ts and
+ * tests/docs-build.test.ts).
  *
  * Three deliberate deviations from vanilla markdown-it:
  *   • fenced `yaml`/`crumb` blocks reuse the hand-rolled highlightYaml() so doc code
@@ -28,16 +28,18 @@ import { highlightYaml }  from "../landing/yaml-highlight"
 // build time; `basename` keys cross-doc `.md` link rewriting. `kicker` /
 // `description` / `group` drive the docs-page chrome (header + grouped sidebar);
 // they are navigational copy only — no field/type claims — so they cannot drift
-// from the format. `download`, when set, gives a doc a Copy + Download .md action.
+// from the format. `download`, when set, gives a doc a Copy + Download .md action;
+// `downloadFile` overrides which file that action ships (defaults to `file`).
 export interface DocMeta {
-  id:          string
-  label:       string
-  file:        string
-  basename:    string
-  kicker:      string             // small category label above the title
-  description: string             // one-line human framing under the title
-  group:       string             // sidebar grouping ("" = ungrouped, on top)
-  download?:   string             // filename → enables Copy guide + Download .md
+  id:           string
+  label:        string
+  file:         string
+  basename:     string
+  kicker:       string            // small category label above the title
+  description:  string            // one-line human framing under the title
+  group:        string            // sidebar grouping ("" = ungrouped, on top)
+  download?:    string            // filename → enables Copy + Download .md
+  downloadFile?: string           // repo path baked for that action (default: `file`)
 }
 
 export const DOCS: readonly DocMeta[] = [
@@ -47,9 +49,9 @@ export const DOCS: readonly DocMeta[] = [
   { id: "doc-spec",       label: "Format Specification", file: "spec/crumb-spec.md",          basename: "crumb-spec.md",
     kicker: "Specification", group: "The format",
     description: "The complete, authoritative definition of the format — every field, type, and rule." },
-  { id: "doc-ai-guide",   label: "AI Authoring Guide",   file: "spec/crumb-for-ai.md",        basename: "crumb-for-ai.md",
-    kicker: "Guide", group: "The format", download: "crumb-for-ai.md",
-    description: "A compact prompt that teaches an AI to write valid Crumb — copy it, then describe your trip." },
+  { id: "doc-ai-guide",   label: "AI Authoring Guide",   file: "spec/reference/using-ai.md",  basename: "using-ai.md",
+    kicker: "Guide", group: "The format", download: "crumb-for-ai.md", downloadFile: "spec/crumb-for-ai.md",
+    description: "How to have an AI draft your crumb from a plain-language description, then open it in the editor." },
   { id: "doc-embedding",  label: "Embedding",            file: "spec/reference/embedding.md", basename: "embedding.md",
     kicker: "Guide", group: "Building on it",
     description: "Put a crumb's interactive map on your own site or blog, with nothing to set up." },
@@ -61,8 +63,13 @@ export const DOCS: readonly DocMeta[] = [
     description: "The TypeScript shape a parser outputs — the contract every viewer reads." },
 ]
 
-const ID_BY_BASENAME: Record<string, string> =
-  Object.fromEntries(DOCS.map(d => [d.basename, d.id]))
+const ID_BY_BASENAME: Record<string, string> = {
+  ...Object.fromEntries(DOCS.map(d => [d.basename, d.id])),
+  // Alias: the spec links to the AI prompt by filename (`crumb-for-ai.md`); the docs
+  // page renders the how-to (using-ai.md) but offers the prompt for download, so route
+  // that cross-doc link to the AI guide section rather than letting it dangle.
+  "crumb-for-ai.md": "doc-ai-guide",
+}
 
 const DOC_ID_SET = new Set<string>(DOCS.map(d => d.id))
 

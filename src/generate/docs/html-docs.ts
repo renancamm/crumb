@@ -37,14 +37,10 @@ export interface DocsOptions {
   defaultDoc?: string       // id shown on load (default: first doc)
 }
 
+// Per-doc header actions. Copy/Download for the AI guide live in its body launcher
+// (ai-launcher.ts), not here — the header keeps just the source link.
 function docActions(d: DocsDoc): string {
-  const parts: string[] = []
-  if (d.download) {
-    parts.push(`<button class="doc-action" data-copy="${d.id}">Copy guide</button>`)
-    parts.push(`<button class="doc-action" data-download="${d.id}">Download .md</button>`)
-  }
-  parts.push(`<a class="doc-action doc-action--ghost" href="${escape(d.sourceUrl)}" target="_blank" rel="noopener">View source ↗</a>`)
-  return parts.join("\n          ")
+  return `<a class="doc-action doc-action--ghost" href="${escape(d.sourceUrl)}" target="_blank" rel="noopener">View source ↗</a>`
 }
 
 export function renderDocsHtml(opts: DocsOptions): string {

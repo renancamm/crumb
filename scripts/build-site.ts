@@ -22,6 +22,7 @@ import { renderHtml }         from "../src/generate/html"
 import { renderLandingHtml }  from "../src/generate/landing/html-landing"
 import { renderDocsHtml }     from "../src/generate/docs/html-docs"
 import { renderDoc, DOCS }    from "../src/generate/docs/markdown"
+import { renderAiLauncher }   from "../src/generate/docs/ai-launcher"
 
 const GITHUB = "https://github.com/renancamm/crumb"
 const LINKS = {
@@ -151,10 +152,16 @@ async function main() {
     const { html, toc } = renderDoc(md, d.id)
     return {
       id: d.id, label: d.label, kicker: d.kicker, description: d.description, group: d.group,
-      html, toc,
+      // Swap the AI guide's launcher marker for the generated prompt+deeplink widget
+      // (no-op for docs without the marker), so the prompt is defined once in ai-launcher.ts.
+      // Replace via a callback so the widget HTML isn't scanned for `$` substitution patterns.
+      html: html.replace("<!-- ai-launcher -->", () => renderAiLauncher()),
+      toc,
       sourceUrl: `${GITHUB}/blob/main/${d.file}`,
       download:  d.download,
-      raw:       d.download ? md : undefined,   // only baked where Copy/Download is offered
+      // Only baked where Copy/Download is offered. `downloadFile` lets a doc ship a file
+      // other than its rendered body — the AI guide page downloads the AI prompt.
+      raw:       d.download ? fs.readFileSync(path.join(ROOT, d.downloadFile ?? d.file), "utf8") : undefined,
     }
   })
   fs.writeFileSync(path.join(DIST, "docs.html"), renderDocsHtml({ docsBundle, docs }))

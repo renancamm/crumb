@@ -127,6 +127,8 @@ export const ICON_CLOSE = icon(
   `<path d="m6 6 12 12"/>`
 )
 
+export const ICON_COPY          = icon(`<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>`)
+export const ICON_CHECK         = icon(`<path d="M20 6 9 17l-5-5"/>`)
 export const ICON_MENU          = icon(`<path d="M4 12h16"/><path d="M4 6h16"/><path d="M4 18h16"/>`)
 export const ICON_CHEVRON_LEFT  = icon(`<path d="m15 18-6-6 6-6"/>`)
 export const ICON_CHEVRON_RIGHT = icon(`<path d="m9 18 6-6-6-6"/>`)

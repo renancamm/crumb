@@ -24,7 +24,7 @@ import {
   placeActivityItems,
 } from "../shared/plan-view"
 import { CSS } from "./css"
-import { ICON_STAY, ICON_ARRIVES, ICON_DEPARTS, ICON_CLOCK, ICON_PIN_OFF, ICON_PRIORITY_MUST, ICON_PRIORITY_MAYBE, ICON_CLOSE, ICON_CHEVRON_DOWN, ICON_CHEVRON_LEFT, ICON_CHEVRON_RIGHT, ICON_UNDO, ICON_REDO, ICON_HELP, ICON_CODE, ICON_MAP, modeIconSvg } from "../shared/icons"
+import { ICON_STAY, ICON_ARRIVES, ICON_DEPARTS, ICON_CLOCK, ICON_PIN_OFF, ICON_PRIORITY_MUST, ICON_PRIORITY_MAYBE, ICON_CLOSE, ICON_COPY, ICON_CHEVRON_DOWN, ICON_CHEVRON_LEFT, ICON_CHEVRON_RIGHT, ICON_UNDO, ICON_REDO, ICON_HELP, ICON_CODE, ICON_MAP, modeIconSvg } from "../shared/icons"
 import {
   escape,
   jsonForScript,
@@ -56,7 +56,7 @@ export interface AppOptions {
   source?: string
   /** crumb-spec.md content (full reference). Only used when includeEditor is true. */
   specContent?: string
-  /** crumb-for-ai.md content — the compact authoring guide used by the "Generate with AI" prompt. Only used when includeEditor is true. */
+  /** crumb-for-ai.md content — the compact authoring guide offered as "Download guide" in the "Generate with AI" modal (the prompt itself lives in shared/ai-prompt.ts). Only used when includeEditor is true. */
   aiGuideContent?: string
   /** Baked geocoding cache ({ query: {lat,lng} }). When provided, the viewer seeds
    *  localStorage from it so known places resolve with zero network requests. */
@@ -604,7 +604,6 @@ export function renderHtml(doc: CrumbDocument | null, options: AppOptions): stri
         ></textarea>
       </div>
       <div class="modal-footer">
-        <button class="action-btn" id="embed-close">Close</button>
         <button class="action-btn primary" id="embed-copy-btn">Copy snippet</button>
       </div>
     </div>
@@ -616,18 +615,20 @@ export function renderHtml(doc: CrumbDocument | null, options: AppOptions): stri
       <button class="modal-x" id="generate-close-x">${ICON_CLOSE}</button>
       <div class="modal-header">
         <div class="modal-title">Generate with AI</div>
-        <div class="modal-description">Copy the prompt into any AI assistant (ChatGPT, Claude, …), describe your trip, then paste the result back into the editor.</div>
+        <div class="modal-description">Open this prompt in ChatGPT or Claude (or copy it into any assistant). It has the AI read the Crumb format, ask a few questions about your trip, then write the file — paste the result back into the editor.</div>
       </div>
       <div class="modal-body">
+        <!-- Prompt text + ChatGPT/Claude deeplinks are filled by app-menus.ts (editor
+             bundle) so the prompt stays out of the viewer/embed render bundle. -->
         <div class="ref-prompt-block">
-          <div class="ref-prompt-label">Then describe your trip, for example:</div>
-          <div class="ref-prompt-text">Plan a 10-day trip to Italy in October: Rome (4 nights), Florence (3), Venice (2). High-speed trains between cities, fly home from Venice. Include must-do sights with morning/afternoon timings and a hotel in Rome.</div>
+          <div class="ref-prompt-head">
+            <span class="ref-prompt-label">The prompt</span>
+            <button class="prompt-copy-btn" id="copy-prompt-btn" aria-label="Copy prompt" title="Copy prompt">${ICON_COPY}</button>
+          </div>
+          <div class="ref-prompt-text ref-prompt-text--prompt" id="ai-prompt-text"></div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button class="action-btn" id="generate-close">Close</button>
-        <button class="action-btn" id="dl-guide-btn">Download guide</button>
-        <button class="action-btn primary" id="copy-prompt-btn">Copy prompt</button>
+        <div class="modal-launch-row" id="ai-launch-row"></div>
+        <p class="modal-fallback">Your assistant can't open links? <button class="linklike" id="dl-guide-btn">Download the guide</button> and upload it instead.</p>
       </div>
     </div>
   </div>

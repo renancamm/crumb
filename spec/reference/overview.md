@@ -13,8 +13,8 @@ have an AI generate one, or build your own tool around it.
 
 - **[Format Specification](#doc-spec)** — the complete, authoritative definition: every
   field, type, and rule, with examples.
-- **[AI Authoring Guide](#doc-ai-guide)** — a compact prompt that teaches an AI to write
-  valid Crumb. Copy it into your model and describe your trip.
+- **[AI Authoring Guide](#doc-ai-guide)** — how to have an AI draft your crumb from a
+  plain-language description, then open the result in the editor.
 - **[Embedding](#doc-embedding)** — drop a crumb's interactive map into your own site or
   blog as a single self-contained embed.
 - **[Parser Reference](#doc-parser)** — how a parser turns crumb text into a resolved
@@ -25,9 +25,9 @@ have an AI generate one, or build your own tool around it.
 ## Where to start
 
 **Just want to make one?** You don't need to read the spec. Open the
-[live editor](editor.html) and start typing, or hand an AI the
-[AI Authoring Guide](#doc-ai-guide) and describe your trip in plain language — it will
-write the crumb for you.
+[live editor](editor.html) and start typing, or follow the
+[AI Authoring Guide](#doc-ai-guide) to have an AI write the crumb from a plain-language
+description of your trip.
 
 **Putting a trip on your website?** Go straight to [Embedding](#doc-embedding). The map
 is self-contained — no server, build step, or API key.

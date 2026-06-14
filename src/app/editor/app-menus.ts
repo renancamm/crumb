@@ -1,6 +1,7 @@
 import { getValue, setValue, focusEditor, refreshEditorLayout, render, editorUndo, editorRedo } from "./app-editor"
 import { copyText } from "../../shared/clipboard"
-import { ICON_FILE } from "../../shared/icons"
+import { AI_PROMPT, AI_DEEPLINKS, aiDeeplinkUrl } from "../../shared/ai-prompt"
+import { ICON_FILE, ICON_COPY, ICON_CHECK } from "../../shared/icons"
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
 
@@ -285,7 +286,7 @@ document.getElementById("menu-download")!.addEventListener("click", async () => 
 
 // ─── File → Export → Generate map embed ────────────────────────────────────────
 
-const embedCtrl = bindModal(embedModal, ["embed-close-x", "embed-close"])
+const embedCtrl = bindModal(embedModal, ["embed-close-x"])
 
 // An <iframe> pointing at this site's embed.html, with a tiny script that passes
 // the current crumb in via the embed-boot handshake (crumb:ready → crumb:load).
@@ -372,26 +373,28 @@ document.getElementById("menu-redo")!.addEventListener("click", () => { editorRe
 
 // ─── File → Generate with AI ───────────────────────────────────────────────────
 
-const generateCtrl = bindModal(generateModal, ["generate-close-x", "generate-close"])
+const generateCtrl = bindModal(generateModal, ["generate-close-x"])
 
 document.getElementById("menu-generate")!.addEventListener("click", () => {
   closeAll()
   generateCtrl.open()
 })
 
-// The prompt = the compact authoring guide + a trailing instruction the user
-// completes with their trip. Pasted whole into any chatbot, it produces a crumb.
-function aiPrompt(): string {
-  const guide = window.__CRUMB_FOR_AI ?? ""
-  return `${guide}
-
----
-
-Now write a single .crumb document (valid YAML only, no commentary) for the trip below.
-
-Trip: [describe your trip here — e.g. "10 days in Italy: Rome (4 nights), Florence (3), Venice (2), trains between, fly home from Venice"]
-`
-}
+// Fill the modal's prompt + ChatGPT/Claude deeplinks from the shared source (kept out
+// of the build-time markup so it never ships in the viewer/embed render bundle).
+;(function fillGeneratePrompt() {
+  const box = document.getElementById("ai-prompt-text")
+  if (box) box.textContent = AI_PROMPT
+  const row = document.getElementById("ai-launch-row")
+  if (row) for (const d of AI_DEEPLINKS) {
+    const a = document.createElement("a")
+    a.className = "action-btn primary"
+    a.href = aiDeeplinkUrl(d.base)
+    a.target = "_blank"; a.rel = "noopener"
+    a.textContent = `${d.label} ↗`
+    row.appendChild(a)
+  }
+})()
 
 document.getElementById("dl-guide-btn")!.addEventListener("click", () => {
   const guide = window.__CRUMB_FOR_AI
@@ -405,7 +408,7 @@ document.getElementById("dl-guide-btn")!.addEventListener("click", () => {
 
 document.getElementById("copy-prompt-btn")!.addEventListener("click", e => {
   const btn = e.currentTarget as HTMLButtonElement
-  copyText(aiPrompt(), () => flashCopied(btn))
+  copyText(AI_PROMPT, () => flashIcon(btn))
 })
 
 // ─── Clipboard helpers ─────────────────────────────────────────────────────────
@@ -414,4 +417,10 @@ function flashCopied(btn: HTMLButtonElement): void {
   const t = btn.textContent
   btn.textContent = "Copied!"
   setTimeout(() => { btn.textContent = t }, 1500)
+}
+
+// Like flashCopied, but for icon-only buttons: briefly swap the copy glyph for a check.
+function flashIcon(btn: HTMLButtonElement): void {
+  btn.innerHTML = ICON_CHECK
+  setTimeout(() => { btn.innerHTML = ICON_COPY }, 1500)
 }

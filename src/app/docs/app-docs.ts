@@ -7,7 +7,8 @@
  *     heading) shows its `.doc-section` and swaps the active "On this page" TOC;
  *   • breadcrumb — Docs / {doc} / {current heading}, updated on switch + scroll;
  *   • scrollspy — highlight the TOC link for the heading nearest the top;
- *   • actions — Copy guide / Download .md (raw Markdown baked in __CRUMB_DOCS_RAW);
+ *   • actions — Download .md (raw Markdown baked in __CRUMB_DOCS_RAW), plus the AI guide's
+ *     Copy prompt (data-copy-target) and ChatGPT/Claude deeplink buttons;
  *   • mobile drawer — the hamburger opens the sidebar; backdrop / link / Esc close it.
  *
  * Deep links from the landing (docs.html#doc-embedding, …) are honoured on load.
@@ -111,6 +112,13 @@ document.addEventListener("click", e => {
   if (copyBtn) {
     const raw = RAW[copyBtn.dataset.copy!]
     if (raw) copyText(raw.md, () => flash(copyBtn, "Copied!"))
+    return
+  }
+  // Copy an on-page element's text (the AI guide's ready prompt box).
+  const copyEl = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-copy-target]")
+  if (copyEl) {
+    const text = document.getElementById(copyEl.dataset.copyTarget!)?.textContent
+    if (text) copyText(text, () => flash(copyEl, "Copied!"))
     return
   }
   const dlBtn = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-download]")

@@ -120,6 +120,14 @@ a.docs-crumb:hover { color: var(--text); }
 .doc-action--ghost { background: transparent; color: var(--text-secondary); border-color: var(--border); }
 .doc-action--ghost:hover { transform: none; background: var(--muted-bg); color: var(--text); border-color: var(--border); }
 
+/* AI guide launcher (ai-launcher.ts): the ready prompt box + its action row. The
+   prompt wraps (and breaks long URLs) so it's readable instead of scrolling; the
+   doc-section prefix out-specifies the base pre.doc-code code white-space rule. */
+.ai-launcher { margin: 0 0 18px; }
+.ai-launcher pre.doc-code { margin: 0 0 14px; }
+.doc-section .ai-launcher pre.doc-code code { white-space: pre-wrap; overflow-wrap: anywhere; }
+.ai-launcher-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
 /* ── Rendered Markdown typography ─────────────────────────────────────────── */
 .doc-section h2, .doc-section h3, .doc-section h4 {
   color: var(--text); scroll-margin-top: calc(var(--docs-topbar-h) + 16px);
@@ -133,8 +141,10 @@ a.docs-crumb:hover { color: var(--text); }
 .doc-section ul, .doc-section ol { margin: 0 0 16px; padding-left: 24px; }
 .doc-section li { line-height: 1.7; margin: 4px 0; color: var(--text-secondary); }
 .doc-section li > ul, .doc-section li > ol { margin: 4px 0; }
-.doc-section a { color: var(--text); text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 3px; }
-.doc-section a:hover { text-decoration-color: var(--text); }
+/* Prose links only — exclude .doc-action buttons (View source, launcher deeplinks),
+   which would otherwise inherit body-link colour + underline over their button fill. */
+.doc-section a:not(.doc-action) { color: var(--text); text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 3px; }
+.doc-section a:not(.doc-action):hover { text-decoration-color: var(--text); }
 .doc-section hr { border: 0; border-top: 1px solid var(--border); margin: 36px 0; }
 
 /* Inline code (not inside a fenced block). */

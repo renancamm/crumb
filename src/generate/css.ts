@@ -611,11 +611,11 @@ const modalCSS = `
   position: relative;
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   width: 100%;
   max-width: 512px;
-  max-height: calc(100vh - 64px);
+  max-height: calc(100dvh - 64px);
   margin: 0 16px;
   padding: 24px;
   display: flex;
@@ -659,6 +659,7 @@ const modalCSS = `
   background: var(--bg);
   color: var(--text);
   cursor: pointer;
+  text-decoration: none;
   transition: background var(--duration);
 }
 .action-btn:hover { background: var(--muted-bg); }
@@ -669,8 +670,36 @@ const modalCSS = `
 
 .ref-intro { font-size: var(--text-sm); color: var(--text); line-height: 1.6; margin-bottom: 14px; }
 .ref-prompt-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; }
+.ref-prompt-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.ref-prompt-head .ref-prompt-label { margin-bottom: 0; }
+.prompt-copy-btn {
+  appearance: none; border: none; background: transparent;
+  color: var(--muted); cursor: pointer;
+  width: 24px; height: 24px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-xs);
+  transition: background var(--duration), color var(--duration);
+}
+.prompt-copy-btn .crumb-icon { width: 15px; height: 15px; stroke-width: 2; }
+.prompt-copy-btn:hover { background: var(--muted-bg); color: var(--text); }
 .ref-prompt-label { font-size: var(--text-3xs); font-weight: 600; color: var(--muted); letter-spacing: .5px; text-transform: uppercase; margin-bottom: 6px; }
 .ref-prompt-text { font-size: var(--text-xs); color: var(--muted); line-height: 1.6; font-style: italic; }
+/* The Generate-with-AI modal shows the real prompt (not an italic example): keep its
+   line breaks and read it upright, and give the ChatGPT/Claude deeplinks a wrap row. */
+.ref-prompt-text--prompt { font-style: normal; white-space: pre-wrap; color: var(--text-secondary); }
+.modal-launch-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.modal-fallback { font-size: var(--text-xs); color: var(--muted); line-height: 1.5; margin: 10px 0 0; }
+.linklike { appearance: none; border: none; background: none; padding: 0; font: inherit; color: var(--text); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.linklike:hover { color: var(--muted); }
+
+/* Mobile: tighter side margins, more breathing room top/bottom, and full-width
+   stacked actions so launch buttons are easy to tap. */
+@media (max-width: 767px) {
+  .modal-box { padding: 20px; margin: 0 12px; max-height: calc(100dvh - 24px); }
+  .modal-launch-row { flex-direction: column; }
+  .modal-launch-row .action-btn { text-align: center; padding: 10px 14px; }
+  .modal-footer .action-btn { flex: 1; text-align: center; padding: 10px 14px; }
+}
 
 .embed-snippet {
   width: 100%;
@@ -995,8 +1024,8 @@ const itineraryCSS = `
 .panel-empty-title { font-size: var(--text-2xl); font-weight: 700; letter-spacing: -0.02em; color: var(--muted); }
 .panel-empty-brand { font-size: var(--text-2xl); letter-spacing: -0.02em; }
 .panel-empty-message { margin: 0; font-size: var(--text-sm); color: var(--muted); max-width: 28ch; line-height: 1.5; }
-.panel-empty-recents { display: flex; flex-direction: column; width: 100%; max-width: 280px; margin-top: 4px; text-align: left; }
 .panel-empty-recents-box {
+  width: 100%; max-width: 280px; margin-top: 4px; text-align: left;
   background: var(--surface); border-radius: var(--radius-md); overflow: hidden;
 }
 .panel-empty-recent {
