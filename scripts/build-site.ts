@@ -90,17 +90,21 @@ async function main() {
   })
   fs.writeFileSync(path.join(DIST, "embed.html"), embedHtml)
 
-  // ── editor.html — the live editor (all examples embedded) ──
-  const examples: Record<string, string> = {}
+  // ── dist/examples/ — example .crumb files as static assets. The editor's
+  //    ?example=<file> deep link fetches these at runtime (relative path, so it
+  //    works under any Pages base path), so they aren't baked into any page. ──
+  const distExamples = path.join(DIST, "examples")
+  fs.mkdirSync(distExamples, { recursive: true })
   for (const f of fs.readdirSync(EXAMPLES).filter(f => f.endsWith(".crumb")).sort())
-    examples[f] = readExample(f)
+    fs.copyFileSync(path.join(EXAMPLES, f), path.join(distExamples, f))
+
+  // ── editor.html — the live editor (japan-detailed loaded by default) ──
   const editorHtml = renderHtml(parse(readExample("japan-detailed.crumb")), {
     crumbBundle: editorRenderBundle,
     viewerBundle,
     editorBundle,
     includeEditor:  true,
     source:         readExample("japan-detailed.crumb"),
-    examples,
     specContent:    readFirst(["spec/crumb-spec.md", "crumb-spec.md"]),
     aiGuideContent: readFirst(["spec/crumb-for-ai.md", "crumb-for-ai.md"]),
     geoData:        readGeo("japan-detailed.geo.json"),

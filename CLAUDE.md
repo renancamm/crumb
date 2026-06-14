@@ -68,9 +68,12 @@ src/parser/
 
    The editor bundle additionally gets (only injected in editor mode):
    - `window.__CRUMB_SOURCE` — original YAML string (pre-fills the editor textarea)
-   - `window.__CRUMB_EXAMPLES` — example file contents
    - `window.__CRUMB_SPEC` — `crumb-spec.md` text (embedded for AI use)
    - `window.__CRUMB_FOR_AI` — `crumb-for-ai.md` authoring guide (for the "Generate with AI" prompt)
+
+   Examples are **not** baked into any page: the build copies `examples/*.crumb` to
+   `dist/examples/`, and the editor's `?example=<file>` deep link fetches them at
+   runtime by relative path (`app-menus.ts`).
 
    Two more modes set their own globals:
    - `window.__CRUMB_EMBED` (embed only) — flips the viewer into a locked-preview map with an expand→fullscreen control (`setupEmbedMode` in `viewer-app.ts`). The doc is loaded at runtime, not baked.

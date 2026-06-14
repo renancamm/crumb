@@ -304,17 +304,23 @@ document.getElementById("menu-undo")!.addEventListener("click", () => { editorUn
 document.getElementById("menu-redo")!.addEventListener("click", () => { editorRedo(); focusEditor() })
 
 // ─── Deep link: editor.html?example=<file>[&view=map] ──────────────────────────
-// Pre-loads the live editor with a bundled example (the landing page's cards link
-// here). `view=map` opens map-first on mobile (the editor a tap away) — otherwise
-// the full-screen code overlay would cover the map. Desktop shows the split either
-// way, so the param is mobile-only.
+// Pre-loads the live editor with an example (the landing page's cards link here).
+// Examples are static assets under dist/examples/, fetched at runtime by name
+// (relative path → works under any Pages base path). `view=map` opens map-first on
+// mobile (the editor a tap away) — otherwise the full-screen code overlay would
+// cover the map. Desktop shows the split either way, so the param is mobile-only.
 {
   const params = new URLSearchParams(location.search)
   const exParam = params.get("example")
-  const src = exParam ? (window.__CRUMB_EXAMPLES ?? {})[exParam] : undefined
-  if (src) loadDoc(src, null, true)
+  // Apply the mobile map-first view immediately; don't wait on the fetch.
   if (params.get("view") === "map" && window.matchMedia("(max-width: 767px)").matches) {
     hideEditor()
+  }
+  if (exParam) {
+    fetch(`examples/${encodeURIComponent(exParam)}`)
+      .then(r => (r.ok ? r.text() : undefined))
+      .then(src => { if (src) loadDoc(src, null, true) })
+      .catch(() => { /* example not found — leave the default doc loaded */ })
   }
 }
 

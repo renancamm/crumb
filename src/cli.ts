@@ -98,16 +98,7 @@ async function main() {
   })
   const editorBundle = editorResult.outputFiles[0].text
 
-  // 5 — Collect examples (only embedded in editor mode, but always read for simplicity)
-  const examplesDir = path.resolve(__dirname, "../examples")
-  const examples: Record<string, string> = {}
-  if (fs.existsSync(examplesDir)) {
-    for (const file of fs.readdirSync(examplesDir).filter(f => f.endsWith(".crumb")).sort()) {
-      examples[file] = fs.readFileSync(path.join(examplesDir, file), "utf8")
-    }
-  }
-
-  // 6 — Load spec for the "Download spec for AI" button
+  // 5 — Load spec for the "Download spec for AI" button
   const specCandidates = [
     path.resolve(__dirname, "../spec/crumb-spec.md"),
     path.resolve(__dirname, "../crumb-spec.md"),
@@ -115,7 +106,7 @@ async function main() {
   const specPath    = specCandidates.find(p => fs.existsSync(p))
   const specContent = specPath ? fs.readFileSync(specPath, "utf8") : undefined
 
-  // 6b — Load the compact authoring guide for the "Generate with AI" prompt
+  // 5b — Load the compact authoring guide for the "Generate with AI" prompt
   const aiGuideCandidates = [
     path.resolve(__dirname, "../spec/crumb-for-ai.md"),
     path.resolve(__dirname, "../crumb-for-ai.md"),
@@ -123,14 +114,13 @@ async function main() {
   const aiGuidePath    = aiGuideCandidates.find(p => fs.existsSync(p))
   const aiGuideContent = aiGuidePath ? fs.readFileSync(aiGuidePath, "utf8") : undefined
 
-  // 7 — Render
+  // 6 — Render
   const options: AppOptions = {
     crumbBundle,
     viewerBundle,
     editorBundle,
     includeEditor: withEditor,
     source,
-    examples,
     specContent,
     aiGuideContent,
     geoData,

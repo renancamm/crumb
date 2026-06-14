@@ -54,8 +54,6 @@ export interface AppOptions {
   includeEditor?: boolean
   /** Original YAML source — embedded for the editor. Only used when includeEditor is true. */
   source?: string
-  /** Example files keyed by filename. Only used when includeEditor is true. */
-  examples?: Record<string, string>
   /** crumb-spec.md content (full reference). Only used when includeEditor is true. */
   specContent?: string
   /** crumb-for-ai.md content — the compact authoring guide used by the "Generate with AI" prompt. Only used when includeEditor is true. */
@@ -651,8 +649,7 @@ export function renderHtml(doc: CrumbDocument | null, options: AppOptions): stri
   const editorGlobals = includeEditor ? `
     window.__CRUMB_SOURCE   = "";
     window.__CRUMB_SPEC     = ${jsonForScript(options.specContent ?? "")};
-    window.__CRUMB_FOR_AI   = ${jsonForScript(options.aiGuideContent ?? "")};
-    window.__CRUMB_EXAMPLES = ${jsonForScript(options.examples ?? {})};` : ""
+    window.__CRUMB_FOR_AI   = ${jsonForScript(options.aiGuideContent ?? "")};` : ""
 
   const editorScript = includeEditor ? `\n  <script>${options.editorBundle}</script>` : ""
 

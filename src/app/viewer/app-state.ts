@@ -15,7 +15,6 @@ declare global {
     __CRUMB_SOURCE?:   string
     __CRUMB_SPEC?:     string
     __CRUMB_FOR_AI?:   string
-    __CRUMB_EXAMPLES?: Record<string, string>
     // Always present:
     __CRUMB_DATA:     CrumbDocument | null
     // Optional baked geocoding cache ({ query: {lat,lng} }) and opt-out flag.

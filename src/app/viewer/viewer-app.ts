@@ -7,7 +7,6 @@
  *
  *   window.__CRUMB_SOURCE   — original YAML source for the editor
  *   window.__CRUMB_SPEC     — crumb-spec.md content for "Download spec"
- *   window.__CRUMB_EXAMPLES — example crumb files keyed by filename
  *   window.__CRUMB_DATA     — parsed CrumbDocument (initial render)
  *
  * The Crumb parser/renderer bundle (window.Crumb) is injected by a separate
