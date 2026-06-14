@@ -95,10 +95,10 @@ Add the live YAML editor shell (for authoring and showcase use):
 npm run render -- examples/japan-detailed.crumb out.html --editor
 ```
 
-Build the full site — landing page, live editor, and the embeddable map — into `dist/`:
+Build the full site — landing page, live editor, embeddable map, and docs — into `dist/`:
 
 ```sh
-npm run build           # → dist/{index,editor,embed}.html
+npm run build           # → dist/{index,editor,embed,docs}.html + dist/examples/
 ```
 
 ---

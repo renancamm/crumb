@@ -126,7 +126,7 @@ src/parser/
 ## Dev commands
 
 ```bash
-npm run build          # build the site → dist/{index,editor,embed}.html (scripts/build-site.ts)
+npm run build          # build the site → dist/{index,editor,embed,docs}.html + dist/examples/ (scripts/build-site.ts)
 npm run build:viewer   # render examples/japan-detailed.crumb → dist/viewer.html (single viewer, dev)
 npm run gen:geocache   # regenerate examples/*.geo.json baked caches (hits Nominatim, ToS-paced)
 npm run typecheck      # tsc --noEmit (zero errors required)

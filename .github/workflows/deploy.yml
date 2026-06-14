@@ -26,7 +26,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm run build          # ts-node scripts/build-site.ts → dist/{index,editor,embed}.html
+      - run: npm run build          # ts-node scripts/build-site.ts → dist/{index,editor,embed,docs}.html + dist/examples/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

@@ -6,6 +6,9 @@
  *   editor.html  the live editor (was the old index.html)
  *   embed.html   generic map embed — takes a crumb inline (postMessage) or by URL
  *                (?src). The landing feeds its hero + cards inline. Not linked in nav.
+ *   docs.html    documentation site, generated from the spec/*.md sources
+ *   examples/    the example .crumb files, copied verbatim as static assets — the
+ *                editor's ?example= deep link fetches them at runtime
  *
  * Bundles are built once with esbuild and reused across pages. No new runtime
  * dependencies — same pipeline as src/cli.ts.
@@ -156,7 +159,7 @@ async function main() {
   })
   fs.writeFileSync(path.join(DIST, "docs.html"), renderDocsHtml({ docsBundle, docs }))
 
-  console.error("Built: dist/index.html, dist/editor.html, dist/embed.html, dist/docs.html")
+  console.error("Built: dist/index.html, dist/editor.html, dist/embed.html, dist/docs.html, dist/examples/")
 }
 
 main().catch(e => { console.error(e); process.exit(1) })
